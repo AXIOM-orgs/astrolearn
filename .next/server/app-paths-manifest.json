@@ -1,5 +1,4 @@
 {
-  "/host/leaderboard/page": "app/host/leaderboard/page.js",
   "/host/lobby/page": "app/host/lobby/page.js",
   "/host/monitor/page": "app/host/monitor/page.js",
   "/host/select-quiz/page": "app/host/select-quiz/page.js",
@@ -7,7 +6,6 @@
   "/join/game/page": "app/join/game/page.js",
   "/join/hangar/page": "app/join/hangar/page.js",
   "/join/quiz/page": "app/join/quiz/page.js",
-  "/join/results/page": "app/join/results/page.js",
   "/join/waiting/page": "app/join/waiting/page.js",
   "/page": "app/page.js"
 }

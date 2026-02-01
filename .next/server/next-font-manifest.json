@@ -1,10 +1,5 @@
 {
   "app": {
-    "[project]/app/host/leaderboard/page": [
-      "static/media/0acc7fdf55eb3220-s.p.532ccaa1.woff2",
-      "static/media/dc0d9adbac686440-s.p.3b382e45.woff2",
-      "static/media/8d05cfa5faa8406c-s.p.4adea45d.woff2"
-    ],
     "[project]/app/host/lobby/page": [
       "static/media/0acc7fdf55eb3220-s.p.532ccaa1.woff2",
       "static/media/dc0d9adbac686440-s.p.3b382e45.woff2",
@@ -36,11 +31,6 @@
       "static/media/8d05cfa5faa8406c-s.p.4adea45d.woff2"
     ],
     "[project]/app/join/quiz/page": [
-      "static/media/0acc7fdf55eb3220-s.p.532ccaa1.woff2",
-      "static/media/dc0d9adbac686440-s.p.3b382e45.woff2",
-      "static/media/8d05cfa5faa8406c-s.p.4adea45d.woff2"
-    ],
-    "[project]/app/join/results/page": [
       "static/media/0acc7fdf55eb3220-s.p.532ccaa1.woff2",
       "static/media/dc0d9adbac686440-s.p.3b382e45.woff2",
       "static/media/8d05cfa5faa8406c-s.p.4adea45d.woff2"

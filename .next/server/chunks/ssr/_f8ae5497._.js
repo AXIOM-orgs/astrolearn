@@ -863,6 +863,30 @@ let keyDownHandler = null;
 let keyUpHandler = null;
 let mouseDownHandler = null;
 let mouseUpHandler = null;
+let resizeHandler = null;
+function handleResize() {
+    if (!canvas || !player) return;
+    // Update canvas dimensions
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    // Reposition background panels to avoid gaps immediately
+    // Ideally we'd scale them, but resetting them stack-wise is safer to prevent gaps
+    // We only reset if they are completely desynchronized, but for now let's just update player
+    // effectively, the background loop usually checks canvas.height so it might self-correct
+    // but let's ensure the player stays on screen.
+    // Update player position
+    player.y = canvas.height - 100;
+    // Clamp player X
+    const margin = player.width / 2;
+    if (player.x < margin) player.x = margin;
+    if (player.x > canvas.width - margin) player.x = canvas.width - margin;
+    // Update target to ensure it's not off-screen
+    targetX = Math.max(margin, Math.min(canvas.width - margin, targetX));
+    targetY = Math.max(player.height / 2, Math.min(canvas.height - player.height / 2, targetY));
+// Re-init scrolling decors if needed or let them flow. 
+// They are 3D perspective so getScreenPosition uses canvas.height/width dynamic
+// so they should adjust automatically on next frame.
+}
 class AudioManager {
     audioContext = null;
     isMuted = false;
@@ -1259,6 +1283,9 @@ function startMiniGame(spaceship, difficulty, callback) {
     updateUI();
     // Setup controls
     setupControls();
+    // Setup resize handler
+    resizeHandler = handleResize;
+    window.addEventListener('resize', resizeHandler);
     // Load sounds and start BGM
     audioManager.loadSounds().then(()=>{
         audioManager.startBGM(0.3);
@@ -1646,7 +1673,92 @@ function drawBackground() {
     for(let i = 0; i < backgroundImages.length; i++){
         const img = backgroundImages[i];
         if (img && img.complete) {
-            ctx.drawImage(img, 0, Math.floor(bgPanelY[i]), canvas.width, canvas.height);
+            // "Cover" logic
+            // Calculate scale ratios
+            const scaleX = canvas.width / img.width;
+            const scaleY = canvas.height / img.height;
+            // Use maximum scale to ensure coverage (clipping overflow)
+            const scale = Math.max(scaleX, scaleY);
+            // Calculate new width and height based on scale
+            const newWidth = img.width * scale;
+            const newHeight = img.height * scale;
+            // Center the image: (destX, destY)
+            const x = (canvas.width - newWidth) / 2;
+            const y = (canvas.height - newHeight) / 2;
+            // We draw the full image scaled and translated (some parts will be clipped by canvas)
+            // But we have scrolling Y offset (bgPanelY[i])
+            // Standard "cover" usually implies a static background, but here we scroll.
+            // If we want "scrolling cover", we need to apply the Y offset.
+            // However, bgPanelY logic assumes stretching.
+            // Alternative: Scale first to fill width (mobile) or height (desktop) then center, 
+            // BUT apply the scrolling offset to the destination Y.
+            // Let's refine:
+            // The scrolling logic shifts the destination Y position of the whole panel.
+            // We want the panel content (image) to be "cover" scaled RELATIVE TO THE CANVAS DIMENSIONS.
+            // If the image is square and screen is portrait, we crop sides.
+            // If screen is landscape, we crop top/bottom (conceptually).
+            // Implementation:
+            // 1. Calculate the 'cover' dimensions for a single panel filling the screen
+            const coverScale = Math.max(canvas.width / img.width, canvas.height / img.height);
+            const coverW = img.width * coverScale;
+            // const coverH = img.height * coverScale; // We probably want to keep original aspect ratio
+            // For scrolling background, we usually want it to fill width at least.
+            // If we enforce 'cover' strictly, a very wide image on a tall phone gets zoomed in massively.
+            // User requested: "mobile ambil tengah-tengah gambar supaya tidak gepeng" -> "mobile take middle of picture so not flattened"
+            // If we just scale by Height (to fill vertical) on mobile, it might be too narrow? No, mobile is tall.
+            // Standard background: ensure it covers the screen.
+            // Let's us drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
+            // But we need to account for the scrolling `bgPanelY[i]`.
+            // The simplest approach that respects the "scrolling panel" system:
+            // Draw the image centered horizontally, scaled to fill HEIGHT (priority) or WIDTH?
+            // If flattened (squashed vertically) was the issue:
+            // It means canvas height > proportional image height.
+            // We should maintain aspect ratio.
+            // Render Strategy:
+            // Draw the image at `bgPanelY[i]`.
+            // Width: canvas.width (fills width) -> This causes stretching if aspect ratio differs.
+            // To fix: Calculate width based on Aspect Ratio given the Height (canvas.height).
+            // Actually, the panels stack. Each panel is supposed to be 1 screen height? 
+            // In init: bgPanelY = [0, -height, -2*height].
+            // So each panel height = canvas.height.
+            // If we change the drawing to NOT stretch, we might have gaps if we don't fill width.
+            // "Cover" strategy for a scrolling tile:
+            // The tile must be at least canvas.width wide and canvas.height high.
+            // We scale the image so that:
+            // w >= canvas.width AND h >= canvas.height.
+            const renderH = canvas.height; // The panel takes up full height of screen slot
+            // To maintain aspect ratio:
+            const ratio = img.width / img.height;
+            let renderW = renderH * ratio;
+            // If calculated width is less than canvas width (gap on sides), we must scale up by width instead
+            if (renderW < canvas.width) {
+                renderW = canvas.width;
+                // renderH would need to increase, but our scrolling logic dictates fixed height slots?
+                // Actually, if we increase renderH, it overlaps other panels?
+                // The scrolling logic just loops them.
+                // Ideally we want the image to "Cover" the designated slot (which matches screen size).
+                // If we scale up to cover, we potentially crop.
+                const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+                const finalW = img.width * scale;
+                const finalH = img.height * scale;
+                const offX = (canvas.width - finalW) / 2;
+                const offY = (canvas.height - finalH) / 2; // Centers it within the slot
+                // Draw at bgPanelY[i] + offY?
+                // bgPanelY[i] is the top of the slot.
+                // We want to draw the image centered in that slot.
+                // However, `finalH` might be > `canvas.height`.
+                // If we draw it larger, it might overlap.
+                // But for a continuous background (stars), overlap is usually okay or unnoticeable IF opaque.
+                // These are space backgrounds.
+                ctx.drawImage(img, // Source (full)
+                0, 0, img.width, img.height, // Dest
+                offX, Math.floor(bgPanelY[i]) + offY, finalW, finalH);
+            } else {
+                // Width is sufficient or larger.
+                // We center horizontally.
+                const offX = (canvas.width - renderW) / 2;
+                ctx.drawImage(img, 0, 0, img.width, img.height, offX, Math.floor(bgPanelY[i]), renderW, renderH);
+            }
         }
     }
     // Fallback if images not loaded
@@ -1759,7 +1871,7 @@ function drawUI(isInDodgePhase, elapsed) {
     if (!ctx || !canvas || !player) return;
     // Mobile-responsive scaling
     const isMobile = canvas.width < 768;
-    const scale = isMobile ? 0.7 : 1;
+    const scale = isMobile ? 1.0 : 1; // Increased for mobile from 0.7 for better readability
     // ===== TOP LEFT: SIMPLE HP BAR (Reference Design) =====
     const barX = 15 * scale;
     const barY = 15 * scale;
@@ -1833,35 +1945,6 @@ function drawUI(isInDodgePhase, elapsed) {
     }
     ctx.fillStyle = '#ff6666';
     ctx.fillText(`🚀 ${enemyRockets.length}`, statsX, 68 * scale);
-    // ===== TOP CENTER: PHASE INDICATOR =====
-    // ctx.textAlign = 'center';
-    // ctx.font = `bold ${Math.floor(16 * scale)}px Orbitron, sans-serif`;
-    // const phaseY = isMobile ? 50 : 65;
-    // if (isInDodgePhase) {
-    //     const remaining = Math.ceil((DODGE_PHASE_DURATION - elapsed) / 1000);
-    //     ctx.fillStyle = '#ff6b6b';
-    //     ctx.fillText(`🔴 SPREAD + ⏱️ ${remaining}s`, canvas.width / 2, phaseY);
-    // } else if (!secondaryWeapon) {
-    //     ctx.fillStyle = '#00ff88';
-    //     ctx.fillText(isMobile ? '🎯 CATCH POWER-UP!' : '🔴 SPREAD | 🎯 CATCH POWER-UP!', canvas.width / 2, phaseY);
-    // } else {
-    //     // Dual weapon display
-    //     const secondaryNames: Record<WeaponType, string> = {
-    //         'spread': '🔴 SPREAD',
-    //         'laser': '🔵 LASER',
-    //         'magnetic': '🟣 MAGNET'
-    //     };
-    //     ctx.fillStyle = '#00ffaa';
-    //     ctx.fillText(isMobile ? `${secondaryNames[secondaryWeapon]} DUAL!` : `🔴 SPREAD + ${secondaryNames[secondaryWeapon]} (DUAL!)`, canvas.width / 2, phaseY);
-    // }
-    // // Weapon timer (if secondary weapon active)
-    // if (secondaryWeapon) {
-    //     const timeLeft = Math.max(0, secondaryWeaponEndTime - Date.now());
-    //     ctx.font = `bold ${Math.floor(10 * scale)}px Orbitron, sans-serif`;
-    //     ctx.fillStyle = '#00ddff';
-    //     ctx.textAlign = 'center';
-    //     ctx.fillText(`⚡ ${(timeLeft / 1000).toFixed(1)}s`, canvas.width / 2, phaseY + 20 * scale);
-    // }
     // ===== BOTTOM: CONTROLS (mobile-friendly) =====
     ctx.textAlign = 'center';
     ctx.font = `${Math.floor(11 * scale)}px Space Mono, monospace`;
@@ -1903,17 +1986,37 @@ function drawUI(isInDodgePhase, elapsed) {
 // ============ BOSS ROCKET (HARD DIFFICULTY) ============
 function spawnBossRocket() {
     if (!canvas) return;
+    // Mobile sizing adjustments
+    const isMobile = canvas.width < 768;
     bossRocket = {
         x: canvas.width / 2,
         y: -200,
-        width: 250,
-        height: 180,
+        width: isMobile ? 180 : 250,
+        height: isMobile ? 130 : 180,
         speed: 1,
         hp: 5000,
         maxHp: 5000,
         lastFireTime: 0,
-        // 4 turret positions (2 left, 2 right)
-        turrets: [
+        // 4 turret positions (2 left, 2 right) - adjusted for mobile width if needed, but relative offsets scale with resizing usually? 
+        // actually offsets are absolute pixels. We should adjust them too.
+        turrets: isMobile ? [
+            {
+                offsetX: -70,
+                offsetY: 35
+            },
+            {
+                offsetX: -40,
+                offsetY: 50
+            },
+            {
+                offsetX: 40,
+                offsetY: 50
+            },
+            {
+                offsetX: 70,
+                offsetY: 35
+            }
+        ] : [
             {
                 offsetX: -100,
                 offsetY: 50
@@ -1961,8 +2064,12 @@ function updateBossRocket(now) {
             const jitterY = (Math.random() - 0.5) * 15; // 2x vertical jitter
             bossRocket.x += jitterX;
             bossRocket.y += jitterY;
-            // Keep boss in bounds
-            bossRocket.x = Math.max(100, Math.min(canvas.width - 100, bossRocket.x));
+            // Keep boss in bounds (Safe margins to keep minions on screen)
+            // Mobile: Offset 120 + Size 20 = 140
+            // Desktop: Offset 180 + Size 30 = 210
+            const isMobile = canvas.width < 768;
+            const safeBound = isMobile ? 140 : 210;
+            bossRocket.x = Math.max(safeBound, Math.min(canvas.width - safeBound, bossRocket.x));
             bossRocket.y = Math.max(targetY - 50, Math.min(targetY + 50, bossRocket.y));
         }
         if (Math.abs(bossRocket.x - playerCenterX) > 5) {
@@ -1982,28 +2089,32 @@ function updateBossRocket(now) {
         // Spawn 2 Minions
         bossRocket.phase = 2;
         bossRocket.invulnerable = true;
+        // Minion sizing for mobile
+        const isMobile = canvas.width < 768;
+        const mSize = isMobile ? 40 : 60;
+        const mOffset = isMobile ? 120 : 180;
         // Spawn 2 Minions - START ABOVE SCREEN
         bossRocket.minions = [
             {
-                x: bossRocket.x - 180,
+                x: bossRocket.x - mOffset,
                 y: -100,
-                width: 60,
-                height: 60,
+                width: mSize,
+                height: mSize,
                 hp: 400,
                 maxHp: 400,
-                offsetX: -180,
+                offsetX: -mOffset,
                 offsetY: 80,
                 lastFireTime: 0,
                 state: 'entering'
             },
             {
-                x: bossRocket.x + 180,
+                x: bossRocket.x + mOffset,
                 y: -100,
-                width: 60,
-                height: 60,
+                width: mSize,
+                height: mSize,
                 hp: 400,
                 maxHp: 400,
-                offsetX: 180,
+                offsetX: mOffset,
                 offsetY: 80,
                 lastFireTime: 0,
                 state: 'entering'
@@ -2540,11 +2651,11 @@ function spawnSquadron() {
             if (i < halfSize) {
                 pathType = 'cross_left';
                 startX = canvas.width * 0.1;
-                timeOffset = i * 150;
+                timeOffset = i * 300;
             } else {
                 pathType = 'cross_right';
                 startX = canvas.width * 0.9;
-                timeOffset = (i - halfSize) * 150; // Sync with first group
+                timeOffset = (i - halfSize) * 300; // Sync with first group
             }
         } else {
             pathType = groupSide === 'left' ? 'u_turn_left' : 'u_turn_right';
@@ -2923,14 +3034,17 @@ function spawnScatteredPowerUps() {
         'laser': '#00d4ff',
         'magnetic': '#9d4edd'
     };
+    // Mobile sizing for powerups
+    const isMobile = canvas.width < 768;
+    const pSize = isMobile ? 35 : 45;
     weaponTypes.forEach((weaponType, index)=>{
         powerUps.push({
             id: powerUpIdCounter++,
             x: lanePositions[index],
             y: -50 - index * 150,
             z: startZ[index],
-            width: 45,
-            height: 45,
+            width: pSize,
+            height: pSize,
             weaponType,
             color: colors[weaponType],
             rotation: 0,
@@ -3009,7 +3123,7 @@ function equipWeapon(weaponType) {
     secondaryWeaponConfig = weaponConfigs[weaponType];
 }
 function drawPowerUp(powerUp, pos) {
-    if (!ctx) return;
+    if (!ctx || !canvas) return;
     ctx.save();
     ctx.translate(pos.x, pos.y);
     ctx.scale(pos.scale, pos.scale);
@@ -3020,7 +3134,9 @@ function drawPowerUp(powerUp, pos) {
     if ((powerUp.weaponType === 'spread' || powerUp.weaponType === 'laser' || powerUp.weaponType === 'magnetic') && weaponPowerUpImage && weaponPowerUpImage.complete && weaponPowerUpImage.naturalWidth > 0) {
         // Preserve aspect ratio to prevent "gepeng" (flattening)
         const aspect = weaponPowerUpImage.naturalWidth / weaponPowerUpImage.naturalHeight;
-        const targetHeight = 100; // Increased size
+        // Resize for mobile
+        const isMobile = canvas.width < 768;
+        const targetHeight = isMobile ? 60 : 100; // Smaller on mobile
         const targetWidth = targetHeight * aspect;
         ctx.drawImage(weaponPowerUpImage, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);
     } else {
@@ -3096,7 +3212,8 @@ function fireBullets() {
                 damage: secondaryWeaponConfig.damage,
                 color: secondaryWeaponConfig.color,
                 type: 'magnetic',
-                targetAsteroid: targetResult.target || undefined
+                targetAsteroid: targetResult.target || undefined,
+                angle: -Math.PI / 2 // Start facing straight up
             });
             audioManager.playSoundEffect('magnetic');
         } else if (secondaryWeaponConfig.type === 'spread') {
@@ -3157,36 +3274,54 @@ function updateBullets() {
     if (!ctx || !canvas) return;
     for(let i = bullets.length - 1; i >= 0; i--){
         const bullet = bullets[i];
-        // Move bullet STRAIGHT UP (decreasing Y and Z)
-        bullet.y -= bullet.speed;
-        bullet.z -= 0.02;
-        if (bullet.type === 'spread' && bullet.angle !== undefined) {
-            bullet.x += Math.sin(bullet.angle) * bullet.speed * 0.4;
-        }
-        // Magnetic bullet homes in on target (asteroid or enemy rocket) - closer range
-        if (bullet.type === 'magnetic' && player) {
-            // Find nearest target within closer range to player (300 pixels)
-            const targetResult = findNearestTarget(player.x, player.y);
-            const target = targetResult.target;
+        // Check collision with moving asteroids
+        let bulletHit = false;
+        // Custom movement for Magnetic Bullets (Smooth Homing)
+        if (bullet.type === 'magnetic') {
+            // Apply movement based on current angle
+            if (bullet.angle === undefined) bullet.angle = -Math.PI / 2;
+            bullet.x += Math.cos(bullet.angle) * bullet.speed;
+            bullet.y += Math.sin(bullet.angle) * bullet.speed;
+            // Homing Logic
+            let target = bullet.targetAsteroid;
+            // If no target or target destroyed, find new one
+            if (!target || target.hp <= 0 || target.x === undefined) {
+                const result = findNearestTarget(bullet.x, bullet.y);
+                if (result.target) {
+                    bullet.targetAsteroid = result.target; // Type cast for convenience
+                    target = result.target;
+                }
+            }
             if (target) {
-                const playerDist = Math.sqrt(Math.pow(target.x - player.x, 2) + Math.pow(target.y - player.y, 2));
-                // Only home in if target is within 300 pixels of player
-                if (playerDist < 300) {
-                    const dx = target.x - bullet.x;
-                    const dy = target.y - bullet.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist > 0) {
-                        // Move DIRECTLY towards target (full homing)
-                        bullet.x += dx / dist * bullet.speed;
-                        bullet.y += dy / dist * bullet.speed;
-                        // Override the default upward movement
-                        bullet.y += bullet.speed;
+                const dx = target.x - bullet.x;
+                const dy = target.y - bullet.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                // Only home if within reasonable range (increase range for better feel)
+                if (dist < 600) {
+                    const targetAngle = Math.atan2(dy, dx);
+                    // Smoothly rotate towards target
+                    let angleDiff = targetAngle - bullet.angle;
+                    // Normalize angle to -PI to PI
+                    while(angleDiff <= -Math.PI)angleDiff += Math.PI * 2;
+                    while(angleDiff > Math.PI)angleDiff -= Math.PI * 2;
+                    const turnRate = 0.15; // Turn speed (radians per frame)
+                    if (Math.abs(angleDiff) < turnRate) {
+                        bullet.angle = targetAngle;
+                    } else {
+                        bullet.angle += Math.sign(angleDiff) * turnRate;
                     }
                 }
             }
+        } else {
+            // Move bullet STRAIGHT UP (decreasing Y and Z)
+            bullet.y -= bullet.speed;
+            if (bullet.type === 'spread' && bullet.angle !== undefined) {
+                bullet.x += Math.sin(bullet.angle) * bullet.speed * 0.4;
+            }
         }
-        // Check collision with moving asteroids
-        let bulletHit = false;
+        // Z-depth update for all bullets
+        bullet.z -= 0.02;
+        // Reset buffer check for collision
         for(let j = movingAsteroids.length - 1; j >= 0; j--){
             const asteroid = movingAsteroids[j];
             const size = asteroid.baseSize;
@@ -3301,6 +3436,40 @@ function updateBullets() {
 function drawBullet(bullet) {
     if (!ctx) return;
     ctx.save();
+    if (bullet.type === 'magnetic') {
+        const drawWidth = bullet.width * 3;
+        const drawHeight = bullet.height * 2;
+        // Save context for rotation
+        ctx.save();
+        ctx.translate(bullet.x, bullet.y);
+        // Rotate to match movement (add PI/2 because sprite points up)
+        ctx.rotate((bullet.angle || -Math.PI / 2) + Math.PI / 2);
+        // Draw Trail (Relative to rotated context)
+        const trailLength = 40;
+        const gradient = ctx.createLinearGradient(0, 0, 0, trailLength);
+        gradient.addColorStop(0, bullet.color);
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = bullet.width;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, trailLength);
+        ctx.stroke();
+        // Draw Bullet Image
+        if (bulletMagneticImage && bulletMagneticImage.complete) {
+            ctx.drawImage(bulletMagneticImage, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+        } else {
+            ctx.fillStyle = bullet.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, bullet.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+        // Return early since we handled drawing fully
+        ctx.restore();
+        return;
+    }
+    // Standard drawing for non-magnetic bullets
     // Bullet Trail (Gradient)
     const trailLength = 30;
     const gradient = ctx.createLinearGradient(bullet.x, bullet.y, bullet.x, bullet.y + trailLength);
@@ -3317,17 +3486,7 @@ function drawBullet(bullet) {
     // Larger bullet sizes (3x width, 2x height)
     const drawWidth = bullet.width * 3;
     const drawHeight = bullet.height * 2;
-    if (bullet.type === 'magnetic') {
-        // Purple magnetic bullet image
-        if (bulletMagneticImage && bulletMagneticImage.complete) {
-            ctx.drawImage(bulletMagneticImage, bullet.x - drawWidth / 2, bullet.y - drawHeight / 2, drawWidth, drawHeight);
-        } else {
-            ctx.fillStyle = bullet.color;
-            ctx.beginPath();
-            ctx.arc(bullet.x, bullet.y, bullet.width / 2, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    } else if (bullet.type === 'laser') {
+    if (bullet.type === 'laser') {
         // Blue laser bullet image
         if (bulletLaserImage && bulletLaserImage.complete) {
             ctx.drawImage(bulletLaserImage, bullet.x - drawWidth / 2, bullet.y - drawHeight / 2, drawWidth, drawHeight);
@@ -3433,7 +3592,9 @@ function endGame() {
     if (keyDownHandler) document.removeEventListener('keydown', keyDownHandler);
     if (keyUpHandler) document.removeEventListener('keyup', keyUpHandler);
     if (mouseDownHandler) document.removeEventListener('mousedown', mouseDownHandler);
+    if (mouseDownHandler) document.removeEventListener('mousedown', mouseDownHandler);
     if (mouseUpHandler) document.removeEventListener('mouseup', mouseUpHandler);
+    if (resizeHandler) window.removeEventListener('resize', resizeHandler);
     if (!ctx || !canvas) {
         if (onComplete && !callbackCalled) {
             callbackCalled = true;
@@ -3479,7 +3640,9 @@ function cleanupMiniGame() {
     if (keyDownHandler) document.removeEventListener('keydown', keyDownHandler);
     if (keyUpHandler) document.removeEventListener('keyup', keyUpHandler);
     if (mouseDownHandler) document.removeEventListener('mousedown', mouseDownHandler);
+    if (mouseDownHandler) document.removeEventListener('mousedown', mouseDownHandler);
     if (mouseUpHandler) document.removeEventListener('mouseup', mouseUpHandler);
+    if (resizeHandler) window.removeEventListener('resize', resizeHandler);
 }
 }),
 "[project]/app/join/game/page.tsx [app-ssr] (ecmascript)", ((__turbopack_context__) => {
