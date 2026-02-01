@@ -285,6 +285,29 @@ function getNearbyObjects(x: number, y: number): (MovingAsteroid | EnemyRocket)[
     return nearby;
 }
 
+// ============ MOBILE PERFORMANCE SETTINGS ============
+// Detect mobile and adjust visual quality for better performance
+
+let isMobile: boolean = false;
+let enableShadows: boolean = true;
+let particleMultiplier: number = 1; // 1 = full, 0.5 = half
+
+function detectMobileAndSetPerformance(): void {
+    // Detect mobile by screen width (under 768px is typically mobile)
+    isMobile = window.innerWidth < 768 ||
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isMobile) {
+        enableShadows = false;      // Disable expensive shadow effects
+        particleMultiplier = 0.5;   // Reduce particle count by 50%
+        console.log('[Performance] Mobile detected - shadows disabled, particles reduced');
+    } else {
+        enableShadows = true;
+        particleMultiplier = 1;
+        console.log('[Performance] Desktop detected - full quality');
+    }
+}
+
 // Game config
 let difficultyConfig: DifficultyConfig | null = null;
 let weaponConfig: WeaponConfig | null = null;
@@ -700,6 +723,9 @@ export function startMiniGame(
         callback({ hits: 0, asteroidsDestroyed: 0, bossDestroyed: false, score: 0, success: false, playerHP: 0, isEliminated: false });
         return;
     }
+
+    // Detect mobile and set performance settings
+    detectMobileAndSetPerformance();
 
     // Set canvas to full screen
     canvas.width = window.innerWidth;
@@ -1322,8 +1348,9 @@ function updateSmokeParticles(): void {
 
     const now = Date.now();
 
-    // Spawn new particles (reduced rate for performance)
-    if (player && now - lastSmokeSpawnTime > 100) {
+    // Spawn new particles (reduced rate for performance, even more on mobile)
+    const smokeSpawnInterval = isMobile ? 200 : 100; // 2x slower on mobile
+    if (player && now - lastSmokeSpawnTime > smokeSpawnInterval) {
         spawnSmokeParticle();
         lastSmokeSpawnTime = now;
     }
@@ -1533,7 +1560,9 @@ function spawnExplosion(x: number, y: number, size: number = 1): void {
     }
 
     // Spawn multiple explosion particles for a more dramatic effect
-    const particleCount = 3 + Math.floor(Math.random() * 3);
+    // Reduce particle count on mobile using particleMultiplier
+    const baseParticleCount = 3 + Math.floor(Math.random() * 3);
+    const particleCount = Math.max(1, Math.floor(baseParticleCount * particleMultiplier));
     for (let i = 0; i < particleCount; i++) {
         // Use object pool instead of creating new object
         const particle = getExplosionFromPool();
@@ -3534,8 +3563,11 @@ function drawBullet(bullet: Bullet): void {
     ctx.lineTo(bullet.x, bullet.y + trailLength);
     ctx.stroke();
 
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = bullet.color;
+    // Only apply shadow effects on desktop (expensive on mobile)
+    if (enableShadows) {
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = bullet.color;
+    }
 
     // Larger bullet sizes (3x width, 2x height)
     const drawWidth = bullet.width * 3;
@@ -3575,9 +3607,11 @@ function drawPlayer(): void {
         if (flashRate === 0) {
             ctx.globalAlpha = 0.4;
         }
-        // Cyan glow for immunity
-        ctx.shadowBlur = 30;
-        ctx.shadowColor = '#00ffff';
+        // Cyan glow for immunity (only on desktop)
+        if (enableShadows) {
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = '#00ffff';
+        }
     }
 
     // Draw rocket first
@@ -3585,7 +3619,7 @@ function drawPlayer(): void {
         ctx.translate(player.x, player.y);
         ctx.rotate(player.tilt * Math.PI / 180);
 
-        if (!isImmune) {
+        if (!isImmune && enableShadows) {
             ctx.shadowBlur = 20;
             ctx.shadowColor = hasWeapon && weaponConfig ? weaponConfig.color : '#00d4ff';
         }
