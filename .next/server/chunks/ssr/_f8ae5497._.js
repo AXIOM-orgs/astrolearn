@@ -725,6 +725,140 @@ let gameLoop = null;
 let isGameRunning = false;
 let onComplete = null;
 let callbackCalled = false;
+// Bullet Pool
+const bulletPool = {
+    pool: [],
+    maxSize: 100
+};
+const enemyBulletPool = {
+    pool: [],
+    maxSize: 50
+};
+const explosionPool = {
+    pool: [],
+    maxSize: 50
+};
+const smokePool = {
+    pool: [],
+    maxSize: 100
+};
+function getBulletFromPool() {
+    if (bulletPool.pool.length > 0) {
+        return bulletPool.pool.pop();
+    }
+    return createEmptyBullet();
+}
+function returnBulletToPool(bullet) {
+    if (bulletPool.pool.length < bulletPool.maxSize) {
+        bulletPool.pool.push(bullet);
+    }
+}
+function getEnemyBulletFromPool() {
+    if (enemyBulletPool.pool.length > 0) {
+        return enemyBulletPool.pool.pop();
+    }
+    return createEmptyBullet();
+}
+function returnEnemyBulletToPool(bullet) {
+    if (enemyBulletPool.pool.length < enemyBulletPool.maxSize) {
+        enemyBulletPool.pool.push(bullet);
+    }
+}
+function createEmptyBullet() {
+    return {
+        id: 0,
+        x: 0,
+        y: 0,
+        z: 0,
+        width: 0,
+        height: 0,
+        speed: 0,
+        damage: 0,
+        color: '',
+        type: 'spread'
+    };
+}
+function getExplosionFromPool() {
+    if (explosionPool.pool.length > 0) {
+        return explosionPool.pool.pop();
+    }
+    return {
+        x: 0,
+        y: 0,
+        scale: 0,
+        alpha: 0,
+        rotation: 0,
+        age: 0
+    };
+}
+function returnExplosionToPool(particle) {
+    if (explosionPool.pool.length < explosionPool.maxSize) {
+        explosionPool.pool.push(particle);
+    }
+}
+function getSmokeFromPool() {
+    if (smokePool.pool.length > 0) {
+        return smokePool.pool.pop();
+    }
+    return {
+        x: 0,
+        y: 0,
+        alpha: 0,
+        scale: 0,
+        age: 0,
+        vx: 0,
+        vy: 0
+    };
+}
+function returnSmokeToPool(particle) {
+    if (smokePool.pool.length < smokePool.maxSize) {
+        smokePool.pool.push(particle);
+    }
+}
+// ============ SPATIAL GRID FOR COLLISION OPTIMIZATION ============
+// Divides the screen into cells to reduce collision checks
+const GRID_CELL_SIZE = 100; // pixels
+let spatialGrid = new Map();
+function getCellKey(x, y) {
+    const cellX = Math.floor(x / GRID_CELL_SIZE);
+    const cellY = Math.floor(y / GRID_CELL_SIZE);
+    return `${cellX},${cellY}`;
+}
+function updateSpatialGrid() {
+    spatialGrid.clear();
+    // Add asteroids to grid
+    for (const asteroid of movingAsteroids){
+        const key = getCellKey(asteroid.x, asteroid.y);
+        if (!spatialGrid.has(key)) {
+            spatialGrid.set(key, []);
+        }
+        spatialGrid.get(key).push(asteroid);
+    }
+    // Add enemy rockets to grid
+    for (const enemy of enemyRockets){
+        const key = getCellKey(enemy.x, enemy.y);
+        if (!spatialGrid.has(key)) {
+            spatialGrid.set(key, []);
+        }
+        spatialGrid.get(key).push(enemy);
+    }
+}
+function getNearbyObjects(x, y) {
+    const nearby = [];
+    // Check 3x3 grid cells around the position
+    for(let dx = -1; dx <= 1; dx++){
+        for(let dy = -1; dy <= 1; dy++){
+            const cellX = Math.floor(x / GRID_CELL_SIZE) + dx;
+            const cellY = Math.floor(y / GRID_CELL_SIZE) + dy;
+            const key = `${cellX},${cellY}`;
+            const objects = spatialGrid.get(key);
+            if (objects) {
+                nearby.push(...objects);
+            }
+        }
+    }
+    return nearby;
+}
 // Game config
 let difficultyConfig = null;
 let weaponConfig = null;
@@ -1011,11 +1145,11 @@ class AudioManager {
         if (type === 'spread') {
             this.playSound('spread', 0.15); // Reduced volume
         } else if (type === 'laser') {
-            this.playSound('laserBiru', 0.25); // Balanced with other lasers
+            this.playSound('laserBiru', 0.35); // Balanced with other lasers
         } else if (type === 'magnetic') {
             this.playSound('laserMagnet', 0.35); // Balanced with other lasers
         } else if (type === 'explosion') {
-            this.playSound('destroy', 0.3);
+            this.playSound('destroy', 0.50);
         } else if (this.audioContext) {
             const now = this.audioContext.currentTime;
             const osc = this.audioContext.createOscillator();
@@ -1445,6 +1579,8 @@ function update() {
     updateMovingAsteroids();
     updateEnemyRockets(now);
     updateEnemyBullets();
+    // Update spatial grid for optimized collision detection
+    updateSpatialGrid();
     updateBullets();
     // Update and draw smoke particles
     updateSmokeParticles();
@@ -1612,15 +1748,16 @@ function spawnSmokeParticle() {
     if (!player) return;
     const offsetX = (Math.random() - 0.5) * 20;
     const offsetY = player.height / 2 + 10;
-    smokeParticles.push({
-        x: player.x + offsetX,
-        y: player.y + offsetY,
-        alpha: 0.6 + Math.random() * 0.3,
-        scale: 0.3 + Math.random() * 0.3,
-        age: 0,
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: 1.5 + Math.random() * 1
-    });
+    // Use object pool instead of creating new object
+    const particle = getSmokeFromPool();
+    particle.x = player.x + offsetX;
+    particle.y = player.y + offsetY;
+    particle.alpha = 0.6 + Math.random() * 0.3;
+    particle.scale = 0.3 + Math.random() * 0.3;
+    particle.age = 0;
+    particle.vx = (Math.random() - 0.5) * 0.8;
+    particle.vy = 1.5 + Math.random() * 1;
+    smokeParticles.push(particle);
 }
 function updateSmokeParticles() {
     if (!ctx || !canvas || !smokeImage || !smokeImage.complete) return;
@@ -1640,7 +1777,8 @@ function updateSmokeParticles() {
         particle.alpha -= 0.015;
         particle.scale += 0.008;
         if (particle.alpha <= 0) {
-            smokeParticles.splice(i, 1);
+            // Return particle to pool for reuse
+            returnSmokeToPool(smokeParticles.splice(i, 1)[0]);
             continue;
         }
         const size = 50 * particle.scale;
@@ -1793,14 +1931,15 @@ function spawnExplosion(x, y, size = 1) {
     // Spawn multiple explosion particles for a more dramatic effect
     const particleCount = 3 + Math.floor(Math.random() * 3);
     for(let i = 0; i < particleCount; i++){
-        explosionParticles.push({
-            x: x + (Math.random() - 0.5) * 30 * size,
-            y: y + (Math.random() - 0.5) * 30 * size,
-            scale: (0.5 + Math.random() * 0.8) * size,
-            alpha: 1,
-            rotation: Math.random() * Math.PI * 2,
-            age: 0
-        });
+        // Use object pool instead of creating new object
+        const particle = getExplosionFromPool();
+        particle.x = x + (Math.random() - 0.5) * 30 * size;
+        particle.y = y + (Math.random() - 0.5) * 30 * size;
+        particle.scale = (0.5 + Math.random() * 0.8) * size;
+        particle.alpha = 1;
+        particle.rotation = Math.random() * Math.PI * 2;
+        particle.age = 0;
+        explosionParticles.push(particle);
     }
 }
 function updateExplosionParticles() {
@@ -1813,7 +1952,8 @@ function updateExplosionParticles() {
         particle.scale += 0.02;
         particle.rotation += 0.05;
         if (particle.alpha <= 0) {
-            explosionParticles.splice(i, 1);
+            // Return particle to pool for reuse
+            returnExplosionToPool(explosionParticles.splice(i, 1)[0]);
             continue;
         }
         const drawSize = 80 * particle.scale;
@@ -3167,54 +3307,58 @@ function fireBullets() {
     const angleSpread = 0.15;
     for(let i = 0; i < spreadCount; i++){
         const angleOffset = (i - (spreadCount - 1) / 2) * angleSpread;
-        bullets.push({
-            id: bulletIdCounter++,
-            x: baseX,
-            y: baseY,
-            z: 1,
-            width: weaponConfig.bulletWidth,
-            height: weaponConfig.bulletHeight,
-            speed: weaponConfig.bulletSpeed,
-            damage: weaponConfig.damage,
-            color: weaponConfig.color,
-            type: 'spread',
-            angle: angleOffset
-        });
+        // Use object pool instead of creating new object
+        const bullet = getBulletFromPool();
+        bullet.id = bulletIdCounter++;
+        bullet.x = baseX;
+        bullet.y = baseY;
+        bullet.z = 1;
+        bullet.width = weaponConfig.bulletWidth;
+        bullet.height = weaponConfig.bulletHeight;
+        bullet.speed = weaponConfig.bulletSpeed;
+        bullet.damage = weaponConfig.damage;
+        bullet.color = weaponConfig.color;
+        bullet.type = 'spread';
+        bullet.angle = angleOffset;
+        bullet.targetAsteroid = undefined;
+        bullets.push(bullet);
     }
     audioManager.playSoundEffect('spread');
     muzzleFlashUntil = Date.now() + 50; // Trigger muzzle flash
     // If player has caught a secondary weapon, fire it too
     if (secondaryWeapon && secondaryWeaponConfig) {
         if (secondaryWeaponConfig.type === 'laser') {
-            bullets.push({
-                id: bulletIdCounter++,
-                x: baseX,
-                y: baseY,
-                z: 1,
-                width: secondaryWeaponConfig.bulletWidth,
-                height: secondaryWeaponConfig.bulletHeight,
-                speed: secondaryWeaponConfig.bulletSpeed,
-                damage: secondaryWeaponConfig.damage,
-                color: secondaryWeaponConfig.color,
-                type: 'laser'
-            });
+            const bullet = getBulletFromPool();
+            bullet.id = bulletIdCounter++;
+            bullet.x = baseX;
+            bullet.y = baseY;
+            bullet.z = 1;
+            bullet.width = secondaryWeaponConfig.bulletWidth;
+            bullet.height = secondaryWeaponConfig.bulletHeight;
+            bullet.speed = secondaryWeaponConfig.bulletSpeed;
+            bullet.damage = secondaryWeaponConfig.damage;
+            bullet.color = secondaryWeaponConfig.color;
+            bullet.type = 'laser';
+            bullet.angle = undefined;
+            bullet.targetAsteroid = undefined;
+            bullets.push(bullet);
             audioManager.playSoundEffect('laser');
         } else if (secondaryWeaponConfig.type === 'magnetic') {
             const targetResult = findNearestTarget(baseX, baseY);
-            bullets.push({
-                id: bulletIdCounter++,
-                x: baseX,
-                y: baseY,
-                z: 1,
-                width: secondaryWeaponConfig.bulletWidth,
-                height: secondaryWeaponConfig.bulletHeight,
-                speed: secondaryWeaponConfig.bulletSpeed,
-                damage: secondaryWeaponConfig.damage,
-                color: secondaryWeaponConfig.color,
-                type: 'magnetic',
-                targetAsteroid: targetResult.target || undefined,
-                angle: -Math.PI / 2 // Start facing straight up
-            });
+            const bullet = getBulletFromPool();
+            bullet.id = bulletIdCounter++;
+            bullet.x = baseX;
+            bullet.y = baseY;
+            bullet.z = 1;
+            bullet.width = secondaryWeaponConfig.bulletWidth;
+            bullet.height = secondaryWeaponConfig.bulletHeight;
+            bullet.speed = secondaryWeaponConfig.bulletSpeed;
+            bullet.damage = secondaryWeaponConfig.damage;
+            bullet.color = secondaryWeaponConfig.color;
+            bullet.type = 'magnetic';
+            bullet.targetAsteroid = targetResult.target || undefined;
+            bullet.angle = -Math.PI / 2; // Start facing straight up
+            bullets.push(bullet);
             audioManager.playSoundEffect('magnetic');
         } else if (secondaryWeaponConfig.type === 'spread') {
             // If secondary is also spread, fire additional spread shots at different angles
@@ -3222,19 +3366,20 @@ function fireBullets() {
             const secondaryAngleSpread = 0.25; // Wider angle for secondary spread
             for(let i = 0; i < secondarySpreadCount; i++){
                 const angleOffset = (i - (secondarySpreadCount - 1) / 2) * secondaryAngleSpread;
-                bullets.push({
-                    id: bulletIdCounter++,
-                    x: baseX,
-                    y: baseY,
-                    z: 1,
-                    width: secondaryWeaponConfig.bulletWidth,
-                    height: secondaryWeaponConfig.bulletHeight,
-                    speed: secondaryWeaponConfig.bulletSpeed,
-                    damage: secondaryWeaponConfig.damage,
-                    color: '#ffaa00',
-                    type: 'spread',
-                    angle: angleOffset
-                });
+                const bullet = getBulletFromPool();
+                bullet.id = bulletIdCounter++;
+                bullet.x = baseX;
+                bullet.y = baseY;
+                bullet.z = 1;
+                bullet.width = secondaryWeaponConfig.bulletWidth;
+                bullet.height = secondaryWeaponConfig.bulletHeight;
+                bullet.speed = secondaryWeaponConfig.bulletSpeed;
+                bullet.damage = secondaryWeaponConfig.damage;
+                bullet.color = '#ffaa00'; // Different color for secondary spread
+                bullet.type = 'spread';
+                bullet.angle = angleOffset;
+                bullet.targetAsteroid = undefined;
+                bullets.push(bullet);
             }
         }
     }
@@ -3321,39 +3466,46 @@ function updateBullets() {
         }
         // Z-depth update for all bullets
         bullet.z -= 0.02;
-        // Reset buffer check for collision
-        for(let j = movingAsteroids.length - 1; j >= 0; j--){
-            const asteroid = movingAsteroids[j];
-            const size = asteroid.baseSize;
-            const dist = Math.sqrt(Math.pow(bullet.x - asteroid.x, 2) + Math.pow(bullet.y - asteroid.y, 2));
-            if (dist < size) {
-                asteroid.hp -= bullet.damage;
-                asteroid.hitFlash = 10;
-                gameStats.hits++;
-                if (hasWeapon) {
-                    gameStats.score += 100;
-                }
-                updateUI();
-                if (asteroid.hp <= 0) {
-                    gameStats.asteroidsDestroyed++;
-                    if (asteroid.isBoss) {
-                        gameStats.bossDestroyed = true;
+        // OPTIMIZED COLLISION: Use spatial grid instead of checking all objects
+        const nearbyObjects = getNearbyObjects(bullet.x, bullet.y);
+        // Check collision with nearby asteroids only
+        for (const obj of nearbyObjects){
+            if ('baseSize' in obj) {
+                // This is an asteroid
+                const asteroid = obj;
+                const size = asteroid.baseSize;
+                const dx = bullet.x - asteroid.x;
+                const dy = bullet.y - asteroid.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < size) {
+                    asteroid.hp -= bullet.damage;
+                    asteroid.hitFlash = 10;
+                    gameStats.hits++;
+                    if (hasWeapon) {
+                        gameStats.score += 100;
                     }
-                    // Spawn explosion effect
-                    spawnExplosion(asteroid.x, asteroid.y, asteroid.isBoss ? 2 : 1);
-                    movingAsteroids.splice(j, 1);
-                    audioManager.playSoundEffect('explosion');
+                    updateUI();
+                    if (asteroid.hp <= 0) {
+                        gameStats.asteroidsDestroyed++;
+                        if (asteroid.isBoss) {
+                            gameStats.bossDestroyed = true;
+                        }
+                        // Spawn explosion effect
+                        spawnExplosion(asteroid.x, asteroid.y, asteroid.isBoss ? 2 : 1);
+                        const asteroidIndex = movingAsteroids.indexOf(asteroid);
+                        if (asteroidIndex > -1) movingAsteroids.splice(asteroidIndex, 1);
+                        audioManager.playSoundEffect('explosion');
+                    }
+                    bulletHit = true;
+                    break;
                 }
-                bulletHit = true;
-                break;
-            }
-        }
-        // Check collision with enemy rockets
-        if (!bulletHit) {
-            for(let j = enemyRockets.length - 1; j >= 0; j--){
-                const enemy = enemyRockets[j];
+            } else if ('lastFireTime' in obj && !bulletHit) {
+                // This is an enemy rocket
+                const enemy = obj;
                 const size = enemy.width;
-                const dist = Math.sqrt(Math.pow(bullet.x - enemy.x, 2) + Math.pow(bullet.y - enemy.y, 2));
+                const dx = bullet.x - enemy.x;
+                const dy = bullet.y - enemy.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist < size) {
                     enemy.hp -= bullet.damage;
                     gameStats.hits++;
@@ -3364,7 +3516,8 @@ function updateBullets() {
                     if (enemy.hp <= 0) {
                         // Spawn explosion effect
                         spawnExplosion(enemy.x, enemy.y, 1.2);
-                        enemyRockets.splice(j, 1);
+                        const enemyIndex = enemyRockets.indexOf(enemy);
+                        if (enemyIndex > -1) enemyRockets.splice(enemyIndex, 1);
                         audioManager.playSoundEffect('explosion');
                     }
                     bulletHit = true;
@@ -3405,8 +3558,8 @@ function updateBullets() {
                 // Immunity Check
                 if (bossRocket.invulnerable) {
                     bulletHit = true;
-                    // Deflect logic/effect
-                    bullets.splice(i, 1);
+                    // Deflect logic/effect - return bullet to pool
+                    returnBulletToPool(bullets.splice(i, 1)[0]);
                     break;
                 }
                 bossRocket.hp -= bullet.damage;
@@ -3427,7 +3580,8 @@ function updateBullets() {
             }
         }
         if (bulletHit || bullet.y < -50 || bullet.z < 0.05) {
-            bullets.splice(i, 1);
+            // Return bullet to pool for reuse
+            returnBulletToPool(bullets.splice(i, 1)[0]);
             continue;
         }
         drawBullet(bullet);

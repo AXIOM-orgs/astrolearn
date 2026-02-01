@@ -490,6 +490,10 @@
     display: block;
   }
 
+  .grid {
+    display: grid;
+  }
+
   .hidden {
     display: none;
   }
