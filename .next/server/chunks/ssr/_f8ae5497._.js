@@ -964,7 +964,7 @@ class AudioManager {
             source.start(0, offset);
         }
     }
-    startBGM(volume = 0.3) {
+    startBGM(volume = 0.5) {
         if (!this.audioContext || this.isMuted || this.bgmSource) return;
         const buffer = this.audioBuffers.get('bgm');
         if (!buffer) return;
@@ -1009,13 +1009,13 @@ class AudioManager {
     playSoundEffect(type) {
         // Map legacy types to new sound system
         if (type === 'spread') {
-            this.playSound('spread', 0.4);
+            this.playSound('spread', 0.15); // Reduced volume
         } else if (type === 'laser') {
-            this.playSound('laserBiru', 0.5);
+            this.playSound('laserBiru', 0.25); // Balanced with other lasers
         } else if (type === 'magnetic') {
-            this.playSound('laserMagnet', 0.5);
+            this.playSound('laserMagnet', 0.35); // Balanced with other lasers
         } else if (type === 'explosion') {
-            this.playSound('destroy', 0.6);
+            this.playSound('destroy', 0.3);
         } else if (this.audioContext) {
             const now = this.audioContext.currentTime;
             const osc = this.audioContext.createOscillator();
@@ -1288,7 +1288,7 @@ function startMiniGame(spaceship, difficulty, callback) {
     window.addEventListener('resize', resizeHandler);
     // Load sounds and start BGM
     audioManager.loadSounds().then(()=>{
-        audioManager.startBGM(0.3);
+        audioManager.startBGM(0.5); // BGM louder than effects
     });
     // Start game loop
     gameLoop = requestAnimationFrame(update);

@@ -135,8 +135,11 @@ export default function SelectQuizPage(): React.JSX.Element {
                             <path d="M19 12H5M12 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 className="quiz-page-title">SELECT QUIZ</h1>
+                    <h1 className="quiz-page-title desktop-title">SELECT QUIZ</h1>
                 </div>
+
+                {/* Mobile Title - shown only on mobile */}
+                <h1 className="quiz-page-title mobile-title">SELECT QUIZ</h1>
 
                 <div className="nav-center">
                     <div className="search-box">
@@ -195,13 +198,13 @@ export default function SelectQuizPage(): React.JSX.Element {
                             const category = getCategoryById(topic.categoryId);
                             const isFavorite = favorites.includes(topic.id);
                             return (
-                                <div key={topic.id} className="quiz-card">
+                                <div key={topic.id} className="quiz-card" onClick={() => handleStartQuiz(topic.id)}>
                                     <div className="quiz-card-content">
                                         <div className="quiz-card-header">
                                             <h3 className="quiz-card-title">{topic.title.toUpperCase()}</h3>
                                             <button
                                                 className={`card-favorite-btn ${isFavorite ? 'active' : ''}`}
-                                                onClick={() => toggleFavorite(topic.id)}
+                                                onClick={(e) => { e.stopPropagation(); toggleFavorite(topic.id); }}
                                                 title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                                             >
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill={isFavorite ? '#ff4757' : 'none'} stroke="#ff4757" strokeWidth="2">
@@ -211,15 +214,20 @@ export default function SelectQuizPage(): React.JSX.Element {
                                         </div>
                                         <p className="quiz-card-description">{topic.description}</p>
                                         <div className="quiz-card-footer">
-                                            <span className="question-count">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <circle cx="12" cy="12" r="10" />
-                                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                                                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                                                </svg>
-                                                {topic.questionCount} Q&apos;s
-                                            </span>
-                                            <button className="start-quiz-btn" onClick={() => handleStartQuiz(topic.id)}>
+                                            <div className="quiz-card-meta">
+                                                <span className="category-badge" style={{ background: category?.color || 'var(--primary-color)' }}>
+                                                    {category?.name || 'General'}
+                                                </span>
+                                                <span className="question-count">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <circle cx="12" cy="12" r="10" />
+                                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                                                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                                                    </svg>
+                                                    {topic.questionCount}
+                                                </span>
+                                            </div>
+                                            <button className="start-quiz-btn" onClick={(e) => { e.stopPropagation(); handleStartQuiz(topic.id); }}>
                                                 START
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                                     <path d="M5 12h14M12 5l7 7-7 7" />

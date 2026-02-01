@@ -3481,7 +3481,7 @@ function SelectQuizPage() {
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
-                                className: "quiz-page-title",
+                                className: "quiz-page-title desktop-title",
                                 children: "SELECT QUIZ"
                             }, void 0, false, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
@@ -3492,6 +3492,14 @@ function SelectQuizPage() {
                     }, void 0, true, {
                         fileName: "[project]/app/host/select-quiz/page.tsx",
                         lineNumber: 132,
+                        columnNumber: 17
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
+                        className: "quiz-page-title mobile-title",
+                        children: "SELECT QUIZ"
+                    }, void 0, false, {
+                        fileName: "[project]/app/host/select-quiz/page.tsx",
+                        lineNumber: 142,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3508,7 +3516,7 @@ function SelectQuizPage() {
                                         onKeyDown: handleSearchKeyDown
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                                        lineNumber: 143,
+                                        lineNumber: 146,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -3529,31 +3537,31 @@ function SelectQuizPage() {
                                                     r: "8"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                    lineNumber: 152,
+                                                    lineNumber: 155,
                                                     columnNumber: 33
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
                                                     d: "m21 21-4.35-4.35"
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                    lineNumber: 153,
+                                                    lineNumber: 156,
                                                     columnNumber: 33
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                                            lineNumber: 151,
+                                            lineNumber: 154,
                                             columnNumber: 29
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                                        lineNumber: 150,
+                                        lineNumber: 153,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                lineNumber: 142,
+                                lineNumber: 145,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3568,7 +3576,7 @@ function SelectQuizPage() {
                                                 children: "All Categories"
                                             }, void 0, false, {
                                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                lineNumber: 163,
+                                                lineNumber: 166,
                                                 columnNumber: 29
                                             }, this),
                                             __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$quizData$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["quizCategories"].map((cat)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -3576,13 +3584,13 @@ function SelectQuizPage() {
                                                     children: cat.name
                                                 }, cat.id, false, {
                                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                    lineNumber: 165,
+                                                    lineNumber: 168,
                                                     columnNumber: 33
                                                 }, this))
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                                        lineNumber: 159,
+                                        lineNumber: 162,
                                         columnNumber: 25
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
@@ -3596,24 +3604,24 @@ function SelectQuizPage() {
                                             d: "m6 9 6 6 6-6"
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                                            lineNumber: 169,
+                                            lineNumber: 172,
                                             columnNumber: 29
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                                        lineNumber: 168,
+                                        lineNumber: 171,
                                         columnNumber: 25
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                lineNumber: 158,
+                                lineNumber: 161,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                        lineNumber: 141,
+                        lineNumber: 144,
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3634,17 +3642,17 @@ function SelectQuizPage() {
                                         d: "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                                        lineNumber: 181,
+                                        lineNumber: 184,
                                         columnNumber: 29
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                    lineNumber: 180,
+                                    lineNumber: 183,
                                     columnNumber: 25
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                lineNumber: 175,
+                                lineNumber: 178,
                                 columnNumber: 21
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -3653,13 +3661,13 @@ function SelectQuizPage() {
                                 children: "MY QUIZ"
                             }, void 0, false, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                lineNumber: 184,
+                                lineNumber: 187,
                                 columnNumber: 21
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                        lineNumber: 174,
+                        lineNumber: 177,
                         columnNumber: 17
                     }, this)
                 ]
@@ -3677,6 +3685,7 @@ function SelectQuizPage() {
                             const isFavorite = favorites.includes(topic.id);
                             return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "quiz-card",
+                                onClick: ()=>handleStartQuiz(topic.id),
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                     className: "quiz-card-content",
                                     children: [
@@ -3688,12 +3697,15 @@ function SelectQuizPage() {
                                                     children: topic.title.toUpperCase()
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                    lineNumber: 201,
+                                                    lineNumber: 204,
                                                     columnNumber: 45
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                                     className: `card-favorite-btn ${isFavorite ? 'active' : ''}`,
-                                                    onClick: ()=>toggleFavorite(topic.id),
+                                                    onClick: (e)=>{
+                                                        e.stopPropagation();
+                                                        toggleFavorite(topic.id);
+                                                    },
                                                     title: isFavorite ? 'Remove from favorites' : 'Add to favorites',
                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
                                                         width: "16",
@@ -3706,23 +3718,23 @@ function SelectQuizPage() {
                                                             d: "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                            lineNumber: 208,
+                                                            lineNumber: 211,
                                                             columnNumber: 53
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                        lineNumber: 207,
+                                                        lineNumber: 210,
                                                         columnNumber: 49
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                    lineNumber: 202,
+                                                    lineNumber: 205,
                                                     columnNumber: 45
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                                            lineNumber: 200,
+                                            lineNumber: 203,
                                             columnNumber: 41
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3730,66 +3742,88 @@ function SelectQuizPage() {
                                             children: topic.description
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                                            lineNumber: 212,
+                                            lineNumber: 215,
                                             columnNumber: 41
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "quiz-card-footer",
                                             children: [
-                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                    className: "question-count",
+                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                                    className: "quiz-card-meta",
                                                     children: [
-                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
-                                                            width: "14",
-                                                            height: "14",
-                                                            viewBox: "0 0 24 24",
-                                                            fill: "none",
-                                                            stroke: "currentColor",
-                                                            strokeWidth: "2",
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                            className: "category-badge",
+                                                            style: {
+                                                                background: category?.color || 'var(--primary-color)'
+                                                            },
+                                                            children: category?.name || 'General'
+                                                        }, void 0, false, {
+                                                            fileName: "[project]/app/host/select-quiz/page.tsx",
+                                                            lineNumber: 218,
+                                                            columnNumber: 49
+                                                        }, this),
+                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                                            className: "question-count",
                                                             children: [
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("circle", {
-                                                                    cx: "12",
-                                                                    cy: "12",
-                                                                    r: "10"
-                                                                }, void 0, false, {
+                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
+                                                                    width: "14",
+                                                                    height: "14",
+                                                                    viewBox: "0 0 24 24",
+                                                                    fill: "none",
+                                                                    stroke: "currentColor",
+                                                                    strokeWidth: "2",
+                                                                    children: [
+                                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("circle", {
+                                                                            cx: "12",
+                                                                            cy: "12",
+                                                                            r: "10"
+                                                                        }, void 0, false, {
+                                                                            fileName: "[project]/app/host/select-quiz/page.tsx",
+                                                                            lineNumber: 223,
+                                                                            columnNumber: 57
+                                                                        }, this),
+                                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
+                                                                            d: "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+                                                                        }, void 0, false, {
+                                                                            fileName: "[project]/app/host/select-quiz/page.tsx",
+                                                                            lineNumber: 224,
+                                                                            columnNumber: 57
+                                                                        }, this),
+                                                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("line", {
+                                                                            x1: "12",
+                                                                            y1: "17",
+                                                                            x2: "12.01",
+                                                                            y2: "17"
+                                                                        }, void 0, false, {
+                                                                            fileName: "[project]/app/host/select-quiz/page.tsx",
+                                                                            lineNumber: 225,
+                                                                            columnNumber: 57
+                                                                        }, this)
+                                                                    ]
+                                                                }, void 0, true, {
                                                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                                    lineNumber: 216,
+                                                                    lineNumber: 222,
                                                                     columnNumber: 53
                                                                 }, this),
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
-                                                                    d: "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
-                                                                }, void 0, false, {
-                                                                    fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                                    lineNumber: 217,
-                                                                    columnNumber: 53
-                                                                }, this),
-                                                                /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("line", {
-                                                                    x1: "12",
-                                                                    y1: "17",
-                                                                    x2: "12.01",
-                                                                    y2: "17"
-                                                                }, void 0, false, {
-                                                                    fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                                    lineNumber: 218,
-                                                                    columnNumber: 53
-                                                                }, this)
+                                                                topic.questionCount
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                            lineNumber: 215,
+                                                            lineNumber: 221,
                                                             columnNumber: 49
-                                                        }, this),
-                                                        topic.questionCount,
-                                                        " Q's"
+                                                        }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                    lineNumber: 214,
+                                                    lineNumber: 217,
                                                     columnNumber: 45
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                                                     className: "start-quiz-btn",
-                                                    onClick: ()=>handleStartQuiz(topic.id),
+                                                    onClick: (e)=>{
+                                                        e.stopPropagation();
+                                                        handleStartQuiz(topic.id);
+                                                    },
                                                     children: [
                                                         "START",
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("svg", {
@@ -3803,41 +3837,41 @@ function SelectQuizPage() {
                                                                 d: "M5 12h14M12 5l7 7-7 7"
                                                             }, void 0, false, {
                                                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                                lineNumber: 225,
+                                                                lineNumber: 233,
                                                                 columnNumber: 53
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                            lineNumber: 224,
+                                                            lineNumber: 232,
                                                             columnNumber: 49
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                                    lineNumber: 222,
+                                                    lineNumber: 230,
                                                     columnNumber: 45
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                                            lineNumber: 213,
+                                            lineNumber: 216,
                                             columnNumber: 41
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                    lineNumber: 199,
+                                    lineNumber: 202,
                                     columnNumber: 37
                                 }, this)
                             }, topic.id, false, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                lineNumber: 198,
+                                lineNumber: 201,
                                 columnNumber: 33
                             }, this);
                         })
                     }, void 0, false, {
                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                        lineNumber: 193,
+                        lineNumber: 196,
                         columnNumber: 21
                     }, this),
                     totalPages > 1 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -3859,19 +3893,19 @@ function SelectQuizPage() {
                                             d: "M15 18l-6-6 6-6"
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                                            lineNumber: 244,
+                                            lineNumber: 252,
                                             columnNumber: 37
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                                        lineNumber: 243,
+                                        lineNumber: 251,
                                         columnNumber: 33
                                     }, this),
                                     "Previous"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                lineNumber: 238,
+                                lineNumber: 246,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -3883,7 +3917,7 @@ function SelectQuizPage() {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                lineNumber: 248,
+                                lineNumber: 256,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -3903,24 +3937,24 @@ function SelectQuizPage() {
                                             d: "M9 18l6-6-6-6"
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                                            lineNumber: 258,
+                                            lineNumber: 266,
                                             columnNumber: 37
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                                        lineNumber: 257,
+                                        lineNumber: 265,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                lineNumber: 251,
+                                lineNumber: 259,
                                 columnNumber: 29
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                        lineNumber: 237,
+                        lineNumber: 245,
                         columnNumber: 25
                     }, this)
                 ]
@@ -3942,20 +3976,20 @@ function SelectQuizPage() {
                                 r: "8"
                             }, void 0, false, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                lineNumber: 267,
+                                lineNumber: 275,
                                 columnNumber: 25
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("path", {
                                 d: "m21 21-4.35-4.35"
                             }, void 0, false, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                lineNumber: 268,
+                                lineNumber: 276,
                                 columnNumber: 25
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                        lineNumber: 266,
+                        lineNumber: 274,
                         columnNumber: 21
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -3963,7 +3997,7 @@ function SelectQuizPage() {
                         children: getEmptyStateMessage().title
                     }, void 0, false, {
                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                        lineNumber: 270,
+                        lineNumber: 278,
                         columnNumber: 21
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -3971,13 +4005,13 @@ function SelectQuizPage() {
                         children: getEmptyStateMessage().subtitle
                     }, void 0, false, {
                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                        lineNumber: 271,
+                        lineNumber: 279,
                         columnNumber: 21
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                lineNumber: 265,
+                lineNumber: 273,
                 columnNumber: 17
             }, this),
             showMyQuizModal && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4001,17 +4035,17 @@ function SelectQuizPage() {
                                     d: "M18 6L6 18M6 6l12 12"
                                 }, void 0, false, {
                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                    lineNumber: 281,
+                                    lineNumber: 289,
                                     columnNumber: 33
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                                lineNumber: 280,
+                                lineNumber: 288,
                                 columnNumber: 29
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                            lineNumber: 279,
+                            lineNumber: 287,
                             columnNumber: 25
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -4029,12 +4063,12 @@ function SelectQuizPage() {
                                         d: "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/select-quiz/page.tsx",
-                                        lineNumber: 286,
+                                        lineNumber: 294,
                                         columnNumber: 33
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                    lineNumber: 285,
+                                    lineNumber: 293,
                                     columnNumber: 29
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -4042,7 +4076,7 @@ function SelectQuizPage() {
                                     children: "MY QUIZ"
                                 }, void 0, false, {
                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                    lineNumber: 288,
+                                    lineNumber: 296,
                                     columnNumber: 29
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4050,7 +4084,7 @@ function SelectQuizPage() {
                                     children: "No quizzes found"
                                 }, void 0, false, {
                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                    lineNumber: 289,
+                                    lineNumber: 297,
                                     columnNumber: 29
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -4058,24 +4092,24 @@ function SelectQuizPage() {
                                     children: "You haven't created any quiz yet"
                                 }, void 0, false, {
                                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                                    lineNumber: 290,
+                                    lineNumber: 298,
                                     columnNumber: 29
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/app/host/select-quiz/page.tsx",
-                            lineNumber: 284,
+                            lineNumber: 292,
                             columnNumber: 25
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/app/host/select-quiz/page.tsx",
-                    lineNumber: 278,
+                    lineNumber: 286,
                     columnNumber: 21
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/host/select-quiz/page.tsx",
-                lineNumber: 277,
+                lineNumber: 285,
                 columnNumber: 17
             }, this)
         ]
