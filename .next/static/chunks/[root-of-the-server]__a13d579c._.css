@@ -506,6 +506,10 @@
     width: 100%;
   }
 
+  .grow {
+    flex-grow: 1;
+  }
+
   .resize {
     resize: both;
   }
@@ -4817,6 +4821,30 @@ input[type="text"]:focus {
   .game-code {
     letter-spacing: 5px;
     font-size: 2rem;
+  }
+
+  .container {
+    margin: 2rem auto !important;
+  }
+
+  .screen {
+    height: auto;
+    min-height: 100vh;
+    padding: 1rem;
+  }
+
+  .mission-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: .5rem !important;
+  }
+
+  .mission-grid .option-label {
+    display: none;
+  }
+
+  .mission-grid .option-number {
+    margin: 0;
+    font-size: 1.2rem;
   }
 }
 

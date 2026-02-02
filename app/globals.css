@@ -4490,4 +4490,32 @@ input[type="text"]:focus {
     font-size: 2rem;
     letter-spacing: 5px;
   }
+
+  /* Fix for height overflow on mobile */
+  .container {
+    margin: 2rem auto !important;
+    /* Override the desktop 500px top margin */
+  }
+
+  .screen {
+    padding: 1rem;
+    height: auto;
+    /* Allow auto height on mobile if content is long */
+    min-height: 100vh;
+  }
+
+  /* Mission Grid - Mobile Optimized */
+  .mission-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  .mission-grid .option-label {
+    display: none;
+  }
+
+  .mission-grid .option-number {
+    font-size: 1.2rem;
+    margin: 0;
+  }
 }

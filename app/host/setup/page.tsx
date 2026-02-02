@@ -62,7 +62,7 @@ export default function SetupPage(): React.JSX.Element {
 
                     <div className="form-group">
                         <label>Mission</label>
-                        <div className="option-grid">
+                        <div className="option-grid mission-grid">
                             <button
                                 className={`option-btn ${gameState.selectedQuestions === 5 ? 'selected' : ''}`}
                                 data-questions="5"

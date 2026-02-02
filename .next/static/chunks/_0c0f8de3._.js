@@ -864,6 +864,24 @@ function getNearbyObjects(x, y) {
     }
     return nearby;
 }
+// ============ MOBILE PERFORMANCE SETTINGS ============
+// Detect mobile and adjust visual quality for better performance
+let isMobile = false;
+let enableShadows = true;
+let particleMultiplier = 1; // 1 = full, 0.5 = half
+function detectMobileAndSetPerformance() {
+    // Detect mobile by screen width (under 768px is typically mobile)
+    isMobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+        enableShadows = false; // Disable expensive shadow effects
+        particleMultiplier = 0.5; // Reduce particle count by 50%
+        console.log('[Performance] Mobile detected - shadows disabled, particles reduced');
+    } else {
+        enableShadows = true;
+        particleMultiplier = 1;
+        console.log('[Performance] Desktop detected - full quality');
+    }
+}
 // Game config
 let difficultyConfig = null;
 let weaponConfig = null;
@@ -900,6 +918,15 @@ let muzzleFlashUntil = 0;
 // Explosion particles
 let explosionImage = null;
 let explosionParticles = [];
+// Boss Death Visuals
+let bossExplosionImage = null;
+let fireRingImage = null;
+let bossDeathEffect = {
+    active: false,
+    startTime: 0,
+    x: 0,
+    y: 0
+};
 // Bullet images
 let bulletSpreadImage = null; // bullet_25.png
 let bulletMagneticImage = null; // bullet_73_5.png
@@ -1035,7 +1062,8 @@ class AudioManager {
             'laserMagnet': '/assets/lasermagnet.mp3',
             'bossLaser': '/assets/big-laser-beam-94884.mp3',
             'destroy': '/assets/hancur.mp3',
-            'bgm': '/assets/bs_game.mp3'
+            'bgm': '/assets/bs_game.mp3',
+            'bossDead': '/assets/bos-dead.mp3'
         };
         const loadPromises = Object.entries(soundFiles).map(async (param)=>{
             let [key, url] = param;
@@ -1133,6 +1161,20 @@ class AudioManager {
         // Stop background music
         this.stopBGM();
     }
+    toggleMute() {
+        this.isMuted = !this.isMuted;
+        if (this.isMuted) {
+            this.stopAllSounds();
+        } else {
+            // Unmute: only start BGM if game is running (managed by caller or just start it)
+            // But usually we want BGM to resume if unmuted
+            this.startBGM(0.5);
+        }
+        return this.isMuted;
+    }
+    getMuted() {
+        return this.isMuted;
+    }
     // Legacy method for compatibility (uses oscillator fallback)
     playSoundEffect(type) {
         // Map legacy types to new sound system
@@ -1168,7 +1210,7 @@ class AudioManager {
     }
     constructor(){
         (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$swc$2f$helpers$2f$esm$2f$_define_property$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["_"])(this, "audioContext", null);
-        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$swc$2f$helpers$2f$esm$2f$_define_property$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["_"])(this, "isMuted", false);
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$swc$2f$helpers$2f$esm$2f$_define_property$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["_"])(this, "isMuted", true); // Default muted per request
         (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$swc$2f$helpers$2f$esm$2f$_define_property$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["_"])(this, "audioBuffers", new Map());
         (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$swc$2f$helpers$2f$esm$2f$_define_property$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["_"])(this, "activeSources", []);
         (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$swc$2f$helpers$2f$esm$2f$_define_property$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["_"])(this, "bgmSource", null);
@@ -1234,6 +1276,8 @@ function startMiniGame(spaceship, difficulty, callback) {
         });
         return;
     }
+    // Detect mobile and set performance settings
+    detectMobileAndSetPerformance();
     // Set canvas to full screen
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -1370,6 +1414,17 @@ function startMiniGame(spaceship, difficulty, callback) {
     explosionImage = new Image();
     explosionImage.src = '/assets/bullet_16.png';
     explosionParticles = [];
+    // Load boss death visuals
+    bossExplosionImage = new Image();
+    bossExplosionImage.src = '/assets/explosion02.png';
+    fireRingImage = new Image();
+    fireRingImage.src = '/assets/fire_ring.png';
+    bossDeathEffect = {
+        active: false,
+        startTime: 0,
+        x: 0,
+        y: 0
+    };
     // Load bullet images
     bulletSpreadImage = new Image();
     bulletSpreadImage.src = '/assets/bullet_25.png';
@@ -1385,7 +1440,7 @@ function startMiniGame(spaceship, difficulty, callback) {
     laserBeamImage = new Image();
     laserBeamImage.src = '/assets/laser_6.png';
     weaponPowerUpImage = new Image();
-    weaponPowerUpImage.src = '/assets/upwewapon.png';
+    weaponPowerUpImage.src = '/assets/upweapnew.png';
     loveImage = new Image();
     loveImage.src = '/assets/love.png';
     barHpImage = new Image();
@@ -1435,6 +1490,57 @@ function startMiniGame(spaceship, difficulty, callback) {
     // Start game loop
     gameLoop = requestAnimationFrame(update);
 }
+function drawMuteButton() {
+    if (!ctx || !canvas) return;
+    const btnRadius = 22;
+    const padding = 25;
+    const btnX = canvas.width - btnRadius - padding;
+    const btnY = canvas.height - btnRadius - padding;
+    const isMuted = audioManager.getMuted();
+    // Draw Button Background
+    ctx.beginPath();
+    ctx.arc(btnX, btnY, btnRadius, 0, Math.PI * 2);
+    ctx.fillStyle = '#10b981';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Draw Speaker Icon
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    const cx = btnX;
+    const cy = btnY;
+    // Speaker Body
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, cy - 5);
+    ctx.lineTo(cx - 9, cy - 5);
+    ctx.lineTo(cx - 9, cy + 5);
+    ctx.lineTo(cx - 5, cy + 5);
+    ctx.lineTo(cx + 1, cy + 10);
+    ctx.lineTo(cx + 1, cy - 10);
+    ctx.closePath();
+    ctx.fill();
+    if (isMuted) {
+        // X mark
+        ctx.beginPath();
+        ctx.moveTo(cx + 5, cy - 3);
+        ctx.lineTo(cx + 11, cy + 3);
+        ctx.moveTo(cx + 11, cy - 3);
+        ctx.lineTo(cx + 5, cy + 3);
+        ctx.stroke();
+    } else {
+        // Sound Waves
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, -Math.PI / 5, Math.PI / 5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 10, -Math.PI / 5, Math.PI / 5);
+        ctx.stroke();
+    }
+}
 function setupControls() {
     if (!canvas) return;
     const updateTargetPosition = (clientX, clientY)=>{
@@ -1471,7 +1577,20 @@ function setupControls() {
     };
     document.addEventListener('keydown', keyDownHandler);
     document.addEventListener('keyup', keyUpHandler);
-    mouseDownHandler = ()=>{
+    mouseDownHandler = (e)=>{
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        // Check Mute Button Click
+        const btnRadius = 22;
+        const padding = 25;
+        const btnX = canvas.width - btnRadius - padding;
+        const btnY = canvas.height - btnRadius - padding;
+        if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 5) {
+            audioManager.toggleMute();
+            return;
+        }
         isFiring = true;
     };
     mouseUpHandler = ()=>{
@@ -1483,6 +1602,20 @@ function setupControls() {
     const touchStartHandler = (e)=>{
         if (!canvas) return;
         e.preventDefault();
+        if (e.touches.length > 0) {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.touches[0].clientX - rect.left;
+            const clickY = e.touches[0].clientY - rect.top;
+            // Check Mute Button Click
+            const btnRadius = 22;
+            const padding = 25;
+            const btnX = canvas.width - btnRadius - padding;
+            const btnY = canvas.height - btnRadius - padding;
+            if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 10) {
+                audioManager.toggleMute();
+                return;
+            }
+        }
         isFiring = true;
         if (e.touches.length > 0) {
             const rect = canvas.getBoundingClientRect();
@@ -1596,11 +1729,14 @@ function update() {
     updateExplosionParticles();
     // Draw player
     drawPlayer();
+    // Draw Boss Death Effect (On top of player but below UI)
+    drawBossDeathEffect();
     // Draw crosshair
     drawCrosshair();
     // Draw UI overlay
     ctx.restore(); // Restore context (stop shaking for UI)
     drawUI(isInDodgePhase, elapsed);
+    drawMuteButton();
     // Check conditions
     if (checkWinCondition()) {
         gameStats.success = true;
@@ -1770,8 +1906,9 @@ function spawnSmokeParticle() {
 function updateSmokeParticles() {
     if (!ctx || !canvas || !smokeImage || !smokeImage.complete) return;
     const now = Date.now();
-    // Spawn new particles (reduced rate for performance)
-    if (player && now - lastSmokeSpawnTime > 100) {
+    // Spawn new particles (reduced rate for performance, even more on mobile)
+    const smokeSpawnInterval = isMobile ? 200 : 100; // 2x slower on mobile
+    if (player && now - lastSmokeSpawnTime > smokeSpawnInterval) {
         spawnSmokeParticle();
         lastSmokeSpawnTime = now;
     }
@@ -1886,20 +2023,13 @@ function drawBackground() {
                 // Ideally we want the image to "Cover" the designated slot (which matches screen size).
                 // If we scale up to cover, we potentially crop.
                 const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-                const finalW = img.width * scale;
-                const finalH = img.height * scale;
-                const offX = (canvas.width - finalW) / 2;
-                const offY = (canvas.height - finalH) / 2; // Centers it within the slot
-                // Draw at bgPanelY[i] + offY?
-                // bgPanelY[i] is the top of the slot.
-                // We want to draw the image centered in that slot.
-                // However, `finalH` might be > `canvas.height`.
-                // If we draw it larger, it might overlap.
-                // But for a continuous background (stars), overlap is usually okay or unnoticeable IF opaque.
-                // These are space backgrounds.
-                ctx.drawImage(img, // Source (full)
-                0, 0, img.width, img.height, // Dest
-                offX, Math.floor(bgPanelY[i]) + offY, finalW, finalH);
+                // Calculate source dimensions (Center Crop)
+                const sW = canvas.width / scale;
+                const sH = canvas.height / scale;
+                const sX = (img.width - sW) / 2;
+                const sY = (img.height - sH) / 2;
+                // Draw strictly within the panel slot (No overlap)
+                ctx.drawImage(img, sX, sY, sW, sH, 0, Math.floor(bgPanelY[i]), canvas.width, canvas.height);
             } else {
                 // Width is sufficient or larger.
                 // We center horizontally.
@@ -1939,7 +2069,9 @@ function spawnExplosion(x, y) {
         triggerScreenShake(5, 150); // Medium shake
     }
     // Spawn multiple explosion particles for a more dramatic effect
-    const particleCount = 3 + Math.floor(Math.random() * 3);
+    // Reduce particle count on mobile using particleMultiplier
+    const baseParticleCount = 3 + Math.floor(Math.random() * 3);
+    const particleCount = Math.max(1, Math.floor(baseParticleCount * particleMultiplier));
     for(let i = 0; i < particleCount; i++){
         // Use object pool instead of creating new object
         const particle = getExplosionFromPool();
@@ -2195,6 +2327,37 @@ function spawnBossRocket() {
 }
 function updateBossRocket(now) {
     if (!bossRocket || !ctx || !canvas || !player) return;
+    // --- DEATH SEQUENCE ---
+    if (bossRocket.isDying) {
+        if (!bossRocket.dyeStartTime) bossRocket.dyeStartTime = now;
+        // Timer
+        const elapsed = now - bossRocket.dyeStartTime;
+        // Shake screen continuously
+        triggerScreenShake(5, 100);
+        // Finish after 3 seconds
+        if (elapsed > 3000) {
+            // Final destruction (Visual Only first)
+            if (!bossDeathEffect.active) {
+                bossDeathEffect.active = true;
+                bossDeathEffect.startTime = now;
+                bossDeathEffect.x = bossRocket.x;
+                bossDeathEffect.y = bossRocket.y;
+                audioManager.playSound('destroy'); // Final boom
+            }
+            // Wait duration of effect (approx 1s) before actually ending game
+            if (elapsed > 4000) {
+                gameStats.bossDestroyed = true;
+                gameStats.score += 5000;
+                bossRocket = null;
+            }
+        }
+        // Draw boss ONLY during the shaking phase (Before explosion starts)
+        // Once explosion starts (3s), boss sprite should disappear
+        if (elapsed <= 3000) {
+            drawBossRocket();
+        }
+        return; // Skip normal update
+    }
     // Move boss slowly down, stop at 1/3 from top
     const targetY = canvas.height * 0.25;
     const bossInPosition = bossRocket.y >= targetY;
@@ -2337,9 +2500,14 @@ function updateBossRocket(now) {
             // Laser Damage (Interval Based)
             const damageInterval = currentDifficulty === 'hard' ? 150 : currentDifficulty === 'medium' ? 300 : 500;
             if (now - (bossRocket.laserDamageTick || 0) > damageInterval) {
-                const laserWidth = 200; // Hitbox width
+                // Laser Hitbox Width based on Difficulty
+                let laserWidth = 200; // Hard (Default)
+                if (currentDifficulty === 'medium') laserWidth = 150;
+                else if (currentDifficulty === 'easy') laserWidth = 150;
                 if (Math.abs(player.x - bossRocket.x) < laserWidth / 2 + player.width / 2) {
-                    applyDamage(1);
+                    // Damage based on difficulty
+                    const damage = currentDifficulty === 'hard' ? 3 : currentDifficulty === 'medium' ? 2 : 1;
+                    applyDamage(damage);
                     triggerScreenShake(3, 100);
                 }
                 bossRocket.laserDamageTick = now;
@@ -2410,15 +2578,17 @@ function drawBossRocket() {
     ctx.shadowColor = '#ff0044';
     // DRAW LASER (BEHIND BOSS) - Visual Layer 1
     if (bossRocket.phase === 3 && bossRocket.isLaserFiring) {
+        // Visual Width based on Difficulty
+        let laserWidth = 500; // Hard (Default)
+        if (currentDifficulty === 'medium') laserWidth = 350;
+        else if (currentDifficulty === 'easy') laserWidth = 100;
         if (laserBeamImage && laserBeamImage.complete) {
             // Rotate 90 degrees clockwise so the laser points straight down
             ctx.save();
             // Start laser from CENTER of boss (y) to hide the top edge behind the body
             ctx.translate(bossRocket.x, bossRocket.y);
             ctx.rotate(Math.PI / 2); // Rotate 90 degrees clockwise
-            // Draw laser: width becomes height, height becomes width (500px wide beam)
             const laserLength = canvas.height - bossRocket.y;
-            const laserWidth = 500; // Maximum laser beam
             ctx.drawImage(laserBeamImage, 0, -laserWidth / 2, laserLength, laserWidth);
             ctx.restore();
         } else {
@@ -2426,7 +2596,8 @@ function drawBossRocket() {
             ctx.fillStyle = '#ff0044';
             ctx.shadowBlur = 50;
             ctx.shadowColor = '#ff0000';
-            ctx.fillRect(bossRocket.x - 30, bossRocket.y + 50, 60, canvas.height);
+            // Use calculating width for fallback too
+            ctx.fillRect(bossRocket.x - laserWidth / 2 * 0.2, bossRocket.y + 50, laserWidth * 0.2, canvas.height);
         }
     }
     if (bossRocketImage && bossRocketImage.complete) {
@@ -3578,13 +3749,16 @@ function updateBullets() {
                     gameStats.score += 500; // Big points for hitting boss
                 }
                 updateUI();
-                if (bossRocket.hp <= 0) {
-                    // Boss destroyed!
-                    spawnExplosion(bossRocket.x, bossRocket.y, 3.0);
-                    gameStats.bossDestroyed = true;
-                    gameStats.score += 5000; // Huge bonus for destroying boss
-                    bossRocket = null;
-                    audioManager.playSoundEffect('explosion');
+                if (bossRocket.hp <= 0 && !bossRocket.isDying) {
+                    // Trigger death sequence
+                    bossRocket.isDying = true;
+                    bossRocket.dyeStartTime = Date.now();
+                    bossRocket.hp = 0;
+                    // Stop firing and attacks
+                    bossRocket.isLaserFiring = false;
+                    bossRocket.invulnerable = true;
+                    // Play dying sound (long scream)
+                    audioManager.playSound('bossDead');
                 }
                 bulletHit = true;
             }
@@ -3645,8 +3819,11 @@ function drawBullet(bullet) {
     ctx.moveTo(bullet.x, bullet.y);
     ctx.lineTo(bullet.x, bullet.y + trailLength);
     ctx.stroke();
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = bullet.color;
+    // Only apply shadow effects on desktop (expensive on mobile)
+    if (enableShadows) {
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = bullet.color;
+    }
     // Larger bullet sizes (3x width, 2x height)
     const drawWidth = bullet.width * 3;
     const drawHeight = bullet.height * 2;
@@ -3679,15 +3856,17 @@ function drawPlayer() {
         if (flashRate === 0) {
             ctx.globalAlpha = 0.4;
         }
-        // Cyan glow for immunity
-        ctx.shadowBlur = 30;
-        ctx.shadowColor = '#00ffff';
+        // Cyan glow for immunity (only on desktop)
+        if (enableShadows) {
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = '#00ffff';
+        }
     }
     // Draw rocket first
     if (player.image.complete) {
         ctx.translate(player.x, player.y);
         ctx.rotate(player.tilt * Math.PI / 180);
-        if (!isImmune) {
+        if (!isImmune && enableShadows) {
             ctx.shadowBlur = 20;
             ctx.shadowColor = hasWeapon && weaponConfig ? weaponConfig.color : '#00d4ff';
         }
@@ -3807,6 +3986,40 @@ function cleanupMiniGame() {
     if (mouseDownHandler) document.removeEventListener('mousedown', mouseDownHandler);
     if (mouseUpHandler) document.removeEventListener('mouseup', mouseUpHandler);
     if (resizeHandler) window.removeEventListener('resize', resizeHandler);
+}
+function drawBossDeathEffect() {
+    if (!bossDeathEffect.active || !canvas || !ctx) return;
+    const now = Date.now();
+    const elapsed = now - bossDeathEffect.startTime;
+    const maxDuration = 1000; // 1 second animation
+    if (elapsed > maxDuration) {
+        bossDeathEffect.active = false;
+        return;
+    }
+    // Render Logic
+    const progress = elapsed / maxDuration;
+    // 1. Fire Ring (Shockwave)
+    // Starts small, grows fast
+    if (fireRingImage && fireRingImage.complete) {
+        ctx.save();
+        ctx.translate(bossDeathEffect.x, bossDeathEffect.y);
+        ctx.globalAlpha = Math.max(0, 1 - progress); // Fade out
+        const ringSize = progress * canvas.width * 1.5; // Grow to 1.5x screen width
+        ctx.drawImage(fireRingImage, -ringSize / 2, -ringSize / 2, ringSize, ringSize);
+        ctx.restore();
+    }
+    // 2. Main Explosion
+    // Starts huge, fades out
+    if (bossExplosionImage && bossExplosionImage.complete) {
+        ctx.save();
+        ctx.translate(bossDeathEffect.x, bossDeathEffect.y);
+        const explosionScale = 2 + progress * 0.5; // Slight grow
+        // Fade out in second half (after 0.2s)
+        ctx.globalAlpha = progress < 0.2 ? 1 : Math.max(0, 1 - progress);
+        const size = 600 * explosionScale;
+        ctx.drawImage(bossExplosionImage, -size / 2, -size / 2, size, size);
+        ctx.restore();
+    }
 }
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(__turbopack_context__.m, globalThis.$RefreshHelpers$);

@@ -116,6 +116,8 @@ interface BossRocket {
     laserWarning: boolean;
     invulnerable: boolean;
     laserDamageTick?: number;
+    isDying?: boolean;
+    dyeStartTime?: number;
 }
 
 interface PowerUp {
@@ -355,6 +357,16 @@ let explosionImage: HTMLImageElement | null = null;
 interface ExplosionParticle { x: number; y: number; scale: number; alpha: number; rotation: number; age: number; }
 let explosionParticles: ExplosionParticle[] = [];
 
+// Boss Death Visuals
+let bossExplosionImage: HTMLImageElement | null = null;
+let fireRingImage: HTMLImageElement | null = null;
+let bossDeathEffect = {
+    active: false,
+    startTime: 0,
+    x: 0,
+    y: 0
+};
+
 // Bullet images
 let bulletSpreadImage: HTMLImageElement | null = null;  // bullet_25.png
 let bulletMagneticImage: HTMLImageElement | null = null; // bullet_73_5.png
@@ -496,11 +508,11 @@ function handleResize(): void {
 
 // ============ AUDIO SYSTEM ============
 
-type SoundType = 'spread' | 'laserBiru' | 'laserMagnet' | 'bossLaser' | 'destroy' | 'powerup';
+type SoundType = 'spread' | 'laserBiru' | 'laserMagnet' | 'bossLaser' | 'destroy' | 'powerup' | 'bossDead';
 
 class AudioManager {
     private audioContext: AudioContext | null = null;
-    private isMuted: boolean = false;
+    private isMuted: boolean = true; // Default muted per request
     private audioBuffers: Map<string, AudioBuffer> = new Map();
     private activeSources: AudioBufferSourceNode[] = [];
     private bgmSource: AudioBufferSourceNode | null = null;
@@ -524,7 +536,8 @@ class AudioManager {
             'laserMagnet': '/assets/lasermagnet.mp3',
             'bossLaser': '/assets/big-laser-beam-94884.mp3',
             'destroy': '/assets/hancur.mp3',
-            'bgm': '/assets/bs_game.mp3'
+            'bgm': '/assets/bs_game.mp3',
+            'bossDead': '/assets/bos-dead.mp3'
         };
 
         const loadPromises = Object.entries(soundFiles).map(async ([key, url]) => {
@@ -640,6 +653,24 @@ class AudioManager {
 
         // Stop background music
         this.stopBGM();
+    }
+
+    toggleMute(): boolean {
+        this.isMuted = !this.isMuted;
+
+        if (this.isMuted) {
+            this.stopAllSounds();
+        } else {
+            // Unmute: only start BGM if game is running (managed by caller or just start it)
+            // But usually we want BGM to resume if unmuted
+            this.startBGM(0.5);
+        }
+
+        return this.isMuted;
+    }
+
+    getMuted(): boolean {
+        return this.isMuted;
     }
 
     // Legacy method for compatibility (uses oscillator fallback)
@@ -873,6 +904,13 @@ export function startMiniGame(
     explosionImage.src = '/assets/bullet_16.png';
     explosionParticles = [];
 
+    // Load boss death visuals
+    bossExplosionImage = new Image();
+    bossExplosionImage.src = '/assets/explosion02.png';
+    fireRingImage = new Image();
+    fireRingImage.src = '/assets/fire_ring.png';
+    bossDeathEffect = { active: false, startTime: 0, x: 0, y: 0 };
+
     // Load bullet images
     bulletSpreadImage = new Image();
     bulletSpreadImage.src = '/assets/bullet_25.png';
@@ -889,7 +927,7 @@ export function startMiniGame(
     laserBeamImage = new Image();
     laserBeamImage.src = '/assets/laser_6.png';
     weaponPowerUpImage = new Image();
-    weaponPowerUpImage.src = '/assets/upwewapon.png';
+    weaponPowerUpImage.src = '/assets/upweapnew.png';
     loveImage = new Image();
     loveImage.src = '/assets/love.png';
     barHpImage = new Image();
@@ -952,6 +990,65 @@ export function startMiniGame(
 
 
 
+function drawMuteButton(): void {
+    if (!ctx || !canvas) return;
+
+    const btnRadius = 22;
+    const padding = 25;
+    const btnX = canvas.width - btnRadius - padding;
+    const btnY = canvas.height - btnRadius - padding;
+
+    const isMuted = audioManager.getMuted();
+
+    // Draw Button Background
+    ctx.beginPath();
+    ctx.arc(btnX, btnY, btnRadius, 0, Math.PI * 2);
+    ctx.fillStyle = '#10b981';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw Speaker Icon
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const cx = btnX;
+    const cy = btnY;
+
+    // Speaker Body
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, cy - 5);
+    ctx.lineTo(cx - 9, cy - 5);
+    ctx.lineTo(cx - 9, cy + 5);
+    ctx.lineTo(cx - 5, cy + 5);
+    ctx.lineTo(cx + 1, cy + 10);
+    ctx.lineTo(cx + 1, cy - 10);
+    ctx.closePath();
+    ctx.fill();
+
+    if (isMuted) {
+        // X mark
+        ctx.beginPath();
+        ctx.moveTo(cx + 5, cy - 3);
+        ctx.lineTo(cx + 11, cy + 3);
+        ctx.moveTo(cx + 11, cy - 3);
+        ctx.lineTo(cx + 5, cy + 3);
+        ctx.stroke();
+    } else {
+        // Sound Waves
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, -Math.PI / 5, Math.PI / 5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 10, -Math.PI / 5, Math.PI / 5);
+        ctx.stroke();
+    }
+}
+
 function setupControls(): void {
     if (!canvas) return;
 
@@ -992,7 +1089,25 @@ function setupControls(): void {
     document.addEventListener('keydown', keyDownHandler);
     document.addEventListener('keyup', keyUpHandler);
 
-    mouseDownHandler = (): void => { isFiring = true; };
+    mouseDownHandler = (e: MouseEvent): void => {
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        // Check Mute Button Click
+        const btnRadius = 22;
+        const padding = 25;
+        const btnX = canvas.width - btnRadius - padding;
+        const btnY = canvas.height - btnRadius - padding;
+
+        if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 5) {
+            audioManager.toggleMute();
+            return;
+        }
+
+        isFiring = true;
+    };
     mouseUpHandler = (): void => { isFiring = false; };
     document.addEventListener('mousedown', mouseDownHandler);
     document.addEventListener('mouseup', mouseUpHandler);
@@ -1001,6 +1116,24 @@ function setupControls(): void {
     const touchStartHandler = (e: TouchEvent): void => {
         if (!canvas) return;
         e.preventDefault();
+
+        if (e.touches.length > 0) {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.touches[0].clientX - rect.left;
+            const clickY = e.touches[0].clientY - rect.top;
+
+            // Check Mute Button Click
+            const btnRadius = 22;
+            const padding = 25;
+            const btnX = canvas.width - btnRadius - padding;
+            const btnY = canvas.height - btnRadius - padding;
+
+            if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 10) { // +10 hit area
+                audioManager.toggleMute();
+                return;
+            }
+        }
+
         isFiring = true;
         if (e.touches.length > 0) {
             const rect = canvas.getBoundingClientRect();
@@ -1133,12 +1266,16 @@ function update(): void {
     // Draw player
     drawPlayer();
 
+    // Draw Boss Death Effect (On top of player but below UI)
+    drawBossDeathEffect();
+
     // Draw crosshair
     drawCrosshair();
 
     // Draw UI overlay
     ctx.restore(); // Restore context (stop shaking for UI)
     drawUI(isInDodgePhase, elapsed);
+    drawMuteButton();
 
     // Check conditions
     if (checkWinCondition()) {
@@ -1490,26 +1627,18 @@ function drawBackground(): void {
                 // If we scale up to cover, we potentially crop.
 
                 const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-                const finalW = img.width * scale;
-                const finalH = img.height * scale;
 
-                const offX = (canvas.width - finalW) / 2;
-                const offY = (canvas.height - finalH) / 2; // Centers it within the slot
+                // Calculate source dimensions (Center Crop)
+                const sW = canvas.width / scale;
+                const sH = canvas.height / scale;
 
-                // Draw at bgPanelY[i] + offY?
-                // bgPanelY[i] is the top of the slot.
-                // We want to draw the image centered in that slot.
+                const sX = (img.width - sW) / 2;
+                const sY = (img.height - sH) / 2;
 
-                // However, `finalH` might be > `canvas.height`.
-                // If we draw it larger, it might overlap.
-                // But for a continuous background (stars), overlap is usually okay or unnoticeable IF opaque.
-                // These are space backgrounds.
-
+                // Draw strictly within the panel slot (No overlap)
                 ctx.drawImage(img,
-                    // Source (full)
-                    0, 0, img.width, img.height,
-                    // Dest
-                    offX, Math.floor(bgPanelY[i]) + offY, finalW, finalH
+                    sX, sY, sW, sH,
+                    0, Math.floor(bgPanelY[i]), canvas.width, canvas.height
                 );
             } else {
                 // Width is sufficient or larger.
@@ -1849,6 +1978,43 @@ function spawnBossRocket(): void {
 function updateBossRocket(now: number): void {
     if (!bossRocket || !ctx || !canvas || !player) return;
 
+    // --- DEATH SEQUENCE ---
+    if (bossRocket.isDying) {
+        if (!bossRocket.dyeStartTime) bossRocket.dyeStartTime = now;
+
+        // Timer
+        const elapsed = now - bossRocket.dyeStartTime;
+
+        // Shake screen continuously
+        triggerScreenShake(5, 100);
+
+        // Finish after 3 seconds
+        if (elapsed > 3000) {
+            // Final destruction (Visual Only first)
+            if (!bossDeathEffect.active) {
+                bossDeathEffect.active = true;
+                bossDeathEffect.startTime = now;
+                bossDeathEffect.x = bossRocket.x;
+                bossDeathEffect.y = bossRocket.y;
+                audioManager.playSound('destroy'); // Final boom
+            }
+
+            // Wait duration of effect (approx 1s) before actually ending game
+            if (elapsed > 4000) {
+                gameStats.bossDestroyed = true;
+                gameStats.score += 5000;
+                bossRocket = null;
+            }
+        }
+
+        // Draw boss ONLY during the shaking phase (Before explosion starts)
+        // Once explosion starts (3s), boss sprite should disappear
+        if (elapsed <= 3000) {
+            drawBossRocket();
+        }
+        return; // Skip normal update
+    }
+
     // Move boss slowly down, stop at 1/3 from top
     const targetY = canvas.height * 0.25;
     const bossInPosition = bossRocket.y >= targetY;
@@ -2005,9 +2171,15 @@ function updateBossRocket(now: number): void {
             const damageInterval = currentDifficulty === 'hard' ? 150 : (currentDifficulty === 'medium' ? 300 : 500);
 
             if (now - (bossRocket.laserDamageTick || 0) > damageInterval) {
-                const laserWidth = 200; // Hitbox width
+                // Laser Hitbox Width based on Difficulty
+                let laserWidth = 200; // Hard (Default)
+                if (currentDifficulty === 'medium') laserWidth = 150;
+                else if (currentDifficulty === 'easy') laserWidth = 150;
+
                 if (Math.abs(player.x - bossRocket.x) < laserWidth / 2 + player.width / 2) {
-                    applyDamage(1);
+                    // Damage based on difficulty
+                    const damage = currentDifficulty === 'hard' ? 3 : (currentDifficulty === 'medium' ? 2 : 1);
+                    applyDamage(damage);
                     triggerScreenShake(3, 100);
                 }
                 bossRocket.laserDamageTick = now;
@@ -2093,6 +2265,11 @@ function drawBossRocket(): void {
 
     // DRAW LASER (BEHIND BOSS) - Visual Layer 1
     if (bossRocket.phase === 3 && bossRocket.isLaserFiring) {
+        // Visual Width based on Difficulty
+        let laserWidth = 500; // Hard (Default)
+        if (currentDifficulty === 'medium') laserWidth = 350;
+        else if (currentDifficulty === 'easy') laserWidth = 100;
+
         if (laserBeamImage && laserBeamImage.complete) {
             // Rotate 90 degrees clockwise so the laser points straight down
             ctx.save();
@@ -2100,9 +2277,7 @@ function drawBossRocket(): void {
             ctx.translate(bossRocket.x, bossRocket.y);
             ctx.rotate(Math.PI / 2); // Rotate 90 degrees clockwise
 
-            // Draw laser: width becomes height, height becomes width (500px wide beam)
             const laserLength = canvas.height - bossRocket.y;
-            const laserWidth = 500; // Maximum laser beam
             ctx.drawImage(laserBeamImage, 0, -laserWidth / 2, laserLength, laserWidth);
             ctx.restore();
         } else {
@@ -2110,7 +2285,8 @@ function drawBossRocket(): void {
             ctx.fillStyle = '#ff0044';
             ctx.shadowBlur = 50;
             ctx.shadowColor = '#ff0000';
-            ctx.fillRect(bossRocket.x - 30, bossRocket.y + 50, 60, canvas.height);
+            // Use calculating width for fallback too
+            ctx.fillRect(bossRocket.x - laserWidth / 2 * 0.2, bossRocket.y + 50, laserWidth * 0.2, canvas.height);
         }
     }
 
@@ -3482,13 +3658,18 @@ function updateBullets(): void {
                 }
                 updateUI();
 
-                if (bossRocket.hp <= 0) {
-                    // Boss destroyed!
-                    spawnExplosion(bossRocket.x, bossRocket.y, 3.0);
-                    gameStats.bossDestroyed = true;
-                    gameStats.score += 5000; // Huge bonus for destroying boss
-                    bossRocket = null;
-                    audioManager.playSoundEffect('explosion');
+                if (bossRocket.hp <= 0 && !bossRocket.isDying) {
+                    // Trigger death sequence
+                    bossRocket.isDying = true;
+                    bossRocket.dyeStartTime = Date.now();
+                    bossRocket.hp = 0;
+
+                    // Stop firing and attacks
+                    bossRocket.isLaserFiring = false;
+                    bossRocket.invulnerable = true;
+
+                    // Play dying sound (long scream)
+                    audioManager.playSound('bossDead');
                 }
 
                 bulletHit = true;
@@ -3775,4 +3956,44 @@ export function cleanupMiniGame(): void {
     if (mouseDownHandler) document.removeEventListener('mousedown', mouseDownHandler);
     if (mouseUpHandler) document.removeEventListener('mouseup', mouseUpHandler);
     if (resizeHandler) window.removeEventListener('resize', resizeHandler);
+}
+
+function drawBossDeathEffect(): void {
+    if (!bossDeathEffect.active || !canvas || !ctx) return;
+
+    const now = Date.now();
+    const elapsed = now - bossDeathEffect.startTime;
+    const maxDuration = 1000; // 1 second animation
+
+    if (elapsed > maxDuration) {
+        bossDeathEffect.active = false;
+        return;
+    }
+
+    // Render Logic
+    const progress = elapsed / maxDuration;
+
+    // 1. Fire Ring (Shockwave)
+    // Starts small, grows fast
+    if (fireRingImage && fireRingImage.complete) {
+        ctx.save();
+        ctx.translate(bossDeathEffect.x, bossDeathEffect.y);
+        ctx.globalAlpha = Math.max(0, 1 - progress); // Fade out
+        const ringSize = progress * canvas.width * 1.5; // Grow to 1.5x screen width
+        ctx.drawImage(fireRingImage, -ringSize / 2, -ringSize / 2, ringSize, ringSize);
+        ctx.restore();
+    }
+
+    // 2. Main Explosion
+    // Starts huge, fades out
+    if (bossExplosionImage && bossExplosionImage.complete) {
+        ctx.save();
+        ctx.translate(bossDeathEffect.x, bossDeathEffect.y);
+        const explosionScale = 2 + progress * 0.5; // Slight grow
+        // Fade out in second half (after 0.2s)
+        ctx.globalAlpha = progress < 0.2 ? 1 : Math.max(0, 1 - progress);
+        const size = 600 * explosionScale;
+        ctx.drawImage(bossExplosionImage, -size / 2, -size / 2, size, size);
+        ctx.restore();
+    }
 }
