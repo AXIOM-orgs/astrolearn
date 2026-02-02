@@ -1,15 +1,18 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useDialog } from '@/context/AlertContext';
 
 interface ProfileMenuProps {
     isOpen: boolean;
     onClose: () => void;
     username: string;
+    onLogoutClick?: () => void;
 }
 
-export function ProfileMenu({ isOpen, onClose, username }: ProfileMenuProps): React.JSX.Element {
+export function ProfileMenu({ isOpen, onClose, username, onLogoutClick }: ProfileMenuProps): React.JSX.Element {
     const menuRef = useRef<HTMLDivElement>(null);
+    const { showInfo } = useDialog();
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -50,14 +53,15 @@ export function ProfileMenu({ isOpen, onClose, username }: ProfileMenuProps): Re
     }, [isOpen, onClose]);
 
     const handleLanguageClick = (): void => {
-        alert('Language settings coming soon!');
+        showInfo('Language settings coming soon!');
         onClose();
     };
 
     const handleLogoutClick = (): void => {
-        localStorage.removeItem('cosmicquest_player_name');
-        localStorage.removeItem('cosmicquest_username');
-        window.location.reload();
+        onClose();
+        if (onLogoutClick) {
+            onLogoutClick();
+        }
     };
 
     if (!isOpen) return <></>;

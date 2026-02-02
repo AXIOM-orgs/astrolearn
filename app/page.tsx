@@ -3,62 +3,68 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
+import { useAuth } from '@/context/AuthContext';
+import { useDialog } from '@/context/AlertContext';
 import { getRandomSciFiName } from '@/lib/randomNames';
 import { FullscreenToggle } from './components/FullscreenToggle';
 import { ProfileMenu } from './components/ProfileSidebar';
-import { getSessionByCode } from '@/lib/gameSession';
+import { LogoutDialog } from './components/LogoutDialog';
+import { supabaseGame } from '@/lib/supabase';
 
 const PLAYER_NAME_KEY = 'cosmicquest_player_name';
-const USERNAME_KEY = 'cosmicquest_username';
 const GAME_CODE_KEY = 'cosmicquest_joined_game_code';
 
 export default function LandingPage(): React.JSX.Element {
     const router = useRouter();
     const { setGameState, showLoading, hideLoading } = useGame();
+    const { user, profile, loading } = useAuth();
+    const { showWarning, showError } = useDialog();
+    const [isJoining, setIsJoining] = useState(false);
 
     const [sectorCode, setSectorCode] = useState('');
-    const [username, setUsername] = useState('');
+    const [nickname, setNickname] = useState('');
+    const [profileName, setProfileName] = useState('');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const usernameInputRef = useRef<HTMLInputElement>(null);
+    const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+    const nicknameInputRef = useRef<HTMLInputElement>(null);
 
-    // Load saved username from localStorage on mount
+    // Sync Auth user with local state
     useEffect(() => {
-        const savedUsername = localStorage.getItem(USERNAME_KEY);
-        if (savedUsername) {
-            setUsername(savedUsername);
-        }
+        if (loading || !user) return;
 
-        // Check for game code in URL query parameters
+        const displayName = profile?.nickname || profile?.fullname || profile?.username || user?.email?.split('@')[0] || '';
+        setProfileName(displayName);
+        setNickname(displayName); // Initial nickname from profile
+
+        // Check URL params
         const params = new URLSearchParams(window.location.search);
         const codeFromUrl = params.get('code');
         if (codeFromUrl) {
             setSectorCode(codeFromUrl.toUpperCase());
         }
-    }, []);
+    }, [user, profile, loading]);
 
-    // Save username to localStorage whenever it changes
-    const handleUsernameChange = (value: string): void => {
-        setUsername(value);
-        localStorage.setItem(USERNAME_KEY, value);
+    const handleNicknameChange = (value: string): void => {
+        setNickname(value);
+        localStorage.setItem(PLAYER_NAME_KEY, value);
     };
 
     const handleRandomizeName = (): void => {
         const randomName = getRandomSciFiName();
-        handleUsernameChange(randomName);
-        if (usernameInputRef.current) {
-            usernameInputRef.current.focus();
+        handleNicknameChange(randomName);
+        if (nicknameInputRef.current) {
+            nicknameInputRef.current.focus();
         }
     };
 
     const handleCreateRoom = (): void => {
-        if (!username.trim()) {
-            alert('Please enter a username first!');
+        if (!nickname.trim()) {
+            showWarning('Please enter a nickname first!');
             return;
         }
 
-        // Save to game state and localStorage
-        localStorage.setItem(PLAYER_NAME_KEY, username);
-        setGameState(prev => ({ ...prev, playerName: username }));
+        localStorage.setItem(PLAYER_NAME_KEY, nickname);
+        setGameState(prev => ({ ...prev, playerName: nickname }));
 
         showLoading();
         setTimeout(() => {
@@ -67,46 +73,76 @@ export default function LandingPage(): React.JSX.Element {
         }, 500);
     };
 
-    const handleLaunchMission = (): void => {
+    const handleLaunchMission = async (): Promise<void> => {
         if (!sectorCode.trim()) {
-            alert('Please enter a game code!');
+            showWarning('Please enter a game code!');
             return;
         }
-        if (!username.trim()) {
-            alert('Please enter a username!');
+        if (!nickname.trim()) {
+            showWarning('Please enter a nickname!');
             return;
         }
+        if (isJoining) return;
 
-        // Validate game code
-        const session = getSessionByCode(sectorCode.trim());
-        if (!session) {
-            alert('Invalid game code! Please check and try again.');
-            return;
-        }
-
-        if (session.status !== 'waiting') {
-            alert('This game has already started or ended.');
-            return;
-        }
-
-        // Save to game state and localStorage
-        localStorage.setItem(PLAYER_NAME_KEY, username);
-        localStorage.setItem(GAME_CODE_KEY, sectorCode.trim());
-        setGameState(prev => ({
-            ...prev,
-            playerName: username,
-            selectedTopicId: session.topicId,
-            topicTitle: session.topicTitle,
-            selectedQuestions: session.selectedQuestions,
-            selectedDifficulty: session.difficulty as 'easy' | 'medium' | 'hard'
-        }));
-
+        setIsJoining(true);
         showLoading();
-        setTimeout(() => {
-            // Navigate to join flow - select spacecraft
-            router.push('/join/hangar');
+
+        try {
+            // Call Supabase RPC to join game
+            const { data, error } = await supabaseGame.rpc('join_game', {
+                p_room_code: sectorCode.trim(),
+                p_nickname: nickname.trim(),
+                p_user_id: user?.id || null
+            });
+
+            if (error) {
+                console.error('Join game error:', error);
+                showError('Failed to join game. Please try again.');
+                hideLoading();
+                setIsJoining(false);
+                return;
+            }
+
+            // Check for RPC-level errors
+            if (data?.error) {
+                switch (data.error) {
+                    case 'room_not_found':
+                        showError('Invalid game code! Please check and try again.');
+                        break;
+                    case 'session_locked':
+                        showError('This game has already started or ended.');
+                        break;
+                    case 'room_full':
+                        showError('This room is full. Cannot join.');
+                        break;
+                    default:
+                        showError('Failed to join game.');
+                }
+                hideLoading();
+                setIsJoining(false);
+                return;
+            }
+
+            // Success - save to localStorage and navigate
+            localStorage.setItem(PLAYER_NAME_KEY, nickname);
+            localStorage.setItem(GAME_CODE_KEY, sectorCode.trim());
+            localStorage.setItem('cosmicquest_participant_id', data.participant_id);
+            localStorage.setItem('cosmicquest_session_id', data.session_id);
+            localStorage.setItem('cosmicquest_spacecraft', data.spacecraft || '');
+
+            setGameState(prev => ({
+                ...prev,
+                playerName: nickname
+            }));
+
+            // Navigate to select character page
+            router.push(`/player/${sectorCode.trim()}/select-character`);
+        } catch (err) {
+            console.error('Join game exception:', err);
+            showError('Something went wrong. Please try again.');
             hideLoading();
-        }, 500);
+            setIsJoining(false);
+        }
     };
 
     const toggleSidebar = (): void => {
@@ -118,12 +154,17 @@ export default function LandingPage(): React.JSX.Element {
             {/* Profile Indicator */}
             <button className="profile-indicator" onClick={toggleSidebar}>
                 <div className="profile-info">
-                    <span className="profile-name">{username || 'Aluna Kynan'}</span>
+                    <span className="profile-name">{profileName || 'Pilot'}</span>
                     <div className="profile-avatar">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="8" r="4" />
-                            <path d="M12 14c-6 0-8 3-8 6v1h16v-1c0-3-2-6-8-6z" />
-                        </svg>
+                        {/* Use profile avatar or default */}
+                        {profile?.avatar_url ? (
+                            <img src={profile.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                        ) : (
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="8" r="4" />
+                                <path d="M12 14c-6 0-8 3-8 6v1h16v-1c0-3-2-6-8-6z" />
+                            </svg>
+                        )}
                     </div>
                 </div>
                 <svg className="profile-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -131,11 +172,19 @@ export default function LandingPage(): React.JSX.Element {
                 </svg>
             </button>
 
+
             {/* Profile Menu */}
             <ProfileMenu
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
-                username={username}
+                username={profileName}
+                onLogoutClick={() => setIsLogoutDialogOpen(true)}
+            />
+
+            {/* Logout Dialog */}
+            <LogoutDialog
+                open={isLogoutDialogOpen}
+                onOpenChange={setIsLogoutDialogOpen}
             />
 
             {/* Main Content */}
@@ -193,12 +242,12 @@ export default function LandingPage(): React.JSX.Element {
 
                         <div className="input-group">
                             <input
-                                ref={usernameInputRef}
+                                ref={nicknameInputRef}
                                 type="text"
                                 className="landing-input"
                                 placeholder="Username"
-                                value={username}
-                                onChange={(e) => handleUsernameChange(e.target.value)}
+                                value={nickname}
+                                onChange={(e) => handleNicknameChange(e.target.value)}
                                 maxLength={20}
                             />
                             <button

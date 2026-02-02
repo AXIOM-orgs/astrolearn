@@ -1,6 +1,7 @@
 import './globals.css';
 import { Orbitron, Space_Mono } from 'next/font/google';
 import { GameProvider } from '@/context/GameContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { Metadata } from 'next';
 import { ClientLayout } from './ClientLayout';
 
@@ -31,11 +32,13 @@ export default function RootLayout({ children }: RootLayoutProps): React.JSX.Ele
     return (
         <html lang="en">
             <body className={`${orbitron.variable} ${spaceMono.variable}`}>
-                <GameProvider>
-                    <ClientLayout>
-                        {children}
-                    </ClientLayout>
-                </GameProvider>
+                <AuthProvider>
+                    <GameProvider>
+                        <ClientLayout>
+                            {children}
+                        </ClientLayout>
+                    </GameProvider>
+                </AuthProvider>
             </body>
         </html>
     );
