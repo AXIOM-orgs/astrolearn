@@ -532,7 +532,7 @@ class AudioManager {
 
         const soundFiles: { [key: string]: string } = {
             'spread': '/assets/spread.mp3',
-            'laserBiru': '/assets/laserbiru.mp3',
+            'laserBiru': '/assets/laserbiru (2).mp3',
             'laserMagnet': '/assets/lasermagnet.mp3',
             'bossLaser': '/assets/big-laser-beam-94884.mp3',
             'destroy': '/assets/hancur.mp3',
@@ -570,10 +570,8 @@ class AudioManager {
         let playbackRate = 1.0;
 
         // Special handling for specific sounds
-        if (type === 'laserBiru') {
-            offset = 16; // Start at 16 seconds
-            duration = 2; // Play for 2 seconds (16-18)
-        } else if (type === 'bossLaser') {
+        // Special handling for specific sounds
+        if (type === 'bossLaser') {
             playbackRate = 2.0; // 2x speed
         }
 
@@ -3669,7 +3667,7 @@ function updateBullets(): void {
                     bossRocket.invulnerable = true;
 
                     // Play dying sound (long scream)
-                    audioManager.playSound('bossDead');
+                    audioManager.playSound('bossDead', 1.0);
                 }
 
                 bulletHit = true;
