@@ -70,21 +70,21 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                     </div>
                 </div>
 
-                <div className="waiting-status">
+                {/* <div className="waiting-status">
                     <div className="status-pulse">
                         <span className="pulse-dot"></span>
                         <span className="status-text">WAITING HOST TO START</span>
                     </div>
-                </div>  
+                </div>   */}
             </header>
 
             {/* Main Content */}
             <div className="waiting-content">
                 {/* Section Header */}
                 <div className="section-header">
-                    <div className="section-left">
+                    {/* <div className="section-left">
                         <h2 className="section-title">WAITING FOR OTHER PLAYERS</h2>
-                    </div>
+                    </div> */}
                     <div className="section-right">
                         <span className="capacity-label">PLAYERS</span>
                         <div className="capacity-display">
