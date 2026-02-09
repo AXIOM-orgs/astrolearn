@@ -116,6 +116,8 @@ interface BossRocket {
     laserWarning: boolean;
     invulnerable: boolean;
     laserDamageTick?: number;
+    isDying?: boolean;
+    dyeStartTime?: number;
 }
 
 interface PowerUp {
@@ -158,6 +160,155 @@ let gameLoop: ReturnType<typeof requestAnimationFrame> | null = null;
 let isGameRunning: boolean = false;
 let onComplete: MiniGameCallback | null = null;
 let callbackCalled: boolean = false;
+
+// ============ OBJECT POOLING SYSTEM ============
+// Reduces garbage collection by reusing objects instead of creating/destroying
+
+interface ObjectPool<T> {
+    pool: T[];
+    maxSize: number;
+}
+
+// Bullet Pool
+const bulletPool: ObjectPool<Bullet> = { pool: [], maxSize: 100 };
+const enemyBulletPool: ObjectPool<Bullet> = { pool: [], maxSize: 50 };
+const explosionPool: ObjectPool<ExplosionParticle> = { pool: [], maxSize: 50 };
+const smokePool: ObjectPool<SmokeParticle> = { pool: [], maxSize: 100 };
+
+function getBulletFromPool(): Bullet {
+    if (bulletPool.pool.length > 0) {
+        return bulletPool.pool.pop()!;
+    }
+    return createEmptyBullet();
+}
+
+function returnBulletToPool(bullet: Bullet): void {
+    if (bulletPool.pool.length < bulletPool.maxSize) {
+        bulletPool.pool.push(bullet);
+    }
+}
+
+function getEnemyBulletFromPool(): Bullet {
+    if (enemyBulletPool.pool.length > 0) {
+        return enemyBulletPool.pool.pop()!;
+    }
+    return createEmptyBullet();
+}
+
+function returnEnemyBulletToPool(bullet: Bullet): void {
+    if (enemyBulletPool.pool.length < enemyBulletPool.maxSize) {
+        enemyBulletPool.pool.push(bullet);
+    }
+}
+
+function createEmptyBullet(): Bullet {
+    return {
+        id: 0, x: 0, y: 0, z: 0, width: 0, height: 0,
+        speed: 0, damage: 0, color: '', type: 'spread'
+    };
+}
+
+function getExplosionFromPool(): ExplosionParticle {
+    if (explosionPool.pool.length > 0) {
+        return explosionPool.pool.pop()!;
+    }
+    return { x: 0, y: 0, scale: 0, alpha: 0, rotation: 0, age: 0 };
+}
+
+function returnExplosionToPool(particle: ExplosionParticle): void {
+    if (explosionPool.pool.length < explosionPool.maxSize) {
+        explosionPool.pool.push(particle);
+    }
+}
+
+function getSmokeFromPool(): SmokeParticle {
+    if (smokePool.pool.length > 0) {
+        return smokePool.pool.pop()!;
+    }
+    return { x: 0, y: 0, alpha: 0, scale: 0, age: 0, vx: 0, vy: 0 };
+}
+
+function returnSmokeToPool(particle: SmokeParticle): void {
+    if (smokePool.pool.length < smokePool.maxSize) {
+        smokePool.pool.push(particle);
+    }
+}
+
+// ============ SPATIAL GRID FOR COLLISION OPTIMIZATION ============
+// Divides the screen into cells to reduce collision checks
+
+const GRID_CELL_SIZE = 100; // pixels
+let spatialGrid: Map<string, (MovingAsteroid | EnemyRocket)[]> = new Map();
+
+function getCellKey(x: number, y: number): string {
+    const cellX = Math.floor(x / GRID_CELL_SIZE);
+    const cellY = Math.floor(y / GRID_CELL_SIZE);
+    return `${cellX},${cellY}`;
+}
+
+function updateSpatialGrid(): void {
+    spatialGrid.clear();
+
+    // Add asteroids to grid
+    for (const asteroid of movingAsteroids) {
+        const key = getCellKey(asteroid.x, asteroid.y);
+        if (!spatialGrid.has(key)) {
+            spatialGrid.set(key, []);
+        }
+        spatialGrid.get(key)!.push(asteroid);
+    }
+
+    // Add enemy rockets to grid
+    for (const enemy of enemyRockets) {
+        const key = getCellKey(enemy.x, enemy.y);
+        if (!spatialGrid.has(key)) {
+            spatialGrid.set(key, []);
+        }
+        spatialGrid.get(key)!.push(enemy);
+    }
+}
+
+function getNearbyObjects(x: number, y: number): (MovingAsteroid | EnemyRocket)[] {
+    const nearby: (MovingAsteroid | EnemyRocket)[] = [];
+
+    // Check 3x3 grid cells around the position
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            const cellX = Math.floor(x / GRID_CELL_SIZE) + dx;
+            const cellY = Math.floor(y / GRID_CELL_SIZE) + dy;
+            const key = `${cellX},${cellY}`;
+            const objects = spatialGrid.get(key);
+            if (objects) {
+                nearby.push(...objects);
+            }
+        }
+    }
+
+    return nearby;
+}
+
+// ============ MOBILE PERFORMANCE SETTINGS ============
+// Detect mobile and adjust visual quality for better performance
+
+let isMobile: boolean = false;
+let enableShadows: boolean = true;
+let particleMultiplier: number = 1; // 1 = full, 0.5 = half
+
+function detectMobileAndSetPerformance(): void {
+    // Detect mobile by screen width (under 768px is typically mobile)
+    isMobile = window.innerWidth < 768 ||
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isMobile) {
+        enableShadows = false;      // Disable expensive shadow effects
+        particleMultiplier = 0.5;   // Reduce particle count by 50%
+        console.log('[Performance] Mobile detected - shadows disabled, particles reduced');
+    } else {
+        enableShadows = true;
+        particleMultiplier = 1;
+        console.log('[Performance] Desktop detected - full quality');
+    }
+}
 
 // Game config
 let difficultyConfig: DifficultyConfig | null = null;
@@ -205,6 +356,16 @@ let muzzleFlashUntil: number = 0;
 let explosionImage: HTMLImageElement | null = null;
 interface ExplosionParticle { x: number; y: number; scale: number; alpha: number; rotation: number; age: number; }
 let explosionParticles: ExplosionParticle[] = [];
+
+// Boss Death Visuals
+let bossExplosionImage: HTMLImageElement | null = null;
+let fireRingImage: HTMLImageElement | null = null;
+let bossDeathEffect = {
+    active: false,
+    startTime: 0,
+    x: 0,
+    y: 0
+};
 
 // Bullet images
 let bulletSpreadImage: HTMLImageElement | null = null;  // bullet_25.png
@@ -313,14 +474,45 @@ let keyDownHandler: ((e: KeyboardEvent) => void) | null = null;
 let keyUpHandler: ((e: KeyboardEvent) => void) | null = null;
 let mouseDownHandler: ((e: MouseEvent) => void) | null = null;
 let mouseUpHandler: ((e: MouseEvent) => void) | null = null;
+let resizeHandler: (() => void) | null = null;
+
+function handleResize(): void {
+    if (!canvas || !player) return;
+
+    // Update canvas dimensions
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Reposition background panels to avoid gaps immediately
+    // Ideally we'd scale them, but resetting them stack-wise is safer to prevent gaps
+    // We only reset if they are completely desynchronized, but for now let's just update player
+    // effectively, the background loop usually checks canvas.height so it might self-correct
+    // but let's ensure the player stays on screen.
+
+    // Update player position
+    player.y = canvas.height - 100;
+
+    // Clamp player X
+    const margin = player.width / 2;
+    if (player.x < margin) player.x = margin;
+    if (player.x > canvas.width - margin) player.x = canvas.width - margin;
+
+    // Update target to ensure it's not off-screen
+    targetX = Math.max(margin, Math.min(canvas.width - margin, targetX));
+    targetY = Math.max(player.height / 2, Math.min(canvas.height - player.height / 2, targetY));
+
+    // Re-init scrolling decors if needed or let them flow. 
+    // They are 3D perspective so getScreenPosition uses canvas.height/width dynamic
+    // so they should adjust automatically on next frame.
+}
 
 // ============ AUDIO SYSTEM ============
 
-type SoundType = 'spread' | 'laserBiru' | 'laserMagnet' | 'bossLaser' | 'destroy' | 'powerup';
+type SoundType = 'spread' | 'laserBiru' | 'laserMagnet' | 'bossLaser' | 'destroy' | 'powerup' | 'bossDead';
 
 class AudioManager {
     private audioContext: AudioContext | null = null;
-    private isMuted: boolean = false;
+    private isMuted: boolean = true; // Default muted per request
     private audioBuffers: Map<string, AudioBuffer> = new Map();
     private activeSources: AudioBufferSourceNode[] = [];
     private bgmSource: AudioBufferSourceNode | null = null;
@@ -340,11 +532,12 @@ class AudioManager {
 
         const soundFiles: { [key: string]: string } = {
             'spread': '/assets/spread.mp3',
-            'laserBiru': '/assets/laserbiru.mp3',
+            'laserBiru': '/assets/laserbiru (2).mp3',
             'laserMagnet': '/assets/lasermagnet.mp3',
             'bossLaser': '/assets/big-laser-beam-94884.mp3',
             'destroy': '/assets/hancur.mp3',
-            'bgm': '/assets/bs_game.mp3'
+            'bgm': '/assets/bs_game.mp3',
+            'bossDead': '/assets/bos-dead.mp3'
         };
 
         const loadPromises = Object.entries(soundFiles).map(async ([key, url]) => {
@@ -377,10 +570,8 @@ class AudioManager {
         let playbackRate = 1.0;
 
         // Special handling for specific sounds
-        if (type === 'laserBiru') {
-            offset = 16; // Start at 16 seconds
-            duration = 2; // Play for 2 seconds (16-18)
-        } else if (type === 'bossLaser') {
+        // Special handling for specific sounds
+        if (type === 'bossLaser') {
             playbackRate = 2.0; // 2x speed
         }
 
@@ -411,7 +602,7 @@ class AudioManager {
         }
     }
 
-    startBGM(volume: number = 0.3): void {
+    startBGM(volume: number = 0.5): void {
         if (!this.audioContext || this.isMuted || this.bgmSource) return;
 
         const buffer = this.audioBuffers.get('bgm');
@@ -462,17 +653,35 @@ class AudioManager {
         this.stopBGM();
     }
 
+    toggleMute(): boolean {
+        this.isMuted = !this.isMuted;
+
+        if (this.isMuted) {
+            this.stopAllSounds();
+        } else {
+            // Unmute: only start BGM if game is running (managed by caller or just start it)
+            // But usually we want BGM to resume if unmuted
+            this.startBGM(0.5);
+        }
+
+        return this.isMuted;
+    }
+
+    getMuted(): boolean {
+        return this.isMuted;
+    }
+
     // Legacy method for compatibility (uses oscillator fallback)
     playSoundEffect(type: 'spread' | 'laser' | 'magnetic' | 'hit' | 'powerup' | 'explosion'): void {
         // Map legacy types to new sound system
         if (type === 'spread') {
-            this.playSound('spread', 0.4);
+            this.playSound('spread', 0.15); // Reduced volume
         } else if (type === 'laser') {
-            this.playSound('laserBiru', 0.5);
+            this.playSound('laserBiru', 0.35); // Balanced with other lasers
         } else if (type === 'magnetic') {
-            this.playSound('laserMagnet', 0.5);
+            this.playSound('laserMagnet', 0.35); // Balanced with other lasers
         } else if (type === 'explosion') {
-            this.playSound('destroy', 0.6);
+            this.playSound('destroy', 0.50);
         }
         // hit and powerup use oscillator fallback
         else if (this.audioContext) {
@@ -543,6 +752,9 @@ export function startMiniGame(
         callback({ hits: 0, asteroidsDestroyed: 0, bossDestroyed: false, score: 0, success: false, playerHP: 0, isEliminated: false });
         return;
     }
+
+    // Detect mobile and set performance settings
+    detectMobileAndSetPerformance();
 
     // Set canvas to full screen
     canvas.width = window.innerWidth;
@@ -690,6 +902,13 @@ export function startMiniGame(
     explosionImage.src = '/assets/bullet_16.png';
     explosionParticles = [];
 
+    // Load boss death visuals
+    bossExplosionImage = new Image();
+    bossExplosionImage.src = '/assets/explosion02.png';
+    fireRingImage = new Image();
+    fireRingImage.src = '/assets/fire_ring.png';
+    bossDeathEffect = { active: false, startTime: 0, x: 0, y: 0 };
+
     // Load bullet images
     bulletSpreadImage = new Image();
     bulletSpreadImage.src = '/assets/bullet_25.png';
@@ -706,7 +925,7 @@ export function startMiniGame(
     laserBeamImage = new Image();
     laserBeamImage.src = '/assets/laser_6.png';
     weaponPowerUpImage = new Image();
-    weaponPowerUpImage.src = '/assets/upwewapon.png';
+    weaponPowerUpImage.src = '/assets/upweapnew.png';
     loveImage = new Image();
     loveImage.src = '/assets/love.png';
     barHpImage = new Image();
@@ -754,9 +973,13 @@ export function startMiniGame(
     // Setup controls
     setupControls();
 
+    // Setup resize handler
+    resizeHandler = handleResize;
+    window.addEventListener('resize', resizeHandler);
+
     // Load sounds and start BGM
     audioManager.loadSounds().then(() => {
-        audioManager.startBGM(0.3);
+        audioManager.startBGM(0.5); // BGM louder than effects
     });
 
     // Start game loop
@@ -764,6 +987,65 @@ export function startMiniGame(
 }
 
 
+
+function drawMuteButton(): void {
+    if (!ctx || !canvas) return;
+
+    const btnRadius = 22;
+    const padding = 25;
+    const btnX = canvas.width - btnRadius - padding;
+    const btnY = canvas.height - btnRadius - padding;
+
+    const isMuted = audioManager.getMuted();
+
+    // Draw Button Background
+    ctx.beginPath();
+    ctx.arc(btnX, btnY, btnRadius, 0, Math.PI * 2);
+    ctx.fillStyle = '#10b981';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw Speaker Icon
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const cx = btnX;
+    const cy = btnY;
+
+    // Speaker Body
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, cy - 5);
+    ctx.lineTo(cx - 9, cy - 5);
+    ctx.lineTo(cx - 9, cy + 5);
+    ctx.lineTo(cx - 5, cy + 5);
+    ctx.lineTo(cx + 1, cy + 10);
+    ctx.lineTo(cx + 1, cy - 10);
+    ctx.closePath();
+    ctx.fill();
+
+    if (isMuted) {
+        // X mark
+        ctx.beginPath();
+        ctx.moveTo(cx + 5, cy - 3);
+        ctx.lineTo(cx + 11, cy + 3);
+        ctx.moveTo(cx + 11, cy - 3);
+        ctx.lineTo(cx + 5, cy + 3);
+        ctx.stroke();
+    } else {
+        // Sound Waves
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, -Math.PI / 5, Math.PI / 5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 10, -Math.PI / 5, Math.PI / 5);
+        ctx.stroke();
+    }
+}
 
 function setupControls(): void {
     if (!canvas) return;
@@ -805,7 +1087,25 @@ function setupControls(): void {
     document.addEventListener('keydown', keyDownHandler);
     document.addEventListener('keyup', keyUpHandler);
 
-    mouseDownHandler = (): void => { isFiring = true; };
+    mouseDownHandler = (e: MouseEvent): void => {
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+
+        // Check Mute Button Click
+        const btnRadius = 22;
+        const padding = 25;
+        const btnX = canvas.width - btnRadius - padding;
+        const btnY = canvas.height - btnRadius - padding;
+
+        if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 5) {
+            audioManager.toggleMute();
+            return;
+        }
+
+        isFiring = true;
+    };
     mouseUpHandler = (): void => { isFiring = false; };
     document.addEventListener('mousedown', mouseDownHandler);
     document.addEventListener('mouseup', mouseUpHandler);
@@ -814,6 +1114,24 @@ function setupControls(): void {
     const touchStartHandler = (e: TouchEvent): void => {
         if (!canvas) return;
         e.preventDefault();
+
+        if (e.touches.length > 0) {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.touches[0].clientX - rect.left;
+            const clickY = e.touches[0].clientY - rect.top;
+
+            // Check Mute Button Click
+            const btnRadius = 22;
+            const padding = 25;
+            const btnX = canvas.width - btnRadius - padding;
+            const btnY = canvas.height - btnRadius - padding;
+
+            if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 10) { // +10 hit area
+                audioManager.toggleMute();
+                return;
+            }
+        }
+
         isFiring = true;
         if (e.touches.length > 0) {
             const rect = canvas.getBoundingClientRect();
@@ -932,6 +1250,9 @@ function update(): void {
     updateMovingAsteroids();
     updateEnemyRockets(now);
     updateEnemyBullets();
+
+    // Update spatial grid for optimized collision detection
+    updateSpatialGrid();
     updateBullets();
 
     // Update and draw smoke particles
@@ -943,12 +1264,16 @@ function update(): void {
     // Draw player
     drawPlayer();
 
+    // Draw Boss Death Effect (On top of player but below UI)
+    drawBossDeathEffect();
+
     // Draw crosshair
     drawCrosshair();
 
     // Draw UI overlay
     ctx.restore(); // Restore context (stop shaking for UI)
     drawUI(isInDodgePhase, elapsed);
+    drawMuteButton();
 
     // Check conditions
     if (checkWinCondition()) {
@@ -1141,15 +1466,16 @@ function spawnSmokeParticle(): void {
     const offsetX = (Math.random() - 0.5) * 20;
     const offsetY = player.height / 2 + 10;
 
-    smokeParticles.push({
-        x: player.x + offsetX,
-        y: player.y + offsetY,
-        alpha: 0.6 + Math.random() * 0.3,
-        scale: 0.3 + Math.random() * 0.3,
-        age: 0,
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: 1.5 + Math.random() * 1
-    });
+    // Use object pool instead of creating new object
+    const particle = getSmokeFromPool();
+    particle.x = player.x + offsetX;
+    particle.y = player.y + offsetY;
+    particle.alpha = 0.6 + Math.random() * 0.3;
+    particle.scale = 0.3 + Math.random() * 0.3;
+    particle.age = 0;
+    particle.vx = (Math.random() - 0.5) * 0.8;
+    particle.vy = 1.5 + Math.random() * 1;
+    smokeParticles.push(particle);
 }
 
 function updateSmokeParticles(): void {
@@ -1157,8 +1483,9 @@ function updateSmokeParticles(): void {
 
     const now = Date.now();
 
-    // Spawn new particles (reduced rate for performance)
-    if (player && now - lastSmokeSpawnTime > 100) {
+    // Spawn new particles (reduced rate for performance, even more on mobile)
+    const smokeSpawnInterval = isMobile ? 200 : 100; // 2x slower on mobile
+    if (player && now - lastSmokeSpawnTime > smokeSpawnInterval) {
         spawnSmokeParticle();
         lastSmokeSpawnTime = now;
     }
@@ -1175,7 +1502,8 @@ function updateSmokeParticles(): void {
         particle.scale += 0.008;
 
         if (particle.alpha <= 0) {
-            smokeParticles.splice(i, 1);
+            // Return particle to pool for reuse
+            returnSmokeToPool(smokeParticles.splice(i, 1)[0]);
             continue;
         }
 
@@ -1215,7 +1543,111 @@ function drawBackground(): void {
     for (let i = 0; i < backgroundImages.length; i++) {
         const img = backgroundImages[i];
         if (img && img.complete) {
-            ctx.drawImage(img, 0, Math.floor(bgPanelY[i]), canvas.width, canvas.height);
+            // "Cover" logic
+            // Calculate scale ratios
+            const scaleX = canvas.width / img.width;
+            const scaleY = canvas.height / img.height;
+            // Use maximum scale to ensure coverage (clipping overflow)
+            const scale = Math.max(scaleX, scaleY);
+
+            // Calculate new width and height based on scale
+            const newWidth = img.width * scale;
+            const newHeight = img.height * scale;
+
+            // Center the image: (destX, destY)
+            const x = (canvas.width - newWidth) / 2;
+            const y = (canvas.height - newHeight) / 2;
+
+            // We draw the full image scaled and translated (some parts will be clipped by canvas)
+            // But we have scrolling Y offset (bgPanelY[i])
+            // Standard "cover" usually implies a static background, but here we scroll.
+            // If we want "scrolling cover", we need to apply the Y offset.
+            // However, bgPanelY logic assumes stretching.
+
+            // Alternative: Scale first to fill width (mobile) or height (desktop) then center, 
+            // BUT apply the scrolling offset to the destination Y.
+
+            // Let's refine:
+            // The scrolling logic shifts the destination Y position of the whole panel.
+            // We want the panel content (image) to be "cover" scaled RELATIVE TO THE CANVAS DIMENSIONS.
+            // If the image is square and screen is portrait, we crop sides.
+            // If screen is landscape, we crop top/bottom (conceptually).
+
+            // Implementation:
+            // 1. Calculate the 'cover' dimensions for a single panel filling the screen
+            const coverScale = Math.max(canvas.width / img.width, canvas.height / img.height);
+            const coverW = img.width * coverScale;
+            // const coverH = img.height * coverScale; // We probably want to keep original aspect ratio
+
+            // For scrolling background, we usually want it to fill width at least.
+            // If we enforce 'cover' strictly, a very wide image on a tall phone gets zoomed in massively.
+            // User requested: "mobile ambil tengah-tengah gambar supaya tidak gepeng" -> "mobile take middle of picture so not flattened"
+
+            // If we just scale by Height (to fill vertical) on mobile, it might be too narrow? No, mobile is tall.
+            // Standard background: ensure it covers the screen.
+
+            // Let's us drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
+            // But we need to account for the scrolling `bgPanelY[i]`.
+            // The simplest approach that respects the "scrolling panel" system:
+            // Draw the image centered horizontally, scaled to fill HEIGHT (priority) or WIDTH?
+            // If flattened (squashed vertically) was the issue:
+            // It means canvas height > proportional image height.
+            // We should maintain aspect ratio.
+
+            // Render Strategy:
+            // Draw the image at `bgPanelY[i]`.
+            // Width: canvas.width (fills width) -> This causes stretching if aspect ratio differs.
+            // To fix: Calculate width based on Aspect Ratio given the Height (canvas.height).
+
+            // Actually, the panels stack. Each panel is supposed to be 1 screen height? 
+            // In init: bgPanelY = [0, -height, -2*height].
+            // So each panel height = canvas.height.
+            // If we change the drawing to NOT stretch, we might have gaps if we don't fill width.
+
+            // "Cover" strategy for a scrolling tile:
+            // The tile must be at least canvas.width wide and canvas.height high.
+            // We scale the image so that:
+            // w >= canvas.width AND h >= canvas.height.
+
+            const renderH = canvas.height; // The panel takes up full height of screen slot
+            // To maintain aspect ratio:
+            const ratio = img.width / img.height;
+            let renderW = renderH * ratio;
+
+            // If calculated width is less than canvas width (gap on sides), we must scale up by width instead
+            if (renderW < canvas.width) {
+                renderW = canvas.width;
+                // renderH would need to increase, but our scrolling logic dictates fixed height slots?
+                // Actually, if we increase renderH, it overlaps other panels?
+                // The scrolling logic just loops them.
+                // Ideally we want the image to "Cover" the designated slot (which matches screen size).
+
+                // If we scale up to cover, we potentially crop.
+
+                const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+
+                // Calculate source dimensions (Center Crop)
+                const sW = canvas.width / scale;
+                const sH = canvas.height / scale;
+
+                const sX = (img.width - sW) / 2;
+                const sY = (img.height - sH) / 2;
+
+                // Draw strictly within the panel slot (No overlap)
+                ctx.drawImage(img,
+                    sX, sY, sW, sH,
+                    0, Math.floor(bgPanelY[i]), canvas.width, canvas.height
+                );
+            } else {
+                // Width is sufficient or larger.
+                // We center horizontally.
+                const offX = (canvas.width - renderW) / 2;
+
+                ctx.drawImage(img,
+                    0, 0, img.width, img.height,
+                    offX, Math.floor(bgPanelY[i]), renderW, renderH
+                );
+            }
         }
     }
 
@@ -1255,16 +1687,19 @@ function spawnExplosion(x: number, y: number, size: number = 1): void {
     }
 
     // Spawn multiple explosion particles for a more dramatic effect
-    const particleCount = 3 + Math.floor(Math.random() * 3);
+    // Reduce particle count on mobile using particleMultiplier
+    const baseParticleCount = 3 + Math.floor(Math.random() * 3);
+    const particleCount = Math.max(1, Math.floor(baseParticleCount * particleMultiplier));
     for (let i = 0; i < particleCount; i++) {
-        explosionParticles.push({
-            x: x + (Math.random() - 0.5) * 30 * size,
-            y: y + (Math.random() - 0.5) * 30 * size,
-            scale: (0.5 + Math.random() * 0.8) * size,
-            alpha: 1,
-            rotation: Math.random() * Math.PI * 2,
-            age: 0
-        });
+        // Use object pool instead of creating new object
+        const particle = getExplosionFromPool();
+        particle.x = x + (Math.random() - 0.5) * 30 * size;
+        particle.y = y + (Math.random() - 0.5) * 30 * size;
+        particle.scale = (0.5 + Math.random() * 0.8) * size;
+        particle.alpha = 1;
+        particle.rotation = Math.random() * Math.PI * 2;
+        particle.age = 0;
+        explosionParticles.push(particle);
     }
 }
 
@@ -1281,7 +1716,8 @@ function updateExplosionParticles(): void {
         particle.rotation += 0.05;
 
         if (particle.alpha <= 0) {
-            explosionParticles.splice(i, 1);
+            // Return particle to pool for reuse
+            returnExplosionToPool(explosionParticles.splice(i, 1)[0]);
             continue;
         }
 
@@ -1354,7 +1790,7 @@ function drawUI(isInDodgePhase: boolean, elapsed: number): void {
 
     // Mobile-responsive scaling
     const isMobile = canvas.width < 768;
-    const scale = isMobile ? 0.7 : 1;
+    const scale = isMobile ? 1.0 : 1; // Increased for mobile from 0.7 for better readability
 
     // ===== TOP LEFT: SIMPLE HP BAR (Reference Design) =====
     const barX = 15 * scale;
@@ -1443,38 +1879,6 @@ function drawUI(isInDodgePhase: boolean, elapsed: number): void {
     ctx.fillStyle = '#ff6666';
     ctx.fillText(`🚀 ${enemyRockets.length}`, statsX, 68 * scale);
 
-    // ===== TOP CENTER: PHASE INDICATOR =====
-    // ctx.textAlign = 'center';
-    // ctx.font = `bold ${Math.floor(16 * scale)}px Orbitron, sans-serif`;
-
-    // const phaseY = isMobile ? 50 : 65;
-    // if (isInDodgePhase) {
-    //     const remaining = Math.ceil((DODGE_PHASE_DURATION - elapsed) / 1000);
-    //     ctx.fillStyle = '#ff6b6b';
-    //     ctx.fillText(`🔴 SPREAD + ⏱️ ${remaining}s`, canvas.width / 2, phaseY);
-    // } else if (!secondaryWeapon) {
-    //     ctx.fillStyle = '#00ff88';
-    //     ctx.fillText(isMobile ? '🎯 CATCH POWER-UP!' : '🔴 SPREAD | 🎯 CATCH POWER-UP!', canvas.width / 2, phaseY);
-    // } else {
-    //     // Dual weapon display
-    //     const secondaryNames: Record<WeaponType, string> = {
-    //         'spread': '🔴 SPREAD',
-    //         'laser': '🔵 LASER',
-    //         'magnetic': '🟣 MAGNET'
-    //     };
-    //     ctx.fillStyle = '#00ffaa';
-    //     ctx.fillText(isMobile ? `${secondaryNames[secondaryWeapon]} DUAL!` : `🔴 SPREAD + ${secondaryNames[secondaryWeapon]} (DUAL!)`, canvas.width / 2, phaseY);
-    // }
-
-    // // Weapon timer (if secondary weapon active)
-    // if (secondaryWeapon) {
-    //     const timeLeft = Math.max(0, secondaryWeaponEndTime - Date.now());
-    //     ctx.font = `bold ${Math.floor(10 * scale)}px Orbitron, sans-serif`;
-    //     ctx.fillStyle = '#00ddff';
-    //     ctx.textAlign = 'center';
-    //     ctx.fillText(`⚡ ${(timeLeft / 1000).toFixed(1)}s`, canvas.width / 2, phaseY + 20 * scale);
-    // }
-
     // ===== BOTTOM: CONTROLS (mobile-friendly) =====
     ctx.textAlign = 'center';
     ctx.font = `${Math.floor(11 * scale)}px Space Mono, monospace`;
@@ -1534,17 +1938,26 @@ function drawUI(isInDodgePhase: boolean, elapsed: number): void {
 function spawnBossRocket(): void {
     if (!canvas) return;
 
+    // Mobile sizing adjustments
+    const isMobile = canvas.width < 768;
+
     bossRocket = {
         x: canvas.width / 2,
         y: -200, // Start above screen
-        width: 250,  // Large boss
-        height: 180,
+        width: isMobile ? 180 : 250,  // Smaller on mobile
+        height: isMobile ? 130 : 180,
         speed: 1,    // Very slow movement
         hp: 5000,
         maxHp: 5000,
         lastFireTime: 0,
-        // 4 turret positions (2 left, 2 right)
-        turrets: [
+        // 4 turret positions (2 left, 2 right) - adjusted for mobile width if needed, but relative offsets scale with resizing usually? 
+        // actually offsets are absolute pixels. We should adjust them too.
+        turrets: isMobile ? [
+            { offsetX: -70, offsetY: 35 },  // Scaled down roughly 0.7
+            { offsetX: -40, offsetY: 50 },
+            { offsetX: 40, offsetY: 50 },
+            { offsetX: 70, offsetY: 35 }
+        ] : [
             { offsetX: -100, offsetY: 50 },  // Far left
             { offsetX: -60, offsetY: 70 },   // Near left
             { offsetX: 60, offsetY: 70 },    // Near right
@@ -1562,6 +1975,43 @@ function spawnBossRocket(): void {
 
 function updateBossRocket(now: number): void {
     if (!bossRocket || !ctx || !canvas || !player) return;
+
+    // --- DEATH SEQUENCE ---
+    if (bossRocket.isDying) {
+        if (!bossRocket.dyeStartTime) bossRocket.dyeStartTime = now;
+
+        // Timer
+        const elapsed = now - bossRocket.dyeStartTime;
+
+        // Shake screen continuously
+        triggerScreenShake(5, 100);
+
+        // Finish after 3 seconds
+        if (elapsed > 3000) {
+            // Final destruction (Visual Only first)
+            if (!bossDeathEffect.active) {
+                bossDeathEffect.active = true;
+                bossDeathEffect.startTime = now;
+                bossDeathEffect.x = bossRocket.x;
+                bossDeathEffect.y = bossRocket.y;
+                audioManager.playSound('destroy'); // Final boom
+            }
+
+            // Wait duration of effect (approx 1s) before actually ending game
+            if (elapsed > 4000) {
+                gameStats.bossDestroyed = true;
+                gameStats.score += 5000;
+                bossRocket = null;
+            }
+        }
+
+        // Draw boss ONLY during the shaking phase (Before explosion starts)
+        // Once explosion starts (3s), boss sprite should disappear
+        if (elapsed <= 3000) {
+            drawBossRocket();
+        }
+        return; // Skip normal update
+    }
 
     // Move boss slowly down, stop at 1/3 from top
     const targetY = canvas.height * 0.25;
@@ -1586,8 +2036,12 @@ function updateBossRocket(now: number): void {
             const jitterY = (Math.random() - 0.5) * 15; // 2x vertical jitter
             bossRocket.x += jitterX;
             bossRocket.y += jitterY;
-            // Keep boss in bounds
-            bossRocket.x = Math.max(100, Math.min(canvas.width - 100, bossRocket.x));
+            // Keep boss in bounds (Safe margins to keep minions on screen)
+            // Mobile: Offset 120 + Size 20 = 140
+            // Desktop: Offset 180 + Size 30 = 210
+            const isMobile = canvas.width < 768;
+            const safeBound = isMobile ? 140 : 210;
+            bossRocket.x = Math.max(safeBound, Math.min(canvas.width - safeBound, bossRocket.x));
             bossRocket.y = Math.max(targetY - 50, Math.min(targetY + 50, bossRocket.y));
         }
 
@@ -1610,23 +2064,29 @@ function updateBossRocket(now: number): void {
         // Spawn 2 Minions
         bossRocket.phase = 2;
         bossRocket.invulnerable = true;
+
+        // Minion sizing for mobile
+        const isMobile = canvas.width < 768;
+        const mSize = isMobile ? 40 : 60;
+        const mOffset = isMobile ? 120 : 180;
+
         // Spawn 2 Minions - START ABOVE SCREEN
         bossRocket.minions = [
             {
-                x: bossRocket.x - 180, // Target X (Further out)
+                x: bossRocket.x - mOffset, // Target X (Further out)
                 y: -100, // Start High
-                width: 60, height: 60,
+                width: mSize, height: mSize,
                 hp: 400, maxHp: 400,
-                offsetX: -180, offsetY: 80, // Position: Outside Shield (180)
+                offsetX: -mOffset, offsetY: 80, // Position: Outside Shield
                 lastFireTime: 0,
                 state: 'entering'
             },
             {
-                x: bossRocket.x + 180,
+                x: bossRocket.x + mOffset,
                 y: -100,
-                width: 60, height: 60,
+                width: mSize, height: mSize,
                 hp: 400, maxHp: 400,
-                offsetX: 180, offsetY: 80, // Position: Outside Shield (180)
+                offsetX: mOffset, offsetY: 80, // Position: Outside Shield
                 lastFireTime: 0,
                 state: 'entering'
             }
@@ -1709,9 +2169,15 @@ function updateBossRocket(now: number): void {
             const damageInterval = currentDifficulty === 'hard' ? 150 : (currentDifficulty === 'medium' ? 300 : 500);
 
             if (now - (bossRocket.laserDamageTick || 0) > damageInterval) {
-                const laserWidth = 200; // Hitbox width
+                // Laser Hitbox Width based on Difficulty
+                let laserWidth = 200; // Hard (Default)
+                if (currentDifficulty === 'medium') laserWidth = 150;
+                else if (currentDifficulty === 'easy') laserWidth = 150;
+
                 if (Math.abs(player.x - bossRocket.x) < laserWidth / 2 + player.width / 2) {
-                    applyDamage(1);
+                    // Damage based on difficulty
+                    const damage = currentDifficulty === 'hard' ? 3 : (currentDifficulty === 'medium' ? 2 : 1);
+                    applyDamage(damage);
                     triggerScreenShake(3, 100);
                 }
                 bossRocket.laserDamageTick = now;
@@ -1797,6 +2263,11 @@ function drawBossRocket(): void {
 
     // DRAW LASER (BEHIND BOSS) - Visual Layer 1
     if (bossRocket.phase === 3 && bossRocket.isLaserFiring) {
+        // Visual Width based on Difficulty
+        let laserWidth = 500; // Hard (Default)
+        if (currentDifficulty === 'medium') laserWidth = 350;
+        else if (currentDifficulty === 'easy') laserWidth = 100;
+
         if (laserBeamImage && laserBeamImage.complete) {
             // Rotate 90 degrees clockwise so the laser points straight down
             ctx.save();
@@ -1804,9 +2275,7 @@ function drawBossRocket(): void {
             ctx.translate(bossRocket.x, bossRocket.y);
             ctx.rotate(Math.PI / 2); // Rotate 90 degrees clockwise
 
-            // Draw laser: width becomes height, height becomes width (500px wide beam)
             const laserLength = canvas.height - bossRocket.y;
-            const laserWidth = 500; // Maximum laser beam
             ctx.drawImage(laserBeamImage, 0, -laserWidth / 2, laserLength, laserWidth);
             ctx.restore();
         } else {
@@ -1814,7 +2283,8 @@ function drawBossRocket(): void {
             ctx.fillStyle = '#ff0044';
             ctx.shadowBlur = 50;
             ctx.shadowColor = '#ff0000';
-            ctx.fillRect(bossRocket.x - 30, bossRocket.y + 50, 60, canvas.height);
+            // Use calculating width for fallback too
+            ctx.fillRect(bossRocket.x - laserWidth / 2 * 0.2, bossRocket.y + 50, laserWidth * 0.2, canvas.height);
         }
     }
 
@@ -2264,11 +2734,11 @@ function spawnSquadron(): void {
             if (i < halfSize) {
                 pathType = 'cross_left';
                 startX = canvas.width * 0.1;
-                timeOffset = i * 150;
+                timeOffset = i * 300;
             } else {
                 pathType = 'cross_right';
                 startX = canvas.width * 0.9;
-                timeOffset = (i - halfSize) * 150; // Sync with first group
+                timeOffset = (i - halfSize) * 300; // Sync with first group
             }
 
         } else { // u_turn
@@ -2717,14 +3187,18 @@ function spawnScatteredPowerUps(): void {
         'magnetic': '#9d4edd'
     };
 
+    // Mobile sizing for powerups
+    const isMobile = canvas.width < 768;
+    const pSize = isMobile ? 35 : 45;
+
     weaponTypes.forEach((weaponType, index) => {
         powerUps.push({
             id: powerUpIdCounter++,
             x: lanePositions[index],
             y: -50 - (index * 150), // Start above screen, staggered
             z: startZ[index],
-            width: 45,
-            height: 45,
+            width: pSize,
+            height: pSize,
             weaponType,
             color: colors[weaponType],
             rotation: 0,
@@ -2814,7 +3288,7 @@ function equipWeapon(weaponType: WeaponType): void {
 }
 
 function drawPowerUp(powerUp: PowerUp, pos: { x: number; y: number; scale: number }): void {
-    if (!ctx) return;
+    if (!ctx || !canvas) return;
 
     ctx.save();
     ctx.translate(pos.x, pos.y);
@@ -2830,7 +3304,11 @@ function drawPowerUp(powerUp: PowerUp, pos: { x: number; y: number; scale: numbe
 
         // Preserve aspect ratio to prevent "gepeng" (flattening)
         const aspect = weaponPowerUpImage.naturalWidth / weaponPowerUpImage.naturalHeight;
-        const targetHeight = 100; // Increased size
+
+        // Resize for mobile
+        const isMobile = canvas.width < 768;
+        const targetHeight = isMobile ? 60 : 100; // Smaller on mobile
+
         const targetWidth = targetHeight * aspect;
 
         ctx.drawImage(weaponPowerUpImage, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);
@@ -2870,19 +3348,21 @@ function fireBullets(): void {
 
     for (let i = 0; i < spreadCount; i++) {
         const angleOffset = (i - (spreadCount - 1) / 2) * angleSpread;
-        bullets.push({
-            id: bulletIdCounter++,
-            x: baseX,
-            y: baseY,
-            z: 1,
-            width: weaponConfig.bulletWidth,
-            height: weaponConfig.bulletHeight,
-            speed: weaponConfig.bulletSpeed,
-            damage: weaponConfig.damage,
-            color: weaponConfig.color,
-            type: 'spread',
-            angle: angleOffset
-        });
+        // Use object pool instead of creating new object
+        const bullet = getBulletFromPool();
+        bullet.id = bulletIdCounter++;
+        bullet.x = baseX;
+        bullet.y = baseY;
+        bullet.z = 1;
+        bullet.width = weaponConfig.bulletWidth;
+        bullet.height = weaponConfig.bulletHeight;
+        bullet.speed = weaponConfig.bulletSpeed;
+        bullet.damage = weaponConfig.damage;
+        bullet.color = weaponConfig.color;
+        bullet.type = 'spread';
+        bullet.angle = angleOffset;
+        bullet.targetAsteroid = undefined;
+        bullets.push(bullet);
     }
     audioManager.playSoundEffect('spread');
     muzzleFlashUntil = Date.now() + 50; // Trigger muzzle flash
@@ -2890,34 +3370,37 @@ function fireBullets(): void {
     // If player has caught a secondary weapon, fire it too
     if (secondaryWeapon && secondaryWeaponConfig) {
         if (secondaryWeaponConfig.type === 'laser') {
-            bullets.push({
-                id: bulletIdCounter++,
-                x: baseX,
-                y: baseY,
-                z: 1,
-                width: secondaryWeaponConfig.bulletWidth,
-                height: secondaryWeaponConfig.bulletHeight,
-                speed: secondaryWeaponConfig.bulletSpeed,
-                damage: secondaryWeaponConfig.damage,
-                color: secondaryWeaponConfig.color,
-                type: 'laser'
-            });
+            const bullet = getBulletFromPool();
+            bullet.id = bulletIdCounter++;
+            bullet.x = baseX;
+            bullet.y = baseY;
+            bullet.z = 1;
+            bullet.width = secondaryWeaponConfig.bulletWidth;
+            bullet.height = secondaryWeaponConfig.bulletHeight;
+            bullet.speed = secondaryWeaponConfig.bulletSpeed;
+            bullet.damage = secondaryWeaponConfig.damage;
+            bullet.color = secondaryWeaponConfig.color;
+            bullet.type = 'laser';
+            bullet.angle = undefined;
+            bullet.targetAsteroid = undefined;
+            bullets.push(bullet);
             audioManager.playSoundEffect('laser');
         } else if (secondaryWeaponConfig.type === 'magnetic') {
             const targetResult = findNearestTarget(baseX, baseY);
-            bullets.push({
-                id: bulletIdCounter++,
-                x: baseX,
-                y: baseY,
-                z: 1,
-                width: secondaryWeaponConfig.bulletWidth,
-                height: secondaryWeaponConfig.bulletHeight,
-                speed: secondaryWeaponConfig.bulletSpeed,
-                damage: secondaryWeaponConfig.damage,
-                color: secondaryWeaponConfig.color,
-                type: 'magnetic',
-                targetAsteroid: targetResult.target as MovingAsteroid || undefined
-            });
+            const bullet = getBulletFromPool();
+            bullet.id = bulletIdCounter++;
+            bullet.x = baseX;
+            bullet.y = baseY;
+            bullet.z = 1;
+            bullet.width = secondaryWeaponConfig.bulletWidth;
+            bullet.height = secondaryWeaponConfig.bulletHeight;
+            bullet.speed = secondaryWeaponConfig.bulletSpeed;
+            bullet.damage = secondaryWeaponConfig.damage;
+            bullet.color = secondaryWeaponConfig.color;
+            bullet.type = 'magnetic';
+            bullet.targetAsteroid = targetResult.target as MovingAsteroid || undefined;
+            bullet.angle = -Math.PI / 2; // Start facing straight up
+            bullets.push(bullet);
             audioManager.playSoundEffect('magnetic');
         } else if (secondaryWeaponConfig.type === 'spread') {
             // If secondary is also spread, fire additional spread shots at different angles
@@ -2926,19 +3409,20 @@ function fireBullets(): void {
 
             for (let i = 0; i < secondarySpreadCount; i++) {
                 const angleOffset = (i - (secondarySpreadCount - 1) / 2) * secondaryAngleSpread;
-                bullets.push({
-                    id: bulletIdCounter++,
-                    x: baseX,
-                    y: baseY,
-                    z: 1,
-                    width: secondaryWeaponConfig.bulletWidth,
-                    height: secondaryWeaponConfig.bulletHeight,
-                    speed: secondaryWeaponConfig.bulletSpeed,
-                    damage: secondaryWeaponConfig.damage,
-                    color: '#ffaa00', // Different color for secondary spread
-                    type: 'spread',
-                    angle: angleOffset
-                });
+                const bullet = getBulletFromPool();
+                bullet.id = bulletIdCounter++;
+                bullet.x = baseX;
+                bullet.y = baseY;
+                bullet.z = 1;
+                bullet.width = secondaryWeaponConfig.bulletWidth;
+                bullet.height = secondaryWeaponConfig.bulletHeight;
+                bullet.speed = secondaryWeaponConfig.bulletSpeed;
+                bullet.damage = secondaryWeaponConfig.damage;
+                bullet.color = '#ffaa00'; // Different color for secondary spread
+                bullet.type = 'spread';
+                bullet.angle = angleOffset;
+                bullet.targetAsteroid = undefined;
+                bullets.push(bullet);
             }
         }
     }
@@ -2982,87 +3466,113 @@ function updateBullets(): void {
     for (let i = bullets.length - 1; i >= 0; i--) {
         const bullet = bullets[i];
 
-        // Move bullet STRAIGHT UP (decreasing Y and Z)
-        bullet.y -= bullet.speed;
-        bullet.z -= 0.02;
-
-        if (bullet.type === 'spread' && bullet.angle !== undefined) {
-            bullet.x += Math.sin(bullet.angle) * bullet.speed * 0.4;
-        }
-
-        // Magnetic bullet homes in on target (asteroid or enemy rocket) - closer range
-        if (bullet.type === 'magnetic' && player) {
-            // Find nearest target within closer range to player (300 pixels)
-            const targetResult = findNearestTarget(player.x, player.y);
-            const target = targetResult.target;
-
-            if (target) {
-                const playerDist = Math.sqrt(
-                    Math.pow(target.x - player.x, 2) +
-                    Math.pow(target.y - player.y, 2)
-                );
-
-                // Only home in if target is within 300 pixels of player
-                if (playerDist < 300) {
-                    const dx = target.x - bullet.x;
-                    const dy = target.y - bullet.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist > 0) {
-                        // Move DIRECTLY towards target (full homing)
-                        bullet.x += (dx / dist) * bullet.speed;
-                        bullet.y += (dy / dist) * bullet.speed;
-                        // Override the default upward movement
-                        bullet.y += bullet.speed;
-                    }
-                }
-            }
-        }
-
         // Check collision with moving asteroids
         let bulletHit = false;
-        for (let j = movingAsteroids.length - 1; j >= 0; j--) {
-            const asteroid = movingAsteroids[j];
-            const size = asteroid.baseSize;
-            const dist = Math.sqrt(
-                Math.pow(bullet.x - asteroid.x, 2) +
-                Math.pow(bullet.y - asteroid.y, 2)
-            );
 
-            if (dist < size) {
-                asteroid.hp -= bullet.damage;
-                asteroid.hitFlash = 10;
-                gameStats.hits++;
+        // Custom movement for Magnetic Bullets (Smooth Homing)
+        if (bullet.type === 'magnetic') {
+            // Apply movement based on current angle
+            if (bullet.angle === undefined) bullet.angle = -Math.PI / 2;
 
-                if (hasWeapon) {
-                    gameStats.score += 100;
+            bullet.x += Math.cos(bullet.angle) * bullet.speed;
+            bullet.y += Math.sin(bullet.angle) * bullet.speed;
+
+            // Homing Logic
+            let target = bullet.targetAsteroid;
+
+            // If no target or target destroyed, find new one
+            if (!target || target.hp <= 0 || (target as any).x === undefined) {
+                const result = findNearestTarget(bullet.x, bullet.y);
+                if (result.target) {
+                    bullet.targetAsteroid = result.target as MovingAsteroid; // Type cast for convenience
+                    target = result.target as MovingAsteroid;
                 }
-                updateUI();
+            }
 
-                if (asteroid.hp <= 0) {
-                    gameStats.asteroidsDestroyed++;
-                    if (asteroid.isBoss) {
-                        gameStats.bossDestroyed = true;
+            if (target) {
+                const dx = target.x - bullet.x;
+                const dy = target.y - bullet.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Only home if within reasonable range (increase range for better feel)
+                if (dist < 600) {
+                    const targetAngle = Math.atan2(dy, dx);
+
+                    // Smoothly rotate towards target
+                    let angleDiff = targetAngle - bullet.angle;
+
+                    // Normalize angle to -PI to PI
+                    while (angleDiff <= -Math.PI) angleDiff += Math.PI * 2;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+
+                    const turnRate = 0.15; // Turn speed (radians per frame)
+
+                    if (Math.abs(angleDiff) < turnRate) {
+                        bullet.angle = targetAngle;
+                    } else {
+                        bullet.angle += Math.sign(angleDiff) * turnRate;
                     }
-                    // Spawn explosion effect
-                    spawnExplosion(asteroid.x, asteroid.y, asteroid.isBoss ? 2 : 1);
-                    movingAsteroids.splice(j, 1);
-                    audioManager.playSoundEffect('explosion');
                 }
+            }
+        }
+        // Standard movement for other bullets
+        else {
+            // Move bullet STRAIGHT UP (decreasing Y and Z)
+            bullet.y -= bullet.speed;
 
-                bulletHit = true;
-                break;
+            if (bullet.type === 'spread' && bullet.angle !== undefined) {
+                bullet.x += Math.sin(bullet.angle) * bullet.speed * 0.4;
             }
         }
 
-        // Check collision with enemy rockets
-        if (!bulletHit) {
-            for (let j = enemyRockets.length - 1; j >= 0; j--) {
-                const enemy = enemyRockets[j];
+        // Z-depth update for all bullets
+        bullet.z -= 0.02;
+
+        // OPTIMIZED COLLISION: Use spatial grid instead of checking all objects
+        const nearbyObjects = getNearbyObjects(bullet.x, bullet.y);
+
+        // Check collision with nearby asteroids only
+        for (const obj of nearbyObjects) {
+            if ('baseSize' in obj) {
+                // This is an asteroid
+                const asteroid = obj as MovingAsteroid;
+                const size = asteroid.baseSize;
+                const dx = bullet.x - asteroid.x;
+                const dy = bullet.y - asteroid.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < size) {
+                    asteroid.hp -= bullet.damage;
+                    asteroid.hitFlash = 10;
+                    gameStats.hits++;
+
+                    if (hasWeapon) {
+                        gameStats.score += 100;
+                    }
+                    updateUI();
+
+                    if (asteroid.hp <= 0) {
+                        gameStats.asteroidsDestroyed++;
+                        if (asteroid.isBoss) {
+                            gameStats.bossDestroyed = true;
+                        }
+                        // Spawn explosion effect
+                        spawnExplosion(asteroid.x, asteroid.y, asteroid.isBoss ? 2 : 1);
+                        const asteroidIndex = movingAsteroids.indexOf(asteroid);
+                        if (asteroidIndex > -1) movingAsteroids.splice(asteroidIndex, 1);
+                        audioManager.playSoundEffect('explosion');
+                    }
+
+                    bulletHit = true;
+                    break;
+                }
+            } else if ('lastFireTime' in obj && !bulletHit) {
+                // This is an enemy rocket
+                const enemy = obj as EnemyRocket;
                 const size = enemy.width;
-                const dist = Math.sqrt(
-                    Math.pow(bullet.x - enemy.x, 2) +
-                    Math.pow(bullet.y - enemy.y, 2)
-                );
+                const dx = bullet.x - enemy.x;
+                const dy = bullet.y - enemy.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
 
                 if (dist < size) {
                     enemy.hp -= bullet.damage;
@@ -3076,7 +3586,8 @@ function updateBullets(): void {
                     if (enemy.hp <= 0) {
                         // Spawn explosion effect
                         spawnExplosion(enemy.x, enemy.y, 1.2);
-                        enemyRockets.splice(j, 1);
+                        const enemyIndex = enemyRockets.indexOf(enemy);
+                        if (enemyIndex > -1) enemyRockets.splice(enemyIndex, 1);
                         audioManager.playSoundEffect('explosion');
                     }
 
@@ -3132,8 +3643,8 @@ function updateBullets(): void {
                 // Immunity Check
                 if (bossRocket.invulnerable) {
                     bulletHit = true;
-                    // Deflect logic/effect
-                    bullets.splice(i, 1);
+                    // Deflect logic/effect - return bullet to pool
+                    returnBulletToPool(bullets.splice(i, 1)[0]);
                     break;
                 }
 
@@ -3145,13 +3656,18 @@ function updateBullets(): void {
                 }
                 updateUI();
 
-                if (bossRocket.hp <= 0) {
-                    // Boss destroyed!
-                    spawnExplosion(bossRocket.x, bossRocket.y, 3.0);
-                    gameStats.bossDestroyed = true;
-                    gameStats.score += 5000; // Huge bonus for destroying boss
-                    bossRocket = null;
-                    audioManager.playSoundEffect('explosion');
+                if (bossRocket.hp <= 0 && !bossRocket.isDying) {
+                    // Trigger death sequence
+                    bossRocket.isDying = true;
+                    bossRocket.dyeStartTime = Date.now();
+                    bossRocket.hp = 0;
+
+                    // Stop firing and attacks
+                    bossRocket.isLaserFiring = false;
+                    bossRocket.invulnerable = true;
+
+                    // Play dying sound (long scream)
+                    audioManager.playSound('bossDead', 1.0);
                 }
 
                 bulletHit = true;
@@ -3159,7 +3675,8 @@ function updateBullets(): void {
         }
 
         if (bulletHit || bullet.y < -50 || bullet.z < 0.05) {
-            bullets.splice(i, 1);
+            // Return bullet to pool for reuse
+            returnBulletToPool(bullets.splice(i, 1)[0]);
             continue;
         }
 
@@ -3172,6 +3689,46 @@ function drawBullet(bullet: Bullet): void {
 
     ctx.save();
 
+    if (bullet.type === 'magnetic') {
+        const drawWidth = bullet.width * 3;
+        const drawHeight = bullet.height * 2;
+
+        // Save context for rotation
+        ctx.save();
+        ctx.translate(bullet.x, bullet.y);
+        // Rotate to match movement (add PI/2 because sprite points up)
+        ctx.rotate((bullet.angle || -Math.PI / 2) + Math.PI / 2);
+
+        // Draw Trail (Relative to rotated context)
+        const trailLength = 40;
+        const gradient = ctx.createLinearGradient(0, 0, 0, trailLength);
+        gradient.addColorStop(0, bullet.color);
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = bullet.width;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, trailLength);
+        ctx.stroke();
+
+        // Draw Bullet Image
+        if (bulletMagneticImage && bulletMagneticImage.complete) {
+            ctx.drawImage(bulletMagneticImage, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+        } else {
+            ctx.fillStyle = bullet.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, bullet.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+
+        // Return early since we handled drawing fully
+        ctx.restore();
+        return;
+    }
+
+    // Standard drawing for non-magnetic bullets
     // Bullet Trail (Gradient)
     const trailLength = 30;
     const gradient = ctx.createLinearGradient(bullet.x, bullet.y, bullet.x, bullet.y + trailLength);
@@ -3185,24 +3742,17 @@ function drawBullet(bullet: Bullet): void {
     ctx.lineTo(bullet.x, bullet.y + trailLength);
     ctx.stroke();
 
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = bullet.color;
+    // Only apply shadow effects on desktop (expensive on mobile)
+    if (enableShadows) {
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = bullet.color;
+    }
 
     // Larger bullet sizes (3x width, 2x height)
     const drawWidth = bullet.width * 3;
     const drawHeight = bullet.height * 2;
 
-    if (bullet.type === 'magnetic') {
-        // Purple magnetic bullet image
-        if (bulletMagneticImage && bulletMagneticImage.complete) {
-            ctx.drawImage(bulletMagneticImage, bullet.x - drawWidth / 2, bullet.y - drawHeight / 2, drawWidth, drawHeight);
-        } else {
-            ctx.fillStyle = bullet.color;
-            ctx.beginPath();
-            ctx.arc(bullet.x, bullet.y, bullet.width / 2, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    } else if (bullet.type === 'laser') {
+    if (bullet.type === 'laser') {
         // Blue laser bullet image
         if (bulletLaserImage && bulletLaserImage.complete) {
             ctx.drawImage(bulletLaserImage, bullet.x - drawWidth / 2, bullet.y - drawHeight / 2, drawWidth, drawHeight);
@@ -3236,9 +3786,11 @@ function drawPlayer(): void {
         if (flashRate === 0) {
             ctx.globalAlpha = 0.4;
         }
-        // Cyan glow for immunity
-        ctx.shadowBlur = 30;
-        ctx.shadowColor = '#00ffff';
+        // Cyan glow for immunity (only on desktop)
+        if (enableShadows) {
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = '#00ffff';
+        }
     }
 
     // Draw rocket first
@@ -3246,7 +3798,7 @@ function drawPlayer(): void {
         ctx.translate(player.x, player.y);
         ctx.rotate(player.tilt * Math.PI / 180);
 
-        if (!isImmune) {
+        if (!isImmune && enableShadows) {
             ctx.shadowBlur = 20;
             ctx.shadowColor = hasWeapon && weaponConfig ? weaponConfig.color : '#00d4ff';
         }
@@ -3340,7 +3892,9 @@ function endGame(): void {
     if (keyDownHandler) document.removeEventListener('keydown', keyDownHandler);
     if (keyUpHandler) document.removeEventListener('keyup', keyUpHandler);
     if (mouseDownHandler) document.removeEventListener('mousedown', mouseDownHandler);
+    if (mouseDownHandler) document.removeEventListener('mousedown', mouseDownHandler);
     if (mouseUpHandler) document.removeEventListener('mouseup', mouseUpHandler);
+    if (resizeHandler) window.removeEventListener('resize', resizeHandler);
 
     if (!ctx || !canvas) {
         if (onComplete && !callbackCalled) {
@@ -3397,5 +3951,47 @@ export function cleanupMiniGame(): void {
     if (keyDownHandler) document.removeEventListener('keydown', keyDownHandler);
     if (keyUpHandler) document.removeEventListener('keyup', keyUpHandler);
     if (mouseDownHandler) document.removeEventListener('mousedown', mouseDownHandler);
+    if (mouseDownHandler) document.removeEventListener('mousedown', mouseDownHandler);
     if (mouseUpHandler) document.removeEventListener('mouseup', mouseUpHandler);
+    if (resizeHandler) window.removeEventListener('resize', resizeHandler);
+}
+
+function drawBossDeathEffect(): void {
+    if (!bossDeathEffect.active || !canvas || !ctx) return;
+
+    const now = Date.now();
+    const elapsed = now - bossDeathEffect.startTime;
+    const maxDuration = 1000; // 1 second animation
+
+    if (elapsed > maxDuration) {
+        bossDeathEffect.active = false;
+        return;
+    }
+
+    // Render Logic
+    const progress = elapsed / maxDuration;
+
+    // 1. Fire Ring (Shockwave)
+    // Starts small, grows fast
+    if (fireRingImage && fireRingImage.complete) {
+        ctx.save();
+        ctx.translate(bossDeathEffect.x, bossDeathEffect.y);
+        ctx.globalAlpha = Math.max(0, 1 - progress); // Fade out
+        const ringSize = progress * canvas.width * 1.5; // Grow to 1.5x screen width
+        ctx.drawImage(fireRingImage, -ringSize / 2, -ringSize / 2, ringSize, ringSize);
+        ctx.restore();
+    }
+
+    // 2. Main Explosion
+    // Starts huge, fades out
+    if (bossExplosionImage && bossExplosionImage.complete) {
+        ctx.save();
+        ctx.translate(bossDeathEffect.x, bossDeathEffect.y);
+        const explosionScale = 2 + progress * 0.5; // Slight grow
+        // Fade out in second half (after 0.2s)
+        ctx.globalAlpha = progress < 0.2 ? 1 : Math.max(0, 1 - progress);
+        const size = 600 * explosionScale;
+        ctx.drawImage(bossExplosionImage, -size / 2, -size / 2, size, size);
+        ctx.restore();
+    }
 }

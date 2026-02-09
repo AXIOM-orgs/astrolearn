@@ -311,8 +311,11 @@ export default function SelectQuizPage(): React.JSX.Element {
                             <path d="M19 12H5M12 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 className="quiz-page-title">SELECT QUIZ</h1>
+                    <h1 className="quiz-page-title desktop-title">SELECT QUIZ</h1>
                 </div>
+
+                {/* Mobile Title - shown only on mobile */}
+                <h1 className="quiz-page-title mobile-title">SELECT QUIZ</h1>
 
                 <div className="nav-center">
                     <div className="search-box">
