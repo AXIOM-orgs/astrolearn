@@ -265,9 +265,9 @@ function JoinQuizPage() {
         setAnsweredIndex(selectedIndex);
         setCorrectAnswerIndex(currentQuestion.correctAnswer);
         const isCorrect = selectedIndex === currentQuestion.correctAnswer;
-        let newScore = gameState.score;
+        // Calculate new correct count for quiz score sync
+        const newCorrectCount = gameState.correctAnswers + (isCorrect ? 1 : 0);
         if (isCorrect) {
-            newScore = gameState.score + scorePerQuestion;
             setGameState((prev)=>({
                     ...prev,
                     score: prev.score + scorePerQuestion,
@@ -277,8 +277,9 @@ function JoinQuizPage() {
         // Move to next question after delay
         setTimeout(()=>{
             const nextIndex = gameState.currentQuestionIndex + 1;
-            // Sync progress to session
-            syncProgress(nextIndex, newScore);
+            // Sync quiz score only (not game score)
+            const quizScore = newCorrectCount * scorePerQuestion;
+            syncProgress(nextIndex, quizScore);
             // Check if we need to show mini game (every 3 questions)
             if (nextIndex % 3 === 0 && nextIndex < gameState.selectedQuestions) {
                 // Show countdown immediately BEFORE updating question index
@@ -329,7 +330,9 @@ function JoinQuizPage() {
         // Mark player as complete
         const player = (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$gameSession$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["getCurrentPlayer"])();
         if (player) {
-            (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$gameSession$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updatePlayerProgress"])(player.id, 100, gameState.selectedQuestions, gameState.score);
+            // Sync quiz score only (not game score)
+            const quizScore = gameState.correctAnswers * scorePerQuestion;
+            (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$gameSession$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["updatePlayerProgress"])(player.id, 100, gameState.selectedQuestions, quizScore);
         }
         showLoading();
         router.push('/join/results');
@@ -346,12 +349,12 @@ function JoinQuizPage() {
                     children: countdownNumber
                 }, void 0, false, {
                     fileName: "[project]/app/join/quiz/page.tsx",
-                    lineNumber: 137,
+                    lineNumber: 141,
                     columnNumber: 21
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/join/quiz/page.tsx",
-                lineNumber: 136,
+                lineNumber: 140,
                 columnNumber: 17
             }, this),
             isFreezing && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -367,7 +370,7 @@ function JoinQuizPage() {
                 }
             }, void 0, false, {
                 fileName: "[project]/app/join/quiz/page.tsx",
-                lineNumber: 143,
+                lineNumber: 147,
                 columnNumber: 17
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
@@ -392,7 +395,7 @@ function JoinQuizPage() {
                                                     children: gameState.currentQuestionIndex + 1
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/join/quiz/page.tsx",
-                                                    lineNumber: 160,
+                                                    lineNumber: 164,
                                                     columnNumber: 46
                                                 }, this),
                                                 " / ",
@@ -401,18 +404,18 @@ function JoinQuizPage() {
                                                     children: gameState.selectedQuestions
                                                 }, void 0, false, {
                                                     fileName: "[project]/app/join/quiz/page.tsx",
-                                                    lineNumber: 160,
+                                                    lineNumber: 164,
                                                     columnNumber: 120
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/app/join/quiz/page.tsx",
-                                            lineNumber: 159,
+                                            lineNumber: 163,
                                             columnNumber: 33
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/join/quiz/page.tsx",
-                                        lineNumber: 158,
+                                        lineNumber: 162,
                                         columnNumber: 29
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -425,18 +428,18 @@ function JoinQuizPage() {
                                             }
                                         }, void 0, false, {
                                             fileName: "[project]/app/join/quiz/page.tsx",
-                                            lineNumber: 164,
+                                            lineNumber: 168,
                                             columnNumber: 33
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/join/quiz/page.tsx",
-                                        lineNumber: 163,
+                                        lineNumber: 167,
                                         columnNumber: 29
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/join/quiz/page.tsx",
-                                lineNumber: 157,
+                                lineNumber: 161,
                                 columnNumber: 25
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -448,7 +451,7 @@ function JoinQuizPage() {
                                         children: currentQuestion.question
                                     }, void 0, false, {
                                         fileName: "[project]/app/join/quiz/page.tsx",
-                                        lineNumber: 169,
+                                        lineNumber: 173,
                                         columnNumber: 29
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -461,34 +464,34 @@ function JoinQuizPage() {
                                                 children: option
                                             }, index, false, {
                                                 fileName: "[project]/app/join/quiz/page.tsx",
-                                                lineNumber: 174,
+                                                lineNumber: 178,
                                                 columnNumber: 37
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/app/join/quiz/page.tsx",
-                                        lineNumber: 172,
+                                        lineNumber: 176,
                                         columnNumber: 29
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/join/quiz/page.tsx",
-                                lineNumber: 168,
+                                lineNumber: 172,
                                 columnNumber: 25
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/join/quiz/page.tsx",
-                        lineNumber: 156,
+                        lineNumber: 160,
                         columnNumber: 21
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/app/join/quiz/page.tsx",
-                    lineNumber: 155,
+                    lineNumber: 159,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/app/join/quiz/page.tsx",
-                lineNumber: 154,
+                lineNumber: 158,
                 columnNumber: 13
             }, this)
         ]

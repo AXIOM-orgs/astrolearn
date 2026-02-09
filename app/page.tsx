@@ -6,7 +6,9 @@ import { useGame } from '@/context/GameContext';
 import { getRandomSciFiName } from '@/lib/randomNames';
 import { FullscreenToggle } from './components/FullscreenToggle';
 import { ProfileMenu } from './components/ProfileSidebar';
-import { getSessionByCode } from '@/lib/gameSession';
+import { getSessionByCode, joinGameSession, setCurrentPlayer } from '@/lib/gameSession'; // Added joinGameSession, setCurrentPlayer
+import { spaceships, quizQuestions } from '@/lib/data'; // Added spaceships, quizQuestions
+import { getQuestionsByTopicAndCount } from '@/lib/quizData'; // Added getQuestionsByTopicAndCount
 
 const PLAYER_NAME_KEY = 'cosmicquest_player_name';
 const USERNAME_KEY = 'cosmicquest_username';
@@ -89,22 +91,68 @@ export default function LandingPage(): React.JSX.Element {
             return;
         }
 
+        // Helper to pick random spaceship
+        const randomSpaceship = spaceships[Math.floor(Math.random() * spaceships.length)];
+
+        // Join the game session immediately
+        const player = joinGameSession(
+            sectorCode.trim(),
+            username,
+            randomSpaceship
+        );
+
+        if (!player) {
+            alert('Failed to join game. The session may have ended or is full.');
+            return;
+        }
+
+        // Save current player
+        setCurrentPlayer(player);
+
+        // Prepare questions for when game starts
+        let questions;
+        if (session.topicId) {
+            const topicQuestions = getQuestionsByTopicAndCount(
+                session.topicId,
+                session.selectedQuestions
+            );
+            questions = topicQuestions
+                .map(q => ({
+                    ...q,
+                    difficulty: session.difficulty as 'easy' | 'medium' | 'hard'
+                }))
+                .sort(() => Math.random() - 0.5);
+        } else {
+            // Fallback if no topic (shouldn't happen in valid flow but good for safety)
+            const allQuestions = quizQuestions[session.difficulty as 'easy' | 'medium' | 'hard'];
+            const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+            questions = shuffled.slice(0, session.selectedQuestions);
+        }
+
+        // Save to game state and localStorage
         // Save to game state and localStorage
         localStorage.setItem(PLAYER_NAME_KEY, username);
         localStorage.setItem(GAME_CODE_KEY, sectorCode.trim());
+
         setGameState(prev => ({
             ...prev,
             playerName: username,
             selectedTopicId: session.topicId,
             topicTitle: session.topicTitle,
             selectedQuestions: session.selectedQuestions,
-            selectedDifficulty: session.difficulty as 'easy' | 'medium' | 'hard'
+            selectedDifficulty: session.difficulty as 'easy' | 'medium' | 'hard',
+            selectedSpaceship: randomSpaceship, // Set the random spaceship
+            questions, // Set the prepared questions
+            currentQuestionIndex: 0,
+            score: 0,
+            correctAnswers: 0,
+            miniGamesCompleted: 0
         }));
 
         showLoading();
         setTimeout(() => {
-            // Navigate to join flow - select spacecraft
-            router.push('/join/hangar');
+            // Navigate directly to waiting room (Skipping Hangar)
+            router.push('/join/waiting');
             hideLoading();
         }, 500);
     };

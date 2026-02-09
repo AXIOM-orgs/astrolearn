@@ -90,7 +90,7 @@ export default function HostMonitorPage(): React.JSX.Element {
             {/* Title */}
             <div className="monitor-title-section">
                 <h2 className="monitor-title">MONITOR</h2>
-                <p className="monitor-subtitle">Real-time mission tracking • {gameState.topicTitle || 'Quiz'}</p>
+                {/* <p className="monitor-subtitle">Real-time mission tracking • {gameState.topicTitle || 'Quiz'}</p> */}
             </div>
 
             {/* Fleet Capacity Bar */}

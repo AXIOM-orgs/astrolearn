@@ -1,4 +1,4 @@
-// File: E:\deadline-2days\space-quiz-mission - Final - Copy (8) - Copy\app\host\setup\page.tsx
+// File: E:\deadline-2days\space-quiz-mission - Final - Copy (9) - Copy\app\host\setup\page.tsx
 import * as entry from '../../../../../app/host/setup/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

@@ -54,10 +54,11 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         setCorrectAnswerIndex(currentQuestion.correctAnswer);
 
         const isCorrect = selectedIndex === currentQuestion.correctAnswer;
-        let newScore = gameState.score;
+
+        // Calculate new correct count for quiz score sync
+        const newCorrectCount = gameState.correctAnswers + (isCorrect ? 1 : 0);
 
         if (isCorrect) {
-            newScore = gameState.score + scorePerQuestion;
             setGameState(prev => ({
                 ...prev,
                 score: prev.score + scorePerQuestion,
@@ -69,8 +70,9 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         setTimeout(() => {
             const nextIndex = gameState.currentQuestionIndex + 1;
 
-            // Sync progress to session
-            syncProgress(nextIndex, newScore);
+            // Sync quiz score only (not game score)
+            const quizScore = newCorrectCount * scorePerQuestion;
+            syncProgress(nextIndex, quizScore);
 
             // Check if we need to show mini game (every 3 questions)
             if (nextIndex % 3 === 0 && nextIndex < gameState.selectedQuestions) {
@@ -118,7 +120,9 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         // Mark player as complete
         const player = getCurrentPlayer();
         if (player) {
-            updatePlayerProgress(player.id, 100, gameState.selectedQuestions, gameState.score);
+            // Sync quiz score only (not game score)
+            const quizScore = gameState.correctAnswers * scorePerQuestion;
+            updatePlayerProgress(player.id, 100, gameState.selectedQuestions, quizScore);
         }
 
         showLoading();

@@ -6,6 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useGame } from '@/context/GameContext';
 import { generateGameCode } from '@/lib/mockPlayers';
 import { GameCodeDialog } from '@/app/components/ui/GameCodeDialog';
+import { ExitConfirmationDialog } from '@/app/components/ui/ExitConfirmationDialog';
 import {
     createGameSession,
     getSessionPlayers,
@@ -20,7 +21,9 @@ export default function HostLobbyPage(): React.JSX.Element {
     const [gameCode, setGameCode] = useState<string>('');
     const [players, setPlayers] = useState<GamePlayer[]>([]);
     const [showQRDialog, setShowQRDialog] = useState<boolean>(false);
+    const [showExitDialog, setShowExitDialog] = useState<boolean>(false);
     const [copySuccess, setCopySuccess] = useState<boolean>(false);
+    const [urlCopySuccess, setUrlCopySuccess] = useState<boolean>(false);
     const [joinUrl, setJoinUrl] = useState<string>('');
     const prevPlayerCount = useRef<number>(0);
 
@@ -96,15 +99,17 @@ export default function HostLobbyPage(): React.JSX.Element {
     };
 
     const handleEndSession = () => {
-        if (confirm('Are you sure you want to end this session?')) {
-            clearGameSession();
-            router.push('/');
-        }
+        setShowExitDialog(true);
+    };
+
+    const handleConfirmExit = () => {
+        clearGameSession();
+        router.push('/host/select-quiz');
     };
 
     const handleLaunch = () => {
         if (players.length === 0) {
-            return; // Button is disabled, but double check
+            return;
         }
 
         // Start the game session
@@ -118,13 +123,13 @@ export default function HostLobbyPage(): React.JSX.Element {
             <header className="host-header">
                 <div className="host-brand">
                     <img
-                        src="/assets/logo2.png"
+                        src="/assets/logo2.webp"
                         alt="Astro Learning"
                         className="brand-logo-image"
                     />
                 </div>
                 <img
-                    src="/assets/logo.png"
+                    src="/assets/logo.webp"
                     alt="Gameforsmart Logo"
                     className="header-logo"
                 />
@@ -132,19 +137,28 @@ export default function HostLobbyPage(): React.JSX.Element {
 
             {/* Main Content */}
             <div className="host-lobby-content">
-                {/* Left Panel - Game Code & QR (Formerly Right) */}
+                {/* Left Panel - Game Code & QR */}
                 <div className="host-right-panel">
                     <div className="game-code-section">
                         <div className="game-code-display">
                             <span className="game-code">{gameCode}</span>
+                            <button
+                                className={`btn-copy-code-inline ${copySuccess ? 'success' : ''}`}
+                                onClick={handleCopyCode}
+                                title="Copy"
+                            >
+                                {copySuccess ? (
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                ) : (
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                )}
+                            </button>
                         </div>
                         <div className="code-actions">
                             <button
                                 className="btn-code-action mobile-view"
                                 onClick={() => setShowQRDialog(true)}
-                            >
-                                <span>QR CODE</span>
-                            </button>
+                            />
                         </div>
                     </div>
 
@@ -176,18 +190,22 @@ export default function HostLobbyPage(): React.JSX.Element {
                                     : joinUrl.replace('join?pin=', '')}
                             </span>
                             <button
-                                className="url-copy-btn"
+                                className={`url-copy-btn ${urlCopySuccess ? 'success' : ''}`}
                                 onClick={() => {
                                     navigator.clipboard.writeText(joinUrl);
-                                    setCopySuccess(true);
-                                    setTimeout(() => setCopySuccess(false), 2000);
+                                    setUrlCopySuccess(true);
+                                    setTimeout(() => setUrlCopySuccess(false), 2000);
                                 }}
                                 title="Copy link"
                             >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                </svg>
+                                {urlCopySuccess ? (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                ) : (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                )}
                             </button>
                         </div>
                     </div>
@@ -224,7 +242,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
-                            <span>Players ({players.length})</span>
+                            <span>{players.length} {players.length === 1 ? 'Player' : 'Players'}</span>
                         </div>
                     </div>
 
@@ -235,12 +253,12 @@ export default function HostLobbyPage(): React.JSX.Element {
                             <div className="waiting-animation">
                                 <div className="waiting-icon">
                                     <img
-                                        src="/assets/waitplayer.png"
-                                        alt="Waiting for players"
+                                        src="/assets/waitplayer.webp"
+                                        alt="Waiting players"
                                         className="waiting-astronaut"
                                     />
                                 </div>
-                                <p className="waiting-text">Waiting for players to join...</p>
+                                <p className="waiting-text">Waiting players to join...</p>
                                 <div className="waiting-dots">
                                     <span></span>
                                     <span></span>
@@ -276,6 +294,13 @@ export default function HostLobbyPage(): React.JSX.Element {
                 onClose={() => setShowQRDialog(false)}
                 gameCode={gameCode}
                 joinUrl={joinUrl}
+            />
+
+            {/* Exit Confirmation Dialog */}
+            <ExitConfirmationDialog
+                isOpen={showExitDialog}
+                onClose={() => setShowExitDialog(false)}
+                onConfirm={handleConfirmExit}
             />
         </section >
     );

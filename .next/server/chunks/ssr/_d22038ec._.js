@@ -1102,65 +1102,6 @@ function HostLeaderboardPage() {
                         columnNumber: 17
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "leaderboard-stats",
-                        children: [
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "stat-item",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                        className: "stat-label",
-                                        children: "TOTAL PLAYERS"
-                                    }, void 0, false, {
-                                        fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 42,
-                                        columnNumber: 25
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                        className: "stat-value",
-                                        children: players.length
-                                    }, void 0, false, {
-                                        fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 43,
-                                        columnNumber: 25
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/app/host/leaderboard/page.tsx",
-                                lineNumber: 41,
-                                columnNumber: 21
-                            }, this),
-                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "stat-item",
-                                children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                        className: "stat-label",
-                                        children: "STATUS"
-                                    }, void 0, false, {
-                                        fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 46,
-                                        columnNumber: 25
-                                    }, this),
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                        className: "stat-value",
-                                        children: "COMPLETE"
-                                    }, void 0, false, {
-                                        fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 47,
-                                        columnNumber: 25
-                                    }, this)
-                                ]
-                            }, void 0, true, {
-                                fileName: "[project]/app/host/leaderboard/page.tsx",
-                                lineNumber: 45,
-                                columnNumber: 21
-                            }, this)
-                        ]
-                    }, void 0, true, {
-                        fileName: "[project]/app/host/leaderboard/page.tsx",
-                        lineNumber: 40,
-                        columnNumber: 17
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "header-actions",
                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
                             className: "btn-exit",
@@ -1168,12 +1109,12 @@ function HostLeaderboardPage() {
                             children: "EXIT"
                         }, void 0, false, {
                             fileName: "[project]/app/host/leaderboard/page.tsx",
-                            lineNumber: 52,
+                            lineNumber: 41,
                             columnNumber: 21
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                        lineNumber: 51,
+                        lineNumber: 40,
                         columnNumber: 17
                     }, this)
                 ]
@@ -1190,7 +1131,7 @@ function HostLeaderboardPage() {
                         children: "THE WINNER"
                     }, void 0, false, {
                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                        lineNumber: 58,
+                        lineNumber: 47,
                         columnNumber: 17
                     }, this),
                     players.length === 0 ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1203,12 +1144,12 @@ function HostLeaderboardPage() {
                             children: "No players participated in this game."
                         }, void 0, false, {
                             fileName: "[project]/app/host/leaderboard/page.tsx",
-                            lineNumber: 62,
+                            lineNumber: 51,
                             columnNumber: 25
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                        lineNumber: 61,
+                        lineNumber: 50,
                         columnNumber: 21
                     }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "podium-container",
@@ -1221,7 +1162,7 @@ function HostLeaderboardPage() {
                                         children: "#2"
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 69,
+                                        lineNumber: 58,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1231,7 +1172,7 @@ function HostLeaderboardPage() {
                                             alt: top3[1].spacecraft.name
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/leaderboard/page.tsx",
-                                            lineNumber: 72,
+                                            lineNumber: 61,
                                             columnNumber: 41
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             style: {
@@ -1240,12 +1181,12 @@ function HostLeaderboardPage() {
                                             children: "🚀"
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/leaderboard/page.tsx",
-                                            lineNumber: 74,
+                                            lineNumber: 63,
                                             columnNumber: 41
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 70,
+                                        lineNumber: 59,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -1253,7 +1194,7 @@ function HostLeaderboardPage() {
                                         children: top3[1].username
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 77,
+                                        lineNumber: 66,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1261,7 +1202,7 @@ function HostLeaderboardPage() {
                                         children: formatScore(top3[1].score)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 78,
+                                        lineNumber: 67,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1269,13 +1210,13 @@ function HostLeaderboardPage() {
                                         children: (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$mockPlayers$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getRankTitle"])(2)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 79,
+                                        lineNumber: 68,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/host/leaderboard/page.tsx",
-                                lineNumber: 68,
+                                lineNumber: 57,
                                 columnNumber: 29
                             }, this),
                             top3[0] && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1286,7 +1227,7 @@ function HostLeaderboardPage() {
                                         children: "#1"
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 86,
+                                        lineNumber: 75,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1296,7 +1237,7 @@ function HostLeaderboardPage() {
                                             alt: top3[0].spacecraft.name
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/leaderboard/page.tsx",
-                                            lineNumber: 89,
+                                            lineNumber: 78,
                                             columnNumber: 41
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             style: {
@@ -1305,12 +1246,12 @@ function HostLeaderboardPage() {
                                             children: "🚀"
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/leaderboard/page.tsx",
-                                            lineNumber: 91,
+                                            lineNumber: 80,
                                             columnNumber: 41
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 87,
+                                        lineNumber: 76,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -1318,7 +1259,7 @@ function HostLeaderboardPage() {
                                         children: top3[0].username
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 94,
+                                        lineNumber: 83,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1326,7 +1267,7 @@ function HostLeaderboardPage() {
                                         children: formatScore(top3[0].score)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 95,
+                                        lineNumber: 84,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1334,13 +1275,13 @@ function HostLeaderboardPage() {
                                         children: (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$mockPlayers$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getRankTitle"])(1)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 96,
+                                        lineNumber: 85,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/host/leaderboard/page.tsx",
-                                lineNumber: 85,
+                                lineNumber: 74,
                                 columnNumber: 29
                             }, this),
                             top3[2] && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1351,7 +1292,7 @@ function HostLeaderboardPage() {
                                         children: "#3"
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 103,
+                                        lineNumber: 92,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1361,7 +1302,7 @@ function HostLeaderboardPage() {
                                             alt: top3[2].spacecraft.name
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/leaderboard/page.tsx",
-                                            lineNumber: 106,
+                                            lineNumber: 95,
                                             columnNumber: 41
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             style: {
@@ -1370,12 +1311,12 @@ function HostLeaderboardPage() {
                                             children: "🚀"
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/leaderboard/page.tsx",
-                                            lineNumber: 108,
+                                            lineNumber: 97,
                                             columnNumber: 41
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 104,
+                                        lineNumber: 93,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h3", {
@@ -1383,7 +1324,7 @@ function HostLeaderboardPage() {
                                         children: top3[2].username
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 111,
+                                        lineNumber: 100,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1391,7 +1332,7 @@ function HostLeaderboardPage() {
                                         children: formatScore(top3[2].score)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 112,
+                                        lineNumber: 101,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1399,25 +1340,25 @@ function HostLeaderboardPage() {
                                         children: (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$mockPlayers$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getRankTitle"])(3)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 113,
+                                        lineNumber: 102,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/host/leaderboard/page.tsx",
-                                lineNumber: 102,
+                                lineNumber: 91,
                                 columnNumber: 29
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                        lineNumber: 65,
+                        lineNumber: 54,
                         columnNumber: 21
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/host/leaderboard/page.tsx",
-                lineNumber: 57,
+                lineNumber: 46,
                 columnNumber: 13
             }, this),
             remaining.length > 0 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1431,7 +1372,7 @@ function HostLeaderboardPage() {
                                 children: "GLOBAL FLEET RANKINGS"
                             }, void 0, false, {
                                 fileName: "[project]/app/host/leaderboard/page.tsx",
-                                lineNumber: 124,
+                                lineNumber: 113,
                                 columnNumber: 25
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1442,13 +1383,13 @@ function HostLeaderboardPage() {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/app/host/leaderboard/page.tsx",
-                                lineNumber: 125,
+                                lineNumber: 114,
                                 columnNumber: 25
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                        lineNumber: 123,
+                        lineNumber: 112,
                         columnNumber: 21
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1464,7 +1405,7 @@ function HostLeaderboardPage() {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 131,
+                                        lineNumber: 120,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -1474,18 +1415,18 @@ function HostLeaderboardPage() {
                                             alt: player.spacecraft.name
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/leaderboard/page.tsx",
-                                            lineNumber: 134,
+                                            lineNumber: 123,
                                             columnNumber: 41
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                             children: "🚀"
                                         }, void 0, false, {
                                             fileName: "[project]/app/host/leaderboard/page.tsx",
-                                            lineNumber: 136,
+                                            lineNumber: 125,
                                             columnNumber: 41
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 132,
+                                        lineNumber: 121,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1493,7 +1434,7 @@ function HostLeaderboardPage() {
                                         children: player.username
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 139,
+                                        lineNumber: 128,
                                         columnNumber: 33
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -1501,24 +1442,24 @@ function HostLeaderboardPage() {
                                         children: formatScore(player.score)
                                     }, void 0, false, {
                                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                                        lineNumber: 140,
+                                        lineNumber: 129,
                                         columnNumber: 33
                                     }, this)
                                 ]
                             }, player.id, true, {
                                 fileName: "[project]/app/host/leaderboard/page.tsx",
-                                lineNumber: 130,
+                                lineNumber: 119,
                                 columnNumber: 29
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/app/host/leaderboard/page.tsx",
-                        lineNumber: 128,
+                        lineNumber: 117,
                         columnNumber: 21
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/app/host/leaderboard/page.tsx",
-                lineNumber: 122,
+                lineNumber: 111,
                 columnNumber: 17
             }, this)
         ]

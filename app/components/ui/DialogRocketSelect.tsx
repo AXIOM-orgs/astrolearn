@@ -16,6 +16,22 @@ export function DialogRocketSelect({
     onSelect,
     currentSpaceship
 }: DialogRocketSelectProps): React.JSX.Element | null {
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+        }
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     const handleBackdropClick = (e: React.MouseEvent) => {
@@ -36,9 +52,7 @@ export function DialogRocketSelect({
                     <span>✕</span>
                 </button>
 
-                <h2 className="dialog-title">REFIT SPACECRAFT</h2>
-                <p className="dialog-subtitle">Select your new vessel for the mission</p>
-
+                <h2 className="dialog-title">Select Rocket</h2>
                 <div className="rocket-select-grid">
                     {spaceships.map(ship => (
                         <div
@@ -51,7 +65,6 @@ export function DialogRocketSelect({
                             </div>
                             <div className="rocket-info">
                                 <span className="rocket-name" style={{ color: ship.color }}>{ship.name}</span>
-                                <span className="rocket-desc">{ship.description}</span>
                             </div>
                             {currentSpaceship?.id === ship.id && (
                                 <div className="current-badge">CURRENT</div>
@@ -59,10 +72,6 @@ export function DialogRocketSelect({
                         </div>
                     ))}
                 </div>
-
-                <button className="btn-dialog-cancel" onClick={onClose}>
-                    <span>CANCEL</span>
-                </button>
             </div>
         </div>
     );

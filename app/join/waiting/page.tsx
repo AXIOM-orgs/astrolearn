@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Users } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { DialogRocketSelect } from '@/app/components/ui/DialogRocketSelect';
 import { Spaceship, spaceships } from '@/lib/data';
@@ -65,77 +66,81 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             {/* Header */}
             <header className="waiting-header">
                 <div className="waiting-brand">
-                    <div className="brand-text">
-                        <h1 className="brand-title">ASTRO LERNING</h1>
-                    </div>
+                    <img
+                        src="/assets/logo2.webp"
+                        alt="Astro Learning"
+                        className="brand-logo-image"
+                    />
                 </div>
-
-                {/* <div className="waiting-status">
-                    <div className="status-pulse">
-                        <span className="pulse-dot"></span>
-                        <span className="status-text">WAITING HOST TO START</span>
-                    </div>
-                </div>   */}
+                <img
+                    src="/assets/logo.webp"
+                    alt="Gameforsmart Logo"
+                    className="header-logo"
+                />
             </header>
 
             {/* Main Content */}
             <div className="waiting-content">
-                {/* Section Header */}
-                <div className="section-header">
-                    {/* <div className="section-left">
-                        <h2 className="section-title">WAITING FOR OTHER PLAYERS</h2>
-                    </div> */}
-                    <div className="section-right">
-                        <span className="capacity-label">PLAYERS</span>
-                        <div className="capacity-display">
-                            <span className="capacity-current">{fleetCapacity.current.toString().padStart(2, '0')}</span>
-                            <span className="capacity-separator">/</span>
-                            <span className="capacity-max">{fleetCapacity.max}</span>
-                            <div className="capacity-bar-mini">
-                                <div
-                                    className="capacity-fill-mini"
-                                    style={{ width: `${(fleetCapacity.current / fleetCapacity.max) * 100}%` }}
-                                ></div>
+
+                {/* Player Panel Wrapper */}
+                <div className="relative">
+                    {/* Title (Overlapping Border) */}
+                    <h1 className="absolute -top-5 md:-top-7 left-1/2 -translate-x-1/2 text-4xl md:text-5xl font-black tracking-widest text-center drop-shadow-[0_0_15px_rgba(0,212,255,0.8)] z-20 pointer-events-none"
+                        style={{
+                            fontFamily: 'var(--font-orbitron)',
+                            background: 'linear-gradient(180deg, #E0F7FA 0%, #00E5FF 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            textShadow: '0 4px 10px rgba(0,0,0,0.5)'
+                        }}>
+                        WAITING ROOM
+                    </h1>
+
+                    {/* Player Panel*/}
+                    <div className="player-panel">
+                    <div className="w-full bg-white/5 backdrop-blur-md border border-[#00d4ff] rounded-[20px] flex flex-col overflow-hidden">
+                        <div className="waiting-panel-header flex items-center justify-start px-8 py-6 border-b border-white/10 w-full bg-white/5">
+                            <div className="waiting-player-badge flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/20 rounded-lg text-sm text-gray-300">
+                                <Users size={16} color='var(--primary-color)' />
+                                <span>{fleetCapacity.current}</span>
+                            </div>
+                        </div>
+
+                        {/* Player Grid */}
+                        <div className="player-content p-10 w-full waiting-grid-container">
+                            <div className="waiting-player-grid">
+                                {players.map((player) => {
+                                    const isCurrentUser = currentPlayer?.id === player.id;
+                                    return (
+                                        <div
+                                            key={player.id}
+                                            className={`waiting-player-card ${isCurrentUser ? 'current-user' : ''}`}
+                                        >
+                                            {isCurrentUser && (
+                                                <div className="you-badge">YOU</div>
+                                            )}
+                                            <div className="player-icon">
+                                                {player.spacecraft ? (
+                                                    <img
+                                                        src={player.spacecraft.image}
+                                                        alt={player.spacecraft.name}
+                                                        className="player-spacecraft-icon"
+                                                    />
+                                                ) : '🚀'}
+                                            </div>
+                                            <span className="player-name">{player.username}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
                 </div>
-
-                {/* Player Grid */}
-                <div className="waiting-player-grid">
-                    {players.map((player) => {
-                        const isCurrentUser = currentPlayer?.id === player.id;
-                        return (
-                            <div
-                                key={player.id}
-                                className={`waiting-player-card ${isCurrentUser ? 'current-user' : ''}`}
-                            >
-                                {isCurrentUser && (
-                                    <div className="you-badge">YOU</div>
-                                )}
-                                <div className="player-icon">
-                                    {player.spacecraft ? (
-                                        <img
-                                            src={player.spacecraft.image}
-                                            alt={player.spacecraft.name}
-                                            className="player-spacecraft-icon"
-                                        />
-                                    ) : '🚀'}
-                                </div>
-                                <span className="player-name">{player.username}</span>
-                            </div>
-                        );
-                    })}
-                    {/* Empty slots */}
-                    {Array.from({ length: Math.max(0, 12 - players.length) }).map((_, i) => (
-                        <div key={`empty-${i}`} className="waiting-player-card empty">
-                            <span className="empty-icon">+</span>
-                        </div>
-                    ))}
                 </div>
 
-                {/* Refit Button */}
-                <div className="refit-section">
+                {/* Refit Button - Moved outside wrapper */}
+                <div className="refit-section mt-8">
                     <button
                         className="btn-refit"
                         onClick={() => setShowRefitDialog(true)}
@@ -143,15 +148,15 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                         <span>CHANGE ROCKET</span>
                     </button>
                 </div>
-            </div>
 
-            {/* Refit Dialog */}
-            <DialogRocketSelect
-                isOpen={showRefitDialog}
-                onClose={() => setShowRefitDialog(false)}
-                onSelect={handleRefitSelect}
-                currentSpaceship={currentSpacecraft}
-            />
+                {/* Refit Dialog */}
+                <DialogRocketSelect
+                    isOpen={showRefitDialog}
+                    onClose={() => setShowRefitDialog(false)}
+                    onSelect={handleRefitSelect}
+                    currentSpaceship={currentSpacecraft}
+                />
+            </div> {/* End Waiting Content */}
         </section>
     );
 }
