@@ -4,6 +4,7 @@ import { useEffect, useRef, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
 import { DialogProvider } from '@/context/AlertContext';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import AuthGate from '@/app/components/AuthGate';
 
 interface ClientLayoutProps {
@@ -81,20 +82,22 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
 
     return (
         <DialogProvider>
-            <AuthGate>
-                {/* Loading Overlay */}
-                <div className={`loading-overlay ${!isLoading ? 'hidden' : ''}`} id="loading-overlay">
-                    <img src="/assets/loading.gif" alt="Loading" className="loading-gif" />
-                    <div className="loading-text">Loading...</div>
-                </div>
+            <TooltipProvider>
+                <AuthGate>
+                    {/* Loading Overlay */}
+                    <div className={`loading-overlay ${!isLoading ? 'hidden' : ''}`} id="loading-overlay">
+                        <img src="/assets/loading.gif" alt="Loading" className="loading-gif" />
+                        <div className="loading-text">Loading...</div>
+                    </div>
 
-                {/* Animated Background */}
-                <div className="stars"></div>
-                <div className="stars2"></div>
-                <div className="stars3"></div>
+                    {/* Animated Background */}
+                    <div className="stars"></div>
+                    <div className="stars2"></div>
+                    <div className="stars3"></div>
 
-                {children}
-            </AuthGate>
+                    {children}
+                </AuthGate>
+            </TooltipProvider>
         </DialogProvider>
     );
 }

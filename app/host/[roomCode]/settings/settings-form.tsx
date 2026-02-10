@@ -45,6 +45,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
     const [saving, setSaving] = useState(false);
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [soundEnabled, setSoundEnabled] = useState(true);
 
     // Redirect if error
     useEffect(() => {
@@ -157,11 +158,6 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                         <p style={{ color: '#06ffa5', fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>
                             {quizDetail.title}
                         </p>
-                        {quizDetail.description && (
-                            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
-                                {quizDetail.description}
-                            </p>
-                        )}
                     </div>
 
                     {/* Divider */}
@@ -171,12 +167,12 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                         marginBottom: '2rem'
                     }} />
 
-                    {/* Settings Row */}
+                    {/* Settings Row 1: Duration, Questions, Sound */}
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(3, 1fr)',
                         gap: '1rem',
-                        marginBottom: '2rem'
+                        marginBottom: '1.5rem'
                     }}>
                         {/* Duration */}
                         <div className="form-group" style={{ marginBottom: 0 }}>
@@ -250,7 +246,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                             </select>
                         </div>
 
-                        {/* Difficulty */}
+                        {/* Sound Toggle Switch */}
                         <div className="form-group" style={{ marginBottom: 0 }}>
                             <label style={{
                                 display: 'block',
@@ -258,33 +254,128 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                                 fontSize: '0.9rem',
                                 color: '#06ffa5',
                                 textTransform: 'uppercase',
-                                letterSpacing: '1px'
-                            }}>Difficulty</label>
-                            <select
-                                value={selectedDifficulty}
-                                onChange={(e) => setSelectedDifficulty(e.target.value)}
+                                letterSpacing: '1px',
+                                textAlign: 'center'
+                            }}>Sound</label>
+                            <div
+                                onClick={() => setSoundEnabled(!soundEnabled)}
                                 style={{
-                                    width: '100%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.75rem',
                                     padding: '0.75rem',
                                     background: 'rgba(10, 10, 15, 0.6)',
                                     border: '1px solid rgba(6, 255, 165, 0.3)',
                                     borderRadius: '8px',
-                                    color: '#fff',
-                                    fontSize: '1rem',
                                     cursor: 'pointer',
-                                    outline: 'none',
-                                    transition: 'all 0.2s ease',
-                                    textTransform: 'capitalize'
+                                    transition: 'all 0.2s ease'
                                 }}
-                                onFocus={(e) => e.currentTarget.style.borderColor = '#06ffa5'}
-                                onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(6, 255, 165, 0.3)'}
                             >
-                                {['easy', 'medium', 'hard'].map((diff) => (
-                                    <option key={diff} value={diff} style={{ textTransform: 'capitalize' }}>
-                                        {diff.charAt(0).toUpperCase() + diff.slice(1)}
-                                    </option>
-                                ))}
-                            </select>
+                                {/* Mute Icon (Left) */}
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke={!soundEnabled ? '#ef4444' : 'rgba(255,255,255,0.4)'}
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    style={{ transition: 'all 0.3s ease' }}
+                                >
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                    <line x1="23" y1="9" x2="17" y2="15" />
+                                    <line x1="17" y1="9" x2="23" y2="15" />
+                                </svg>
+
+                                {/* Toggle Switch */}
+                                <div style={{
+                                    position: 'relative',
+                                    width: '50px',
+                                    height: '26px',
+                                    background: soundEnabled ? '#06ffa5' : '#333',
+                                    borderRadius: '13px',
+                                    transition: 'all 0.3s ease',
+                                    flexShrink: 0
+                                }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '3px',
+                                        left: soundEnabled ? '27px' : '3px',
+                                        width: '20px',
+                                        height: '20px',
+                                        background: '#fff',
+                                        borderRadius: '50%',
+                                        transition: 'all 0.3s ease',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                                    }} />
+                                </div>
+
+                                {/* Unmute Icon (Right) */}
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke={soundEnabled ? '#06ffa5' : 'rgba(255,255,255,0.4)'}
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    style={{ transition: 'all 0.3s ease' }}
+                                >
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Settings Row 2: Difficulty Buttons */}
+                    <div style={{ marginBottom: '2rem' }}>
+                        <label style={{
+                            display: 'block',
+                            marginBottom: '0.5rem',
+                            fontSize: '0.9rem',
+                            color: '#06ffa5',
+                            textTransform: 'uppercase',
+                            letterSpacing: '1px'
+                        }}>Difficulty</label>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(3, 1fr)',
+                            gap: '0.75rem'
+                        }}>
+                            {[
+                                { value: 'easy', label: 'Easy', color: '#22c55e' },
+                                { value: 'medium', label: 'Medium', color: '#f59e0b' },
+                                { value: 'hard', label: 'Hard', color: '#ef4444' }
+                            ].map((diff) => (
+                                <button
+                                    key={diff.value}
+                                    type="button"
+                                    onClick={() => setSelectedDifficulty(diff.value)}
+                                    style={{
+                                        padding: '0.75rem 1rem',
+                                        background: selectedDifficulty === diff.value
+                                            ? `${diff.color}20`
+                                            : 'rgba(10, 10, 15, 0.6)',
+                                        border: selectedDifficulty === diff.value
+                                            ? `2px solid ${diff.color}`
+                                            : '1px solid rgba(255, 255, 255, 0.2)',
+                                        borderRadius: '8px',
+                                        color: selectedDifficulty === diff.value ? diff.color : '#fff',
+                                        fontSize: '1rem',
+                                        fontWeight: selectedDifficulty === diff.value ? 'bold' : 'normal',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        textTransform: 'capitalize'
+                                    }}
+                                >
+                                    {diff.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
 

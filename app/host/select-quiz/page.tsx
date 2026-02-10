@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, supabaseGame } from '@/lib/supabase';
 import { generateXID } from '@/lib/id-generator';
+import { useGame } from '@/context/GameContext';
 
 // Generate game PIN
 function generateGamePin(length = 6): string {
@@ -12,7 +13,7 @@ function generateGamePin(length = 6): string {
     return Array.from({ length }, () => digits[Math.floor(Math.random() * digits.length)]).join('');
 }
 
-const DESKTOP_CARDS_PER_PAGE = 9;
+const DESKTOP_CARDS_PER_PAGE = 12;
 const MOBILE_CARDS_PER_PAGE = 4;
 
 interface Quiz {
@@ -28,6 +29,7 @@ interface Quiz {
 export default function SelectQuizPage(): React.JSX.Element {
     const router = useRouter();
     const { profile } = useAuth();
+    const { showLoading, hideLoading } = useGame();
 
     // UI States
     const [searchInput, setSearchInput] = useState('');
@@ -83,6 +85,7 @@ export default function SelectQuizPage(): React.JSX.Element {
             }
         };
         fetchProfile();
+        hideLoading(); // Hide global loading
     }, [profile?.id]);
 
     // Fetch categories once
@@ -107,7 +110,6 @@ export default function SelectQuizPage(): React.JSX.Element {
     useEffect(() => {
         const fetchQuizzes = async () => {
             if (!profile?.id) return;
-
             setIsFetching(true);
 
             try {
@@ -143,7 +145,7 @@ export default function SelectQuizPage(): React.JSX.Element {
         };
 
         fetchQuizzes();
-    }, [profile?.id, currentPage, searchQuery, selectedCategory, showFavoritesOnly, showMyQuizOnly, favorites, cardsPerPage]);
+    }, [profile?.id, currentPage, searchQuery, selectedCategory, showFavoritesOnly, showMyQuizOnly, favorites, cardsPerPage, showLoading, hideLoading]);
 
     // Reset page when filters change
     useEffect(() => {
@@ -204,6 +206,7 @@ export default function SelectQuizPage(): React.JSX.Element {
 
     const handleStartQuiz = async (quizId: string) => {
         if (creating) return;
+        showLoading();
         setCreating(true);
         setCreatingQuizId(quizId);
 
@@ -249,6 +252,7 @@ export default function SelectQuizPage(): React.JSX.Element {
                 }
                 setCreating(false);
                 setCreatingQuizId(null);
+                hideLoading();
                 return;
             }
 
@@ -257,6 +261,7 @@ export default function SelectQuizPage(): React.JSX.Element {
                 await supabase.from('game_sessions').delete().eq('id', sessId);
                 setCreating(false);
                 setCreatingQuizId(null);
+                hideLoading();
                 return;
             }
 
@@ -271,6 +276,7 @@ export default function SelectQuizPage(): React.JSX.Element {
             console.error('Unexpected error:', err);
             setCreating(false);
             setCreatingQuizId(null);
+            hideLoading();
         }
     };
 
@@ -289,17 +295,6 @@ export default function SelectQuizPage(): React.JSX.Element {
         }
         return { title: 'No quizzes found', subtitle: 'Try adjusting your search or filter' };
     };
-
-    if (loading) {
-        return (
-            <section className="select-quiz-page">
-                <div className="empty-state">
-                    <div className="loading-spinner" />
-                    <h3 className="empty-state-title">Loading quizzes...</h3>
-                </div>
-            </section>
-        );
-    }
 
     return (
         <section className="select-quiz-page">
@@ -384,15 +379,9 @@ export default function SelectQuizPage(): React.JSX.Element {
                                     onClick={() => !creating && handleStartQuiz(quiz.id)}
                                     style={{ cursor: creating ? (isThisQuizCreating ? 'wait' : 'not-allowed') : 'pointer' }}
                                 >
-                                    {isThisQuizCreating && (
-                                        <div className="quiz-card-loading">
-                                            <div className="loading-spinner"></div>
-                                            <span>Creating...</span>
-                                        </div>
-                                    )}
-                                    <div className="quiz-card-content">
+                                    <div className="quiz-card-content justify-between">
                                         <div className="quiz-card-header">
-                                            <h3 className="quiz-card-title">{quiz.title}</h3>
+                                            <h3 className="quiz-card-title line-clamp-3">{quiz.title}</h3>
                                             <button
                                                 className={`card-favorite-btn ${isFavorite ? 'active' : ''}`}
                                                 onClick={(e) => { e.stopPropagation(); toggleFavorite(quiz.id); }}

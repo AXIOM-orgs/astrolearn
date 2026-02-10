@@ -86,7 +86,21 @@ export default function LoginPage() {
     };
 
     return (
-        <section className="screen active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <section className="screen active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            {/* Brand Logos - Outside Card */}
+            <img
+                className="desktop-view"
+                src="/assets/logo2.webp"
+                alt="Astro Learning"
+                style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', height: '40px', objectFit: 'contain' }}
+            />
+            <img
+                className="desktop-view"
+                src="/assets/logo.webp"
+                alt="Gameforsmart Logo"
+                style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', height: '50px', objectFit: 'contain' }}
+            />
+
             <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '2rem', borderRadius: '16px' }}>
 
                 <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>

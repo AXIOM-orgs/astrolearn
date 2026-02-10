@@ -69,7 +69,6 @@ export default function LandingPage(): React.JSX.Element {
         showLoading();
         setTimeout(() => {
             router.push('/host/select-quiz');
-            hideLoading();
         }, 500);
     };
 
@@ -136,7 +135,7 @@ export default function LandingPage(): React.JSX.Element {
             }));
 
             // Navigate to select character page
-            router.push(`/player/${sectorCode.trim()}/select-character`);
+            router.push(`/player/${sectorCode.trim()}/waiting`);
         } catch (err) {
             console.error('Join game exception:', err);
             showError('Something went wrong. Please try again.');

@@ -4,254 +4,188 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { useGame } from '@/context/GameContext';
+import { supabaseGame } from '@/lib/supabase';
 import { GameCodeDialog } from '@/app/components/ui/GameCodeDialog';
-import { supabase, supabaseGame } from '@/lib/supabase';
-import { syncServerTime, getSyncedServerTime } from '@/lib/serverTime';
+import { ExitConfirmationDialog } from '@/app/components/ui/ExitConfirmationDialog';
 
-type Participant = {
+interface Participant {
     id: string;
     nickname: string;
     spacecraft: string | null;
     joined_at: string;
-};
+}
 
-type SessionData = {
+interface SessionData {
     id: string;
     quiz_id: string;
-    host_id: string;
     game_pin: string;
     status: string;
-    total_time_minutes: number;
-    question_limit: number;
-    difficulty: string;
-    countdown_started_at: string | null;
-};
+}
 
 export default function HostLobbyPage(): React.JSX.Element {
     const router = useRouter();
     const params = useParams();
     const roomCode = params.roomCode as string;
-    const { hideLoading } = useGame();
+    const { showLoading, hideLoading } = useGame();
 
-    // State
     const [session, setSession] = useState<SessionData | null>(null);
-    const [quizTitle, setQuizTitle] = useState<string>('');
     const [participants, setParticipants] = useState<Participant[]>([]);
     const [totalCount, setTotalCount] = useState<number>(0);
-    const [countdown, setCountdown] = useState<number>(0);
     const [loading, setLoading] = useState<boolean>(true);
-    const [gameStarted, setGameStarted] = useState<boolean>(false);
-
     const [showQRDialog, setShowQRDialog] = useState<boolean>(false);
+    const [showExitDialog, setShowExitDialog] = useState<boolean>(false);
+    const [isStarting, setIsStarting] = useState<boolean>(false);
+    const [isDeleting, setIsDeleting] = useState<boolean>(false);
     const [copySuccess, setCopySuccess] = useState<boolean>(false);
+    const [urlCopySuccess, setUrlCopySuccess] = useState<boolean>(false);
     const [joinUrl, setJoinUrl] = useState<string>('');
 
-    // Kick dialog state
-    const [showKickDialog, setShowKickDialog] = useState<boolean>(false);
-    const [selectedPlayer, setSelectedPlayer] = useState<Participant | null>(null);
+    const prevPlayerCount = useRef<number>(0);
+    const channelRef = useRef<ReturnType<typeof supabaseGame.channel> | null>(null);
 
-    // Refs
-    const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-    // Sync server time on mount
+    // Set joinUrl on client side only
     useEffect(() => {
-        syncServerTime();
-    }, []);
-
-    // Set join URL on client side
-    useEffect(() => {
-        if (roomCode) {
-            setJoinUrl(`${window.location.origin}/join/${roomCode}`);
-        }
+        setJoinUrl(`${window.location.origin}/join/${roomCode}`);
     }, [roomCode]);
 
-    // Countdown calculation
-    const calculateCountdown = useCallback((startTimestamp: string, durationSeconds: number = 10): number => {
-        const start = new Date(startTimestamp).getTime();
-        const now = getSyncedServerTime();
-        const elapsed = (now - start) / 1000;
-        return Math.max(0, Math.min(durationSeconds, Math.ceil(durationSeconds - elapsed)));
-    }, []);
-
-    // Start countdown sync
-    const startCountdownSync = useCallback((startTimestamp: string, duration: number = 10) => {
-        if (countdownIntervalRef.current) {
-            clearInterval(countdownIntervalRef.current);
-        }
-
-        let remaining = calculateCountdown(startTimestamp, duration);
-        setCountdown(remaining);
-        if (remaining <= 0) return;
-
-        countdownIntervalRef.current = setInterval(() => {
-            remaining = calculateCountdown(startTimestamp, duration);
-            setCountdown(remaining);
-
-            if (remaining <= 0) {
-                clearInterval(countdownIntervalRef.current!);
-                setCountdown(0);
-
-                // Redirect to game after countdown
-                setTimeout(async () => {
-                    const { error } = await supabaseGame
-                        .from('sessions')
-                        .update({
-                            status: 'active',
-                            started_at: new Date(getSyncedServerTime()).toISOString(),
-                            countdown_started_at: null,
-                        })
-                        .eq('game_pin', roomCode);
-
-                    if (error) console.error('End countdown error:', error);
-                    else router.push(`/host/${roomCode}/game`);
-                }, 500);
-            }
-        }, 100);
-    }, [roomCode, router, calculateCountdown]);
-
-    // Stop countdown sync
-    const stopCountdownSync = useCallback(() => {
-        if (countdownIntervalRef.current) {
-            clearInterval(countdownIntervalRef.current);
-        }
-        setCountdown(0);
-    }, []);
-
-    // Fetch initial data and setup realtime
+    // Fetch session and participants
     useEffect(() => {
         if (!roomCode) return;
 
-        let sessionSubscription: any = null;
-        let participantsSubscription: any = null;
+        let sessionSubscription: ReturnType<typeof supabaseGame.channel> | null = null;
 
-        const fetchData = async () => {
-            // Fetch session
-            const { data: sessionData, error: sessionError } = await supabaseGame
-                .from('sessions')
-                .select('id, quiz_id, host_id, game_pin, status, total_time_minutes, question_limit, difficulty, countdown_started_at')
-                .eq('game_pin', roomCode)
-                .single();
+        const fetchSessionAndParticipants = async () => {
+            try {
+                // Fetch session
+                const { data: sessionData, error: sessionError } = await supabaseGame
+                    .from('sessions')
+                    .select('id, quiz_id, game_pin, status')
+                    .eq('game_pin', roomCode)
+                    .single();
 
-            if (sessionError || !sessionData) {
-                console.error('Session not found:', sessionError);
+                if (sessionError || !sessionData) {
+                    console.error('Session not found:', sessionError);
+                    setLoading(false);
+                    router.push('/host/select-quiz');
+                    return;
+                }
+
+                setSession(sessionData);
+
+                // Fetch initial participants
+                const { data: participantsData, count } = await supabaseGame
+                    .from('participants')
+                    .select('id, nickname, spacecraft, joined_at', { count: 'exact' })
+                    .eq('session_id', sessionData.id)
+                    .order('joined_at', { ascending: true });
+
+                setParticipants(participantsData || []);
+                setTotalCount(count || 0);
+                prevPlayerCount.current = count || 0;
+
                 setLoading(false);
-                router.push('/host');
-                return;
+                hideLoading();
+
+                // Subscribe to session changes
+                sessionSubscription = supabaseGame
+                    .channel(`session:${roomCode}`)
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: 'UPDATE',
+                            schema: 'public',
+                            table: 'sessions',
+                            filter: `game_pin=eq.${roomCode}`
+                        },
+                        (payload) => {
+                            console.log('Session updated:', payload);
+                            const newSession = payload.new as SessionData;
+                            setSession(newSession);
+
+                            if (newSession.status === 'active') {
+                                router.replace(`/host/${roomCode}/game`);
+                            } else if (newSession.status === 'finished') {
+                                router.replace(`/host/${roomCode}/result`);
+                            }
+                        }
+                    )
+                    .subscribe();
+
+            } catch (err) {
+                console.error('Error fetching data:', err);
+                setLoading(false);
+                router.push('/host/select-quiz');
             }
-
-            setSession(sessionData);
-
-            // Fetch quiz title
-            const { data: quizData } = await supabase
-                .from('quizzes')
-                .select('title')
-                .eq('id', sessionData.quiz_id)
-                .single();
-
-            if (quizData) {
-                setQuizTitle(quizData.title);
-            }
-
-            // Fetch participants
-            const { data: participantsData, count } = await supabaseGame
-                .from('participants')
-                .select('id, nickname, spacecraft, joined_at', { count: 'exact' })
-                .eq('session_id', sessionData.id)
-                .order('joined_at', { ascending: true })
-                .limit(100);
-
-            setParticipants(participantsData || []);
-            setTotalCount(count || 0);
-            setLoading(false);
-            hideLoading();
-
-            // Handle countdown if already started
-            if (sessionData.countdown_started_at) {
-                startCountdownSync(sessionData.countdown_started_at, 10);
-            }
-
-            // Subscribe to session changes
-            sessionSubscription = supabaseGame
-                .channel(`session:${roomCode}`)
-                .on(
-                    'postgres_changes',
-                    {
-                        event: 'UPDATE',
-                        schema: 'public',
-                        table: 'sessions',
-                        filter: `game_pin=eq.${roomCode}`,
-                    },
-                    (payload) => {
-                        console.log('Session updated:', payload);
-                        const newSession = payload.new as SessionData;
-                        setSession(newSession);
-
-                        if (newSession.countdown_started_at) {
-                            startCountdownSync(newSession.countdown_started_at, 10);
-                        } else {
-                            stopCountdownSync();
-                        }
-
-                        if (newSession.status === 'active') {
-                            router.replace(`/host/${roomCode}/game`);
-                        } else if (newSession.status === 'finished') {
-                            router.replace(`/host/${roomCode}/result`);
-                        }
-                    }
-                )
-                .subscribe((status) => {
-                    console.log(`Session subscription status: ${status}`);
-                });
-
-            // Subscribe to participants changes
-            participantsSubscription = supabaseGame
-                .channel(`participants:${roomCode}`)
-                .on(
-                    'postgres_changes',
-                    {
-                        event: '*',
-                        schema: 'public',
-                        table: 'participants',
-                        filter: `session_id=eq.${sessionData.id}`,
-                    },
-                    (payload) => {
-                        console.log('Participant change:', payload);
-
-                        if (payload.eventType === 'INSERT') {
-                            setParticipants((prev) => {
-                                if (prev.some((p) => p.id === payload.new.id)) return prev;
-                                return [...prev, payload.new as Participant];
-                            });
-                            setTotalCount((prev) => prev + 1);
-                        }
-                        if (payload.eventType === 'UPDATE') {
-                            setParticipants((prev) =>
-                                prev.map((p) => (p.id === payload.new.id ? payload.new as Participant : p))
-                            );
-                        }
-                        if (payload.eventType === 'DELETE') {
-                            setParticipants((prev) =>
-                                prev.filter((p) => p.id !== payload.old.id)
-                            );
-                            setTotalCount((prev) => Math.max(0, prev - 1));
-                        }
-                    }
-                )
-                .subscribe((status) => {
-                    console.log(`Participants subscription status: ${status}`);
-                });
         };
 
-        fetchData();
+        fetchSessionAndParticipants();
 
         return () => {
-            stopCountdownSync();
-            if (sessionSubscription) supabaseGame.removeChannel(sessionSubscription);
-            if (participantsSubscription) supabaseGame.removeChannel(participantsSubscription);
+            if (sessionSubscription) {
+                supabaseGame.removeChannel(sessionSubscription);
+            }
         };
-    }, [roomCode, router, hideLoading, startCountdownSync, stopCountdownSync]);
+    }, [roomCode, router, hideLoading]);
 
-    // Copy to clipboard
+    // Setup realtime subscription for participants
+    useEffect(() => {
+        if (!session?.id) return;
+
+        const channel = supabaseGame
+            .channel(`participants:${roomCode}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'participants',
+                    filter: `session_id=eq.${session.id}`
+                },
+                (payload) => {
+                    console.log('Realtime participant change:', payload);
+
+                    if (payload.eventType === 'INSERT') {
+                        const newParticipant = payload.new as Participant;
+                        setParticipants(prev => {
+                            // Avoid duplicates
+                            if (prev.some(p => p.id === newParticipant.id)) return prev;
+                            return [...prev, newParticipant];
+                        });
+                        setTotalCount(prev => prev + 1);
+
+                        // Play join sound
+                        const audio = new Audio('/sounds/join.mp3');
+                        audio.volume = 0.5;
+                        audio.play().catch(() => { });
+                    }
+
+                    if (payload.eventType === 'UPDATE') {
+                        const updatedParticipant = payload.new as Participant;
+                        setParticipants(prev =>
+                            prev.map(p => p.id === updatedParticipant.id ? updatedParticipant : p)
+                        );
+                    }
+
+                    if (payload.eventType === 'DELETE') {
+                        const deletedId = (payload.old as { id: string }).id;
+                        setParticipants(prev => prev.filter(p => p.id !== deletedId));
+                        setTotalCount(prev => Math.max(0, prev - 1));
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log('Participants channel status:', status);
+            });
+
+        channelRef.current = channel;
+
+        return () => {
+            if (channelRef.current) {
+                supabaseGame.removeChannel(channelRef.current);
+            }
+        };
+    }, [session?.id, roomCode]);
+
     const handleCopyCode = async () => {
         try {
             await navigator.clipboard.writeText(roomCode);
@@ -262,99 +196,65 @@ export default function HostLobbyPage(): React.JSX.Element {
         }
     };
 
-    // End session
-    const handleEndSession = async () => {
-        if (!confirm('Are you sure you want to end this session?')) return;
+    const handleEndSession = () => {
+        setShowExitDialog(true);
+    };
+
+    const handleConfirmExit = async () => {
+        setIsDeleting(true);
+        try {
+            await supabaseGame
+                .from('sessions')
+                .delete()
+                .eq('game_pin', roomCode);
+
+            localStorage.removeItem('hostGamePin');
+            router.push('/host/select-quiz');
+        } catch (err) {
+            console.error('Error deleting session:', err);
+            router.push('/host/select-quiz');
+        } finally {
+            setIsDeleting(false);
+            setShowExitDialog(false);
+        }
+    };
+
+    const handleLaunch = async () => {
+        if (participants.length === 0 || isStarting) return;
+
+        setIsStarting(true);
+        showLoading();
 
         try {
-            await Promise.allSettled([
-                supabase.from('game_sessions').delete().eq('game_pin', roomCode),
-                supabaseGame.from('sessions').delete().eq('game_pin', roomCode)
-            ]);
-            localStorage.removeItem('hostGamePin');
-            router.push('/host');
-        } catch (err) {
-            console.error('Error ending session:', err);
-            router.push('/host');
-        }
-    };
+            // Update session status to 'active'
+            const { error } = await supabaseGame
+                .from('sessions')
+                .update({
+                    status: 'active',
+                    started_at: new Date().toISOString()
+                })
+                .eq('game_pin', roomCode);
 
-    // Start game with countdown
-    const handleLaunch = async () => {
-        if (participants.length === 0) {
-            if (!confirm('No players have joined. Launch anyway?')) {
+            if (error) {
+                console.error('Failed to start game:', error);
+                hideLoading();
+                setIsStarting(false);
                 return;
             }
+
+            router.push(`/host/${roomCode}/game`);
+        } catch (err) {
+            console.error('Error starting game:', err);
+            hideLoading();
+            setIsStarting(false);
         }
-
-        const countdownTime = new Date(getSyncedServerTime()).toISOString();
-
-        const { error } = await supabaseGame
-            .from('sessions')
-            .update({
-                countdown_started_at: countdownTime,
-            })
-            .eq('game_pin', roomCode);
-
-        if (error) {
-            console.error('Start game error:', error);
-            return;
-        }
-
-        setGameStarted(true);
-
-        // Broadcast to all players
-        const broadcastChannel = supabaseGame.channel(`room:${roomCode}`);
-        await broadcastChannel.subscribe();
-        await broadcastChannel.send({
-            type: 'broadcast',
-            event: 'countdown_start',
-            payload: { countdown_started_at: countdownTime }
-        });
-        supabaseGame.removeChannel(broadcastChannel);
     };
 
-    // Kick player
-    const handleKickPlayer = (player: Participant) => {
-        setSelectedPlayer(player);
-        setShowKickDialog(true);
-    };
-
-    const confirmKick = async () => {
-        if (!selectedPlayer || !session) return;
-
-        const { error } = await supabaseGame
-            .from('participants')
-            .delete()
-            .eq('id', selectedPlayer.id)
-            .eq('session_id', session.id);
-
-        if (error) {
-            console.error('Kick error:', error);
-        }
-
-        setShowKickDialog(false);
-        setSelectedPlayer(null);
-    };
-
-    // Countdown overlay
-    if (countdown > 0) {
-        return (
-            <section className="countdown-screen">
-                <div className="countdown-display">
-                    <span className="countdown-number">{countdown}</span>
-                    <span className="countdown-label">GET READY!</span>
-                </div>
-            </section>
-        );
-    }
-
-    // Loading state
     if (loading) {
         return (
             <section className="host-lobby-screen">
-                <div className="loading-container">
-                    <span className="loading-text">Loading...</span>
+                <div className="flex items-center justify-center h-screen">
+                    <div className="loading-spinner" />
                 </div>
             </section>
         );
@@ -365,87 +265,48 @@ export default function HostLobbyPage(): React.JSX.Element {
             {/* Header */}
             <header className="host-header">
                 <div className="host-brand">
-                    <div className="brand-text">
-                        <h1 className="brand-title">ASTRO LEARNING</h1>
-                    </div>
+                    <img
+                        src="/assets/logo2.webp"
+                        alt="Astro Learning"
+                        className="brand-logo-image"
+                    />
                 </div>
-                <div className="host-actions">
-                    <button className="btn-end-session" onClick={handleEndSession}>
-                        <span className="btn-icon">⏻</span>
-                        <span>EXIT</span>
-                    </button>
-                    <button
-                        className="btn-launch"
-                        onClick={handleLaunch}
-                        disabled={gameStarted}
-                    >
-                        <span>{gameStarted ? 'STARTING...' : 'START'}</span>
-                    </button>
-                </div>
+                <img
+                    src="/assets/logo.webp"
+                    alt="Gameforsmart Logo"
+                    className="header-logo"
+                />
             </header>
 
             {/* Main Content */}
             <div className="host-lobby-content">
-                {/* Left Panel - Player Grid */}
-                <div className="host-left-panel">
-                    <div className="panel-header">
-                        <h2 className="panel-title">WAITING FOR PLAYERS</h2>
-                        <div className="connected-count">
-                            <span className="count-label">QUIZ:</span>
-                            <span className="count-value">{quizTitle || 'Loading...'}</span>
-                        </div>
-                        <div className="connected-count">
-                            <span className="count-label">PLAYERS:</span>
-                            <span className="count-value">{totalCount}</span>
-                        </div>
-                        <div className="connected-count">
-                            <span className="count-label">DIFFICULTY:</span>
-                            <span className="count-value">{(session?.difficulty || 'medium').toUpperCase()}</span>
-                        </div>
-                    </div>
-
-                    <div className="player-grid">
-                        {participants.map((player) => (
-                            <div key={player.id} className="player-card" onClick={() => handleKickPlayer(player)}>
-                                <div className="player-icon">
-                                    {player.spacecraft ? (
-                                        <img
-                                            src={`/assets/${player.spacecraft}`}
-                                            alt={player.nickname}
-                                            style={{ width: '40px', height: '30px', objectFit: 'contain' }}
-                                        />
-                                    ) : '🚀'}
-                                </div>
-                                <span className="player-name" title={player.nickname}>{player.nickname}</span>
-                            </div>
-                        ))}
-                        {/* Empty slots */}
-                        {participants.length === 0 && (
-                            <div className="empty-state">
-                                <span className="empty-icon">👥</span>
-                                <span className="empty-text">Waiting for players to join...</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Right Panel - Game Code & QR */}
+                {/* Left Panel - Game Code & QR */}
                 <div className="host-right-panel">
                     <div className="game-code-section">
                         <div className="game-code-display">
                             <span className="game-code">{roomCode}</span>
+                            <button
+                                className={`btn-copy-code-inline ${copySuccess ? 'success' : ''}`}
+                                onClick={handleCopyCode}
+                                title="Copy"
+                            >
+                                {copySuccess ? (
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                ) : (
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                )}
+                            </button>
                         </div>
                         <div className="code-actions">
                             <button
-                                className={`btn-code-action w-full ${copySuccess ? 'success' : ''}`}
-                                onClick={handleCopyCode}
-                            >
-                                <span>{copySuccess ? 'COPIED!' : 'COPY'}</span>
-                            </button>
+                                className="btn-code-action mobile-view"
+                                onClick={() => setShowQRDialog(true)}
+                            />
                         </div>
                     </div>
 
-                    <div className="qr-section">
+                    {/* Desktop QR Section */}
+                    <div className="qr-section desktop-view">
                         <div className="qr-container" onClick={() => setShowQRDialog(true)}>
                             <div className="qr-frame">
                                 <div className="qr-corner top-left"></div>
@@ -462,6 +323,111 @@ export default function HostLobbyPage(): React.JSX.Element {
                             </div>
                         </div>
                     </div>
+
+                    {/* URL Card Panel */}
+                    <div className="url-card-panel">
+                        <div className="url-card compact">
+                            <span className="url-text">
+                                {joinUrl.length > 30
+                                    ? `${joinUrl.substring(0, 30)}...`
+                                    : joinUrl}
+                            </span>
+                            <button
+                                className={`url-copy-btn ${urlCopySuccess ? 'success' : ''}`}
+                                onClick={() => {
+                                    navigator.clipboard.writeText(joinUrl);
+                                    setUrlCopySuccess(true);
+                                    setTimeout(() => setUrlCopySuccess(false), 2000);
+                                }}
+                                title="Copy link"
+                            >
+                                {urlCopySuccess ? (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                ) : (
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Action Bar */}
+                    <div className="lobby-action-bar right-panel-actions">
+                        <button className="btn-end-session" onClick={handleEndSession}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M18 6L6 18M6 6l12 12"></path>
+                            </svg>
+                            <span>EXIT</span>
+                        </button>
+                        <button
+                            className={`btn-launch ${participants.length === 0 ? 'disabled' : ''}`}
+                            onClick={handleLaunch}
+                            disabled={participants.length === 0 || isStarting}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            <span>{isStarting ? 'Starting...' : 'START'}</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Right Panel - Player Grid */}
+                <div className="host-left-panel">
+                    {/* Player Count Badge */}
+                    <div className="player-count-header">
+                        <div className="player-count-badge">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            <span>{totalCount} {totalCount === 1 ? 'Player' : 'Players'}</span>
+                        </div>
+                    </div>
+
+                    {/* Player Grid Container - Scrollable */}
+                    <div className="player-grid-container">
+                        {participants.length === 0 ? (
+                            /* Waiting Animation */
+                            <div className="waiting-animation">
+                                <div className="waiting-icon">
+                                    <img
+                                        src="/assets/waitplayer.webp"
+                                        alt="Waiting players"
+                                        className="waiting-astronaut"
+                                    />
+                                </div>
+                                <p className="waiting-text">Waiting players to join...</p>
+                                <div className="waiting-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Player Cards */
+                            <div className="player-grid">
+                                {participants.map((player) => (
+                                    <div key={player.id} className="player-card">
+                                        <div className="player-icon">
+                                            {player.spacecraft ? (
+                                                <img
+                                                    src={`/assets/${player.spacecraft}`}
+                                                    alt="spacecraft"
+                                                    style={{ width: '40px', height: '30px', objectFit: 'contain' }}
+                                                />
+                                            ) : '🚀'}
+                                        </div>
+                                        <span className="player-name">{player.nickname}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -473,31 +439,12 @@ export default function HostLobbyPage(): React.JSX.Element {
                 joinUrl={joinUrl}
             />
 
-            {/* Kick Dialog */}
-            {showKickDialog && selectedPlayer && (
-                <div className="dialog-overlay">
-                    <div className="dialog-content">
-                        <h3 className="dialog-title">Kick Player?</h3>
-                        <p className="dialog-message">
-                            Remove <strong>{selectedPlayer.nickname}</strong> from the game?
-                        </p>
-                        <div className="dialog-actions">
-                            <button
-                                className="btn-cancel"
-                                onClick={() => setShowKickDialog(false)}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className="btn-confirm"
-                                onClick={confirmKick}
-                            >
-                                Kick
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Exit Confirmation Dialog */}
+            <ExitConfirmationDialog
+                isOpen={showExitDialog}
+                onClose={() => setShowExitDialog(false)}
+                onConfirm={handleConfirmExit}
+            />
         </section>
     );
 }
