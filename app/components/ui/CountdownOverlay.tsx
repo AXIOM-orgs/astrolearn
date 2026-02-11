@@ -44,10 +44,6 @@ export function CountdownOverlay({ isActive, onComplete, targetDate }: Countdown
             <div className="countdown-number">
                 {count}
             </div>
-            {/* Optional: Add some decorative elements */}
-            <div className="absolute bottom-10 text-white/50 font-mono text-sm tracking-widest animate-pulse">
-                LAUNCHING SEQUENCE INITIATED
-            </div>
         </div>
     );
 }

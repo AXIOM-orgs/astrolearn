@@ -1,208 +1,288 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Home, RotateCcw } from 'lucide-react';
-import { getSessionPlayers, clearGameSession, GamePlayer } from '@/lib/gameSession';
+import { supabaseGame } from '@/lib/supabase'; // pastikan path sesuai
+import { useGame } from '@/context/GameContext';
+
+interface Participant {
+  id: string;
+  nickname: string;
+  spacecraft: string;
+  score: number;
+  duration: number | null;
+  finished_at: string | null;
+  joined_at: string;
+}
 
 export default function HostLeaderboardPage(): React.JSX.Element {
-    const router = useRouter();
-    const [players, setPlayers] = useState<GamePlayer[]>([]);
+  const router = useRouter();
+  const params = useParams();
+  const gamePin = params.roomCode as string;
+  const { showLoading, hideLoading } = useGame();
 
-    const [visibleRanks, setVisibleRanks] = useState<number[]>([]);
+  const [players, setPlayers] = useState<Participant[]>([]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [visibleRanks, setVisibleRanks] = useState<number[]>([]);
 
-    // Load players and sort by score
-    useEffect(() => {
-        const sessionPlayers = getSessionPlayers();
-        // Sort by score descending
-        const sorted = [...sessionPlayers].sort((a, b) => b.score - a.score);
-        setPlayers(sorted);
-    }, []);
+  // Fetch session + participants yang sudah selesai
+  useEffect(() => {
+    if (!gamePin) return;
 
-    // Sequential animation for podium (3 -> 2 -> 1)
-    useEffect(() => {
-        if (players.length > 0) {
-            // Reset
-            setVisibleRanks([]);
+    const init = async () => {
+      // Ambil session untuk dapatkan ID
+      const { data: sess } = await supabaseGame
+        .from('sessions')
+        .select('id')
+        .eq('game_pin', gamePin)
+        .single();
 
-            const timers: NodeJS.Timeout[] = [];
+      if (!sess) {
+        router.push('/host');
+        return;
+      }
 
-            // Rank 3 (index 2)
-            if (players.length >= 3) {
-                timers.push(setTimeout(() => {
-                    setVisibleRanks(prev => [...prev, 3]);
-                    const audio = new Audio('/sounds/reveal.mp3'); // Optional sound
-                    audio.volume = 0.5;
-                    audio.play().catch(() => { });
-                }, 500));
+      setSessionId(sess.id);
+
+      // Ambil participants yang sudah finished
+      const { data: parts } = await supabaseGame
+        .from('participants')
+        .select('id, nickname, spacecraft, score, duration, finished_at, joined_at')
+        .eq('session_id', sess.id)
+        .not('finished_at', 'is', null)
+        .order('score', { ascending: false });
+
+      if (parts) {
+        setPlayers(parts);
+      }
+
+      hideLoading();
+    };
+
+    init();
+  }, [gamePin, router]);
+
+  // Realtime update participants (jika ada yang baru selesai setelah leaderboard dibuka)
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const channel = supabaseGame
+      .channel(`leaderboard-${gamePin}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'participants', filter: `session_id=eq.${sessionId}` },
+        payload => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const p = payload.new as Participant;
+            if (p.finished_at) {
+              setPlayers(prev => {
+                const filtered = prev.filter(x => x.id !== p.id);
+                const updated = [...filtered, p];
+                return updated.sort((a, b) => b.score - a.score);
+              });
             }
-
-            // Rank 2 (index 1)
-            if (players.length >= 2) {
-                timers.push(setTimeout(() => {
-                    setVisibleRanks(prev => [...prev, 2]);
-                    const audio = new Audio('/sounds/reveal.mp3');
-                    audio.volume = 0.5;
-                    audio.play().catch(() => { });
-                }, 1500));
-            }
-
-            // Rank 1 (index 0)
-            if (players.length >= 1) {
-                timers.push(setTimeout(() => {
-                    setVisibleRanks(prev => [...prev, 1]);
-                    const audio = new Audio('/sounds/win.mp3'); // Special sound for #1
-                    audio.volume = 0.6;
-                    audio.play().catch(() => { });
-                }, 2500));
-            }
-
-            return () => timers.forEach(timer => clearTimeout(timer));
+          } else if (payload.eventType === 'DELETE') {
+            setPlayers(prev => prev.filter(x => x.id !== payload.old.id));
+          }
         }
-    }, [players]);
+      )
+      .subscribe();
 
-    const handleHome = () => {
-        clearGameSession();
-        router.push('/');
+    return () => {
+      supabaseGame.removeChannel(channel);
     };
+  }, [sessionId, gamePin]);
 
-    const handleRestart = () => {
-        router.push('/host/lobby');
-    };
+  // Sequential reveal podium (tetap sama)
+  useEffect(() => {
+    if (players.length > 0) {
+      setVisibleRanks([]);
 
-    const formatScore = (score: number): string => {
-        return score.toLocaleString();
-    };
+      const timers: NodeJS.Timeout[] = [];
 
-    // Truncate name to first word with ellipsis if there are more words
-    const truncateName = (name: string): { display: string; full: string; isTruncated: boolean } => {
-        const words = name.trim().split(' ');
-        if (words.length > 1) {
-            return { display: `${words[0]}...`, full: name, isTruncated: true };
-        }
-        return { display: name, full: name, isTruncated: false };
-    };
+      if (players.length >= 3) {
+        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 3]), 500));
+      }
+      if (players.length >= 2) {
+        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 2]), 1500));
+      }
+      if (players.length >= 1) {
+        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 1]), 2500));
+      }
 
-    const top3 = players.slice(0, 3);
-    const remaining = players.slice(3);
+      return () => timers.forEach(clearTimeout);
+    }
+  }, [players]);
 
-    return (
-        <section className="leaderboard-screen">
-            {/* Header */}
-            <header className="leaderboard-header">
-                <div className="leaderboard-brand">
-                    <img
-                        src="/assets/logo2.webp"
-                        alt="Astro Learning"
-                        className="brand-logo-image"
-                    />
+  const handleHome = () => {
+    router.push('/');
+  };
+
+  const handleRestart = () => {
+    router.push('/host/select-quiz');
+  };
+
+  const formatScore = (score: number): string => score.toLocaleString();
+
+  const formatDuration = (seconds: number | null): string => {
+    if (!seconds) return '-';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const truncateName = (name: string): { display: string; full: string; isTruncated: boolean } => {
+    const words = name.trim().split(' ');
+    if (words.length > 1) {
+      return { display: `${words[0]}...`, full: name, isTruncated: true };
+    }
+    return { display: name, full: name, isTruncated: false };
+  };
+
+  const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+  const top3 = sortedPlayers.slice(0, 3);
+
+  return (
+    <>
+    <section className="leaderboard-screen">
+      {/* Header - tetap sama */}
+      <header className="leaderboard-header">
+        <div className="leaderboard-brand">
+          <img src="/assets/logo2.webp" alt="Astro Learning" className="brand-logo-image" />
+        </div>
+        <img src="/assets/logo.webp" alt="Gameforsmart Logo" className="header-logo" />
+      </header>
+
+      {/* Floating Buttons - tetap sama */}
+      <button className="floating-btn home-btn" onClick={handleHome} title="Home">
+        <Home size={28} />
+      </button>
+      <button className="floating-btn restart-btn" onClick={handleRestart} title="Restart">
+        <RotateCcw size={28} />
+      </button>
+
+      {/* Podium - tetap sama, tanpa duration */}
+      <div className="vanguard-section">
+        {players.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+            <p>No players participated in this game.</p>
+          </div>
+        ) : (
+          <div className="podium-container">
+            {/* 2nd Place */}
+            {top3[1] && (
+              <div className={`podium-card silver ${visibleRanks.includes(2) ? 'visible' : 'hidden'}`}>
+                <div className="rank-badge">#2</div>
+                <div className="podium-image">
+                  {top3[1].spacecraft ? (
+                    <img src={`/assets/${top3[1].spacecraft}`} alt="spacecraft" />
+                  ) : (
+                    <span style={{ fontSize: '3rem' }}>🚀</span>
+                  )}
                 </div>
-                <img
-                    src="/assets/logo.webp"
-                    alt="Gameforsmart Logo"
-                    className="header-logo"
-                />
-            </header>
-
-            {/* Floating Action Buttons */}
-            <button className="floating-btn home-btn" onClick={handleHome} title="Home">
-                <Home size={28} />
-            </button>
-            <button className="floating-btn restart-btn" onClick={handleRestart} title="Restart">
-                <RotateCcw size={28} />
-            </button>
-
-            {/* The Vanguard - Podium */}
-            <div className="vanguard-section">
-                {/* <h2 className="vanguard-title">THE WINNER</h2> */}
-                {players.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                        <p>No players participated in this game.</p>
-                    </div>
-                ) : (
-                    <div className="podium-container">
-                        {/* 2nd Place - Left */}
-                        {top3[1] && (
-                            <div className={`podium-card silver ${visibleRanks.includes(2) ? 'visible' : 'hidden'}`}>
-                                <div className="rank-badge">#2</div>
-                                <div className="podium-image">
-                                    {top3[1].spacecraft ? (
-                                        <img src={top3[1].spacecraft.image} alt={top3[1].spacecraft.name} />
-                                    ) : (
-                                        <span style={{ fontSize: '3rem' }}>🚀</span>
-                                    )}
-                                </div>
-                                <h3 className="podium-name has-tooltip" data-tooltip={top3[1].username}>
-                                    {truncateName(top3[1].username).display}
-                                </h3>
-                                <div className="podium-score">{formatScore(top3[1].score)}</div>
-                            </div>
-                        )}
-
-                        {/* 1st Place - Center */}
-                        {top3[0] && (
-                            <div className={`podium-card gold center ${visibleRanks.includes(1) ? 'visible' : 'hidden'}`}>
-                                <div className="rank-badge">#1</div>
-                                <div className="podium-image">
-                                    {top3[0].spacecraft ? (
-                                        <img src={top3[0].spacecraft.image} alt={top3[0].spacecraft.name} />
-                                    ) : (
-                                        <span style={{ fontSize: '3.5rem' }}>🚀</span>
-                                    )}
-                                </div>
-                                <h3 className="podium-name has-tooltip" data-tooltip={top3[0].username}>
-                                    {truncateName(top3[0].username).display}
-                                </h3>
-                                <div className="podium-score">{formatScore(top3[0].score)}</div>
-                            </div>
-                        )}
-
-                        {/* 3rd Place - Right */}
-                        {top3[2] && (
-                            <div className={`podium-card bronze ${visibleRanks.includes(3) ? 'visible' : 'hidden'}`}>
-                                <div className="rank-badge">#3</div>
-                                <div className="podium-image">
-                                    {top3[2].spacecraft ? (
-                                        <img src={top3[2].spacecraft.image} alt={top3[2].spacecraft.name} />
-                                    ) : (
-                                        <span style={{ fontSize: '2.5rem' }}>🚀</span>
-                                    )}
-                                </div>
-                                <h3 className="podium-name has-tooltip" data-tooltip={top3[2].username}>
-                                    {truncateName(top3[2].username).display}
-                                </h3>
-                                <div className="podium-score">{formatScore(top3[2].score)}</div>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-
-            {/* Rankings Table */}
-            {remaining.length > 0 && (
-                <div className="rankings-table-container">
-                    <table className="rankings-table">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Player</th>
-                                <th>Score</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {remaining.map((player, index) => (
-                                <tr key={player.id}>
-                                    <td className="rank-cell">#{index + 4}</td>
-                                    <td className="player-cell">
-                                        {player.username}
-                                    </td>
-                                    <td className="score-cell">{formatScore(player.score)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                <h3 className="podium-name has-tooltip" data-tooltip={top3[1].nickname}>
+                  {truncateName(top3[1].nickname).display}
+                </h3>
+                <div className="podium-score">{formatScore(top3[1].score)}</div>
+              </div>
             )}
-        </section>
-    );
+
+            {/* 1st Place */}
+            {top3[0] && (
+              <div className={`podium-card gold center ${visibleRanks.includes(1) ? 'visible' : 'hidden'}`}>
+                <div className="rank-badge">#1</div>
+                <div className="podium-image">
+                  {top3[0].spacecraft ? (
+                    <img src={`/assets/${top3[0].spacecraft}`} alt="spacecraft" />
+                  ) : (
+                    <span style={{ fontSize: '3.5rem' }}>🚀</span>
+                  )}
+                </div>
+                <h3 className="podium-name has-tooltip" data-tooltip={top3[0].nickname}>
+                  {truncateName(top3[0].nickname).display}
+                </h3>
+                <div className="podium-score">{formatScore(top3[0].score)}</div>
+              </div>
+            )}
+
+            {/* 3rd Place */}
+            {top3[2] && (
+              <div className={`podium-card bronze ${visibleRanks.includes(3) ? 'visible' : 'hidden'}`}>
+                <div className="rank-badge">#3</div>
+                <div className="podium-image">
+                  {top3[2].spacecraft ? (
+                    <img src={`/assets/${top3[2].spacecraft}`} alt="spacecraft" />
+                  ) : (
+                    <span style={{ fontSize: '2.5rem' }}>🚀</span>
+                  )}
+                </div>
+                <h3 className="podium-name has-tooltip" data-tooltip={top3[2].nickname}>
+                  {truncateName(top3[2].nickname).display}
+                </h3>
+                <div className="podium-score">{formatScore(top3[2].score)}</div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Rankings Table - tambah kolom Duration */}
+      {sortedPlayers.length > 0 && (
+        <div className="rankings-table-container">
+          <table className="rankings-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Time</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedPlayers.map((player, index) => (
+                <tr key={player.id}>
+                  <td className="rank-cell">#{index + 1}</td>
+                  <td className="player-cell">{player.nickname}</td>
+                  <td className="score-cell">{formatDuration(player.duration)}</td>
+                  <td className="score-cell">{formatScore(player.score)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+    <style jsx>{`
+    .rankings-table {
+  table-layout: fixed;
+  width: 100%; 
+}
+
+.rankings-table th:nth-child(1),
+.rankings-table td:nth-child(1) {
+  width: 10%;
+  text-align: left;
+}
+
+.rankings-table th:nth-child(2),
+.rankings-table td:nth-child(2) {
+  width: 60%;   
+  text-align: left;
+}
+
+.rankings-table th:nth-child(3),
+.rankings-table td:nth-child(3) {
+  width: 15%;         
+  text-align: left;
+}
+
+.rankings-table th:nth-child(4),
+.rankings-table td:nth-child(4) {
+  width: 15%;          
+  text-align: left;
+}
+    `}</style>
+    </>
+  );
 }
