@@ -13,7 +13,7 @@ function generateGamePin(length = 6): string {
     return Array.from({ length }, () => digits[Math.floor(Math.random() * digits.length)]).join('');
 }
 
-const DESKTOP_CARDS_PER_PAGE = 12;
+const DESKTOP_CARDS_PER_PAGE = 8;
 const MOBILE_CARDS_PER_PAGE = 4;
 
 interface Quiz {
@@ -49,8 +49,21 @@ export default function SelectQuizPage(): React.JSX.Element {
     const [isFetching, setIsFetching] = useState(false);
     const [creating, setCreating] = useState(false);
     const [creatingQuizId, setCreatingQuizId] = useState<string | null>(null);
+    const [tooltipData, setTooltipData] = useState<{ title: string; x: number; y: number } | null>(null);
 
     const totalPages = Math.ceil(totalCount / cardsPerPage);
+
+    const handleMouseMove = (e: React.MouseEvent, title: string) => {
+        setTooltipData({
+            title,
+            x: e.clientX,
+            y: e.clientY
+        });
+    };
+
+    const handleMouseLeave = () => {
+        setTooltipData(null);
+    };
 
     // Responsive cards per page
     useEffect(() => {
@@ -296,6 +309,16 @@ export default function SelectQuizPage(): React.JSX.Element {
         return { title: 'No quizzes found', subtitle: 'Try adjusting your search or filter' };
     };
 
+    const getCategoryBadgeClass = (category: string) => {
+        const cat = category.toLowerCase();
+        if (cat.includes('tech') || cat.includes('prog')) return 'badge-technology';
+        if (cat.includes('science') || cat.includes('alam')) return 'badge-science';
+        if (cat.includes('math') || cat.includes('hitung') || cat.includes('penjumlahan')) return 'badge-math';
+        if (cat.includes('history') || cat.includes('sejarah') || cat.includes('umum')) return 'badge-history';
+        if (cat.includes('language') || cat.includes('bahasa')) return 'badge-language';
+        return 'badge-general';
+    };
+
     return (
         <section className="select-quiz-page">
             {/* Navigation Bar */}
@@ -372,11 +395,14 @@ export default function SelectQuizPage(): React.JSX.Element {
                         {quizzes.map((quiz) => {
                             const isFavorite = favorites.includes(quiz.id);
                             const isThisQuizCreating = creatingQuizId === quiz.id;
+                            const badgeClass = getCategoryBadgeClass(quiz.category || '');
                             return (
                                 <div
                                     key={quiz.id}
-                                    className={`quiz-card ${isThisQuizCreating ? 'creating' : ''} ${creating && !isThisQuizCreating ? 'disabled' : ''}`}
+                                    className={`quiz-card relative ${isThisQuizCreating ? 'creating' : ''} ${creating && !isThisQuizCreating ? 'disabled' : ''}`}
                                     onClick={() => !creating && handleStartQuiz(quiz.id)}
+                                    onMouseMove={(e) => handleMouseMove(e, quiz.title)}
+                                    onMouseLeave={handleMouseLeave}
                                     style={{ cursor: creating ? (isThisQuizCreating ? 'wait' : 'not-allowed') : 'pointer' }}
                                 >
                                     <div className="quiz-card-content justify-between">
@@ -393,19 +419,24 @@ export default function SelectQuizPage(): React.JSX.Element {
                                             </button>
                                         </div>
                                         <div className="quiz-card-footer">
-                                            {quiz.category && (
-                                                <span className="category-label">
-                                                    {quiz.category.charAt(0).toUpperCase() + quiz.category.slice(1)}
+                                            <div className="footer-left">
+                                                {quiz.category && (
+                                                    <span className={`category-badge ${badgeClass}`}>
+                                                        {quiz.category.charAt(0).toUpperCase() + quiz.category.slice(1)}
+                                                    </span>
+                                                )}
+                                                <span className="question-count">
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <circle cx="12" cy="12" r="10" />
+                                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                                                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                                                    </svg>
+                                                    {quiz.question_count || 0}
                                                 </span>
-                                            )}
-                                            <span className="question-count">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <circle cx="12" cy="12" r="10" />
-                                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                                                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                                                </svg>
-                                                {quiz.question_count || 0}
-                                            </span>
+                                            </div>
+                                            <button className="btn-card-start">
+                                                START
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -450,6 +481,19 @@ export default function SelectQuizPage(): React.JSX.Element {
                     </svg>
                     <h3 className="empty-state-title">{getEmptyStateMessage().title}</h3>
                     <p className="empty-state-subtitle">{getEmptyStateMessage().subtitle}</p>
+                </div>
+            )}
+
+            {/* Floating Dynamic Tooltip */}
+            {tooltipData && (
+                <div
+                    className="cosmic-dynamic-tooltip"
+                    style={{
+                        left: tooltipData.x + 15,
+                        top: tooltipData.y + 15
+                    }}
+                >
+                    {tooltipData.title}
                 </div>
             )}
         </section>
