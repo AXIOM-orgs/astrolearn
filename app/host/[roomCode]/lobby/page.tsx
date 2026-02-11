@@ -7,6 +7,7 @@ import { useGame } from '@/context/GameContext';
 import { supabaseGame } from '@/lib/supabase';
 import { GameCodeDialog } from '@/app/components/ui/GameCodeDialog';
 import { ExitConfirmationDialog } from '@/app/components/ui/ExitConfirmationDialog';
+import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
 
 interface Participant {
     id: string;
@@ -20,6 +21,7 @@ interface SessionData {
     quiz_id: string;
     game_pin: string;
     status: string;
+    countdown_started_at?: string;
 }
 
 export default function HostLobbyPage(): React.JSX.Element {
@@ -103,9 +105,9 @@ export default function HostLobbyPage(): React.JSX.Element {
                             setSession(newSession);
 
                             if (newSession.status === 'active') {
-                                router.replace(`/host/${roomCode}/game`);
+                                router.replace(`/host/${roomCode}/monitor`);
                             } else if (newSession.status === 'finished') {
-                                router.replace(`/host/${roomCode}/result`);
+                                router.replace(`/host/${roomCode}/leaderboard`);
                             }
                         }
                     )
@@ -219,33 +221,69 @@ export default function HostLobbyPage(): React.JSX.Element {
         }
     };
 
+    // Countdown Logic
+    const [countdownTarget, setCountdownTarget] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (session?.countdown_started_at) {
+            const startDate = new Date(session.countdown_started_at);
+            const targetDate = new Date(startDate.getTime() + 10000); // 10 seconds
+            setCountdownTarget(targetDate.toISOString());
+        } else {
+            setCountdownTarget(null);
+        }
+    }, [session?.countdown_started_at]);
+
     const handleLaunch = async () => {
         if (participants.length === 0 || isStarting) return;
 
         setIsStarting(true);
-        showLoading();
+        // showLoading(); // Removed to show countdown instead
 
         try {
-            // Update session status to 'active'
+            // Start countdown by setting timestamp
+            const now = new Date();
             const { error } = await supabaseGame
                 .from('sessions')
                 .update({
-                    status: 'active',
-                    started_at: new Date().toISOString()
+                    countdown_started_at: now.toISOString(),
+                    // Status remains 'waiting' during countdown
                 })
                 .eq('game_pin', roomCode);
 
             if (error) {
-                console.error('Failed to start game:', error);
-                hideLoading();
+                console.error('Failed to start countdown:', error);
                 setIsStarting(false);
                 return;
             }
 
-            router.push(`/host/${roomCode}/game`);
+            // Optimistic update for immediate feedback
+            setSession(prev => prev ? { ...prev, countdown_started_at: now.toISOString() } : null);
+
+            // The useEffect above will detect the change and show the overlay
+            // We need another effect or timeout to actually start the game after 10s
+            // However, it's safer to let the Host (this component) be the source of truth for the transition
+            setTimeout(async () => {
+                try {
+                    const { error: startError } = await supabaseGame
+                        .from('sessions')
+                        .update({
+                            status: 'active',
+                            started_at: new Date().toISOString()
+                        })
+                        .eq('game_pin', roomCode);
+
+                    if (startError) throw startError;
+
+                    router.replace(`/host/${roomCode}/monitor`);
+                } catch (e) {
+                    console.error("Error transitioning to active:", e);
+                    setIsStarting(false);
+                }
+            }, 10000);
+
         } catch (err) {
-            console.error('Error starting game:', err);
-            hideLoading();
+            console.error('Error initiating launch:', err);
             setIsStarting(false);
         }
     };
@@ -444,6 +482,11 @@ export default function HostLobbyPage(): React.JSX.Element {
                 isOpen={showExitDialog}
                 onClose={() => setShowExitDialog(false)}
                 onConfirm={handleConfirmExit}
+            />
+
+            <CountdownOverlay
+                isActive={!!countdownTarget}
+                targetDate={countdownTarget || undefined}
             />
         </section>
     );

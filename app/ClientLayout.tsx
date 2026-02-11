@@ -4,7 +4,6 @@ import { useEffect, useRef, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
 import { DialogProvider } from '@/context/AlertContext';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import AuthGate from '@/app/components/AuthGate';
 
 interface ClientLayoutProps {
@@ -82,7 +81,6 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
 
     return (
         <DialogProvider>
-            <TooltipProvider>
                 <AuthGate>
                     {/* Loading Overlay */}
                     <div className={`loading-overlay ${!isLoading ? 'hidden' : ''}`} id="loading-overlay">
@@ -97,7 +95,6 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
 
                     {children}
                 </AuthGate>
-            </TooltipProvider>
         </DialogProvider>
     );
 }

@@ -7,6 +7,7 @@ import { useGame } from '@/context/GameContext';
 import { supabaseGame } from '@/lib/supabase';
 import { DialogRocketSelect } from '@/app/components/ui/DialogRocketSelect';
 import { ExitConfirmationDialog } from '@/app/components/ui/ExitConfirmationDialog';
+import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
 import { Spaceship, spaceships } from '@/lib/data';
 
 interface Participant {
@@ -90,7 +91,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
 
             // If already active, redirect to game
             if (fetchedSession.status === 'active') {
-                router.replace(`/player/${roomCode}/game`);
+                router.replace(`/player/${roomCode}/quiz`);
                 return;
             } else if (fetchedSession.status === 'finished') {
                 router.replace(`/player/${roomCode}/result`);
@@ -145,7 +146,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
 
                         if (newSession.status === 'active') {
                             showLoading();
-                            router.replace(`/player/${roomCode}/game`);
+                            router.replace(`/player/${roomCode}/quiz`);
                         } else if (newSession.status === 'finished') {
                             router.replace(`/player/${roomCode}/result`);
                         }
@@ -363,13 +364,13 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="refit-section mt-8">
+                <div className="refit-section mt-8 flex gap-4 justify-center">
                     <button
                         className="btn-exit-player"
                         onClick={() => setShowExitDialog(true)}
                         title="Exit Game"
                     >
-                        <LogOut size={20} />
+                        <LogOut size={24} style={{ transform: 'rotate(180deg)' }} />
                     </button>
                     <button
                         className="btn-refit"
@@ -394,6 +395,11 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                     onConfirm={handleExit}
                 />
             </div>
+
+            <CountdownOverlay
+                isActive={!!session?.countdown_started_at}
+                targetDate={session?.countdown_started_at ? new Date(new Date(session.countdown_started_at).getTime() + 10000).toISOString() : undefined}
+            />
         </section>
     );
 }

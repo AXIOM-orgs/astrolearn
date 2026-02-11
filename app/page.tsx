@@ -57,6 +57,20 @@ export default function LandingPage(): React.JSX.Element {
         }
     };
 
+    const autoJoinAttempted = useRef(false);
+    useEffect(() => {
+        if (loading || autoJoinAttempted.current) return;
+
+        const pendingCode = localStorage.getItem("pendingRoomCode");
+        if (!pendingCode) return;
+
+        // Ada pending code dan user sudah login → redirect ke join page untuk auto-join
+        if (user && profile?.id && !profile.id.startsWith('fallback-')) {
+            autoJoinAttempted.current = true;
+            router.replace(`/join/${pendingCode}`);
+        }
+    }, [loading, user, profile, router]);
+
     const handleCreateRoom = (): void => {
         if (!nickname.trim()) {
             showWarning('Please enter a nickname first!');

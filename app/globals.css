@@ -331,18 +331,20 @@ body::before {
 /* Screen Management */
 .screen {
   display: none;
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   padding: 3rem 2rem;
   position: relative;
   z-index: 1;
-  align-items: center;
+  /* align-items: center; Remove to allow natural flow and scrolling */
   justify-content: center;
-  overflow: hidden;
+  overflow-y: auto; /* Allow scrolling */
+  overflow-x: hidden;
 }
 
 .screen.active {
   display: flex;
+  flex-direction: column; /* Ensure vertical stacking */
   animation: fadeIn 0.5s ease-in-out;
 }
 
@@ -362,7 +364,7 @@ body::before {
 .container {
   width: 100%;
   max-width: 900px;
-  margin: 500px auto;
+  margin: 0 auto; /* Corrected from 500px */
 }
 
 /* Glass Panel Effect */
@@ -532,6 +534,58 @@ input[type="text"]:focus {
   height: 300px;
 }
 
+/* Button styles for Player Waiting Room */
+.btn-exit-player {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 0, 110, 0.1);
+  border: 2px solid rgba(255, 0, 110, 0.3);
+  border-radius: 12px;
+  color: var(--accent-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.btn-exit-player:hover {
+  background: rgba(255, 0, 110, 0.8);
+  border-color: var(--accent-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 0, 110, 0.4);
+}
+
+.btn-refit {
+  height: 50px;
+  padding: 0 1.5rem;
+  background: rgba(70, 167, 187, 0.1);
+  border: 2px solid rgba(70, 167, 187, 0.3);
+  border-radius: 12px;
+  color: var(--primary-color);
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn-refit:hover {
+  background: rgba(70, 167, 187, 0.8);
+  border-color: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(70, 167, 187, 0.4);
+}
+
 /* Option Grid */
 .option-grid {
   display: grid;
@@ -676,7 +730,7 @@ input[type="text"]:focus {
 
 /* Quiz Interface */
 .quiz-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.2rem;
 }
 
 .quiz-info {
@@ -711,7 +765,7 @@ input[type="text"]:focus {
 }
 
 .question-container {
-  margin-top: 2rem;
+  margin-top: 1.2rem;
 }
 
 .question-text {

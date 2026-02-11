@@ -15,7 +15,13 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (user && !loading) {
-            router.replace('/');
+            const pendingCode = localStorage.getItem('pendingRoomCode');
+            if (pendingCode) {
+                localStorage.removeItem('pendingRoomCode');
+                router.replace(`/`);
+            } else {
+                router.replace('/');
+            }
         }
     }, [user, loading, router]);
 
@@ -46,7 +52,7 @@ export default function LoginPage() {
                 password,
             });
             if (error) throw error;
-            router.push('/');
+            // router.push('/'); // Handled by useEffect
         } catch (err: any) {
             setError(err.message || 'An error occurred. Please try again.');
         } finally {
