@@ -9,6 +9,7 @@ import {
     endGameSession,
     GamePlayer
 } from '@/lib/gameSession';
+import { Users } from 'lucide-react';
 
 export default function HostMonitorPage(): React.JSX.Element {
     const router = useRouter();
@@ -74,17 +75,18 @@ export default function HostMonitorPage(): React.JSX.Element {
             {/* Header */}
             <header className="monitor-header">
                 <div className="monitor-brand">
-                    <h1 className="brand-title">ASTRO LEARNING</h1>
+                    <img
+                        src="/assets/logo2.webp"
+                        alt="Astro Learning"
+                        className="brand-logo-image"
+                        style={{ height: 'auto', width: '300px', objectFit: 'contain' }}
+                    />
                 </div>
-
-                <div className="monitor-stats-bar">
-                    <div className="timer-display">
-                        <span className="timer-value">{formatTime(timeRemaining)}</span>
-                    </div>
-                    <button className="btn-end-game" onClick={handleEndGame}>
-                        <span>End Game</span>
-                    </button>
-                </div>
+                <img
+                    src="/assets/logo.webp"
+                    alt="Gameforsmart Logo"
+                    className="header-logo"
+                />
             </header>
 
             {/* Title */}
@@ -93,21 +95,23 @@ export default function HostMonitorPage(): React.JSX.Element {
                 {/* <p className="monitor-subtitle">Real-time mission tracking • {gameState.topicTitle || 'Quiz'}</p> */}
             </div>
 
-            {/* Fleet Capacity Bar */}
-            <div className="fleet-capacity-section">
-                <div className="capacity-header">
-                    <span className="capacity-label">FLEET CAPACITY</span>
-                    <span className="capacity-value">{fleetCapacity}</span>
+            {/* Monitor Info Bar */}
+            <div className="monitor-info-bar">
+                <div className="info-item completion-status">
+                    <Users />
+                    <span className="info-value">{players.length}</span>
                 </div>
-                <div className="capacity-bar">
-                    <div
-                        className="capacity-fill"
-                        style={{ width: `${(players.length / 24) * 100}%` }}
-                    ></div>
+
+                <div className="info-item timer-central">
+                    <div className="timer-display">
+                        <span className="timer-value">{formatTime(timeRemaining)}</span>
+                    </div>
                 </div>
-                <div className="capacity-stats">
-                    <span>{completedPlayers} pilots completed</span>
-                    <span>{players.length - completedPlayers} in progress</span>
+
+                <div className="info-item actions">
+                    <button className="btn-end-game" onClick={handleEndGame}>
+                        <span>End Game</span>
+                    </button>
                 </div>
             </div>
 
@@ -119,8 +123,14 @@ export default function HostMonitorPage(): React.JSX.Element {
                     </div>
                 ) : (
                     players.map((player) => (
-                        <div key={player.id} className="progress-card">
+                        <div key={player.id} className={`progress-card ${player.progress >= 100 ? 'completed' : ''}`}>
                             <div className="progress-card-header">
+                                <div className="progress-bar-container">
+                                    <div
+                                        className={`progress-bar-fill ${player.progress >= 100 ? 'complete' : ''}`}
+                                        style={{ width: `${player.progress}%` }}
+                                    ></div>
+                                </div>
                                 <span className="progress-indicator">
                                     {player.questionsAnswered}/{totalQuestions}
                                 </span>
@@ -136,34 +146,11 @@ export default function HostMonitorPage(): React.JSX.Element {
                                     <div className="progress-icon">🚀</div>
                                 )}
                                 <span className="progress-player-name">{player.username}</span>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--primary-color)' }}>
-                                    Score: {player.score}
-                                </span>
-                            </div>
-                            <div className="progress-bar-container">
-                                <div
-                                    className={`progress-bar-fill ${player.progress >= 100 ? 'complete' : ''}`}
-                                    style={{ width: `${player.progress}%` }}
-                                ></div>
                             </div>
                         </div>
                     ))
                 )}
             </div>
-
-            {/* Footer */}
-            <footer className="monitor-footer">
-                <div className="footer-item">
-                    <span className="footer-dot green"></span>
-                    <span>GAME IN PROGRESS</span>
-                </div>
-                <div className="footer-item">
-                    <span>PLAYERS: {players.length}</span>
-                </div>
-                <div className="footer-item">
-                    <span>COMPLETED: {completedPlayers}</span>
-                </div>
-            </footer>
         </section>
     );
 }
