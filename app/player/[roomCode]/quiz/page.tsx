@@ -33,6 +33,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     // Timer State
     const [timeLeft, setTimeLeft] = useState<number>(0); // Seconds remaining
     const [sessionEndTime, setSessionEndTime] = useState<number | null>(null);
+    const [startTime, setStartTime] = useState<number | null>(null);
 
     const hasBootstrapped = useRef(false);
 
@@ -108,6 +109,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                     const durationMs = session.total_time_minutes * 60 * 1000;
                     const endTime = startTime + durationMs;
                     setSessionEndTime(endTime);
+                    setStartTime(startTime);
                 }
 
                 // Check if game already finished for this player
@@ -138,9 +140,18 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                 .eq('id', participantId);
         }
 
+        // Calculate duration if start time is known
+        const endTs = Date.now();
+        const durationSec = startTime ? Math.floor((endTs - startTime) / 1000) : null;
+
+        setGameState(prev => ({
+            ...prev,
+            duration: durationSec
+        }));
+
         showLoading();
         router.push(`/player/${roomCode}/result`);
-    }, [roomCode, router, showLoading]);
+    }, [roomCode, router, showLoading, startTime, setGameState]);
 
     // Timer Logic
     useEffect(() => {

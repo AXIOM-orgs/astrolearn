@@ -66,6 +66,14 @@ export default function JoinResultsPage(): React.JSX.Element {
         return s[(v - 20) % 10] || s[v] || s[0];
     };
 
+    // Format duration mm:ss
+    const formatDuration = (seconds: number | null): string => {
+        if (seconds === null) return '--:--';
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
     return (
         <section id="screen-results" className="screen active">
             <div className="results-wrapper">
@@ -97,7 +105,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                         boxShadow: '0 4px 20px rgba(255, 0, 68, 0.4)'
                     }}>
                         <span style={{ fontSize: '20px', fontWeight: 'bold', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-                            TERELIMINASI 
+                            TERELIMINASI
                         </span>
                     </div>
                 )}
@@ -121,6 +129,12 @@ export default function JoinResultsPage(): React.JSX.Element {
                             <span id="result-correct">{gameState.correctAnswers}</span>/<span id="result-total">{gameState.selectedQuestions}</span>
                         </span>
                         <span className="result-stat-label">Correct</span>
+                    </div>
+                    <div className="result-stat-card">
+                        <span className="result-stat-value">
+                            {formatDuration(gameState.duration)}
+                        </span>
+                        <span className="result-stat-label">Duration</span>
                     </div>
                 </div>
 

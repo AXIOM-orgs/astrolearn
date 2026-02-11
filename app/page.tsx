@@ -34,7 +34,14 @@ export default function LandingPage(): React.JSX.Element {
 
         const displayName = profile?.nickname || profile?.fullname || profile?.username || user?.email?.split('@')[0] || '';
         setProfileName(displayName);
-        setNickname(displayName); // Initial nickname from profile
+
+        // Check localStorage first
+        const savedNickname = localStorage.getItem(PLAYER_NAME_KEY);
+        if (savedNickname) {
+            setNickname(savedNickname);
+        } else {
+            setNickname(displayName); // Fallback to profile name
+        }
 
         // Check URL params
         const params = new URLSearchParams(window.location.search);
@@ -175,14 +182,14 @@ export default function LandingPage(): React.JSX.Element {
             {/* Profile Indicator */}
             <button className="profile-indicator" onClick={toggleSidebar}>
                 <div className="profile-info">
-                    <span className="profile-name">{profileName || 'Pilot'}</span>
-                    <div className="profile-avatar">
+                    <span className="profile-name">{profileName}</span>
+                    <div className="profile-avatar shrink-0 w-8 h-8 md:w-9 md:h-9">
                         {/* Use profile avatar or default */}
                         {profile?.avatar_url ? (
                             <img src={profile.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
                         ) : (
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="12" cy="8" r="4" />
+                                <circle cx="12" cy="12" r="4" />
                                 <path d="M12 14c-6 0-8 3-8 6v1h16v-1c0-3-2-6-8-6z" />
                             </svg>
                         )}
@@ -266,7 +273,7 @@ export default function LandingPage(): React.JSX.Element {
                                 ref={nicknameInputRef}
                                 type="text"
                                 className="landing-input"
-                                placeholder="Username"
+                                placeholder="Nickname"
                                 value={nickname}
                                 onChange={(e) => handleNicknameChange(e.target.value)}
                                 maxLength={20}

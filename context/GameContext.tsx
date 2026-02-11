@@ -26,6 +26,7 @@ export interface GameState {
     miniGamesCompleted: number;
     gameStats: GameStats;
     isEliminated: boolean;
+    duration: number | null;
 }
 
 // Context Interface
@@ -58,7 +59,8 @@ const initialGameState: GameState = {
         bossDestroyed: false,
         success: false
     },
-    isEliminated: false
+    isEliminated: false,
+    duration: null
 };
 
 // Create Context
