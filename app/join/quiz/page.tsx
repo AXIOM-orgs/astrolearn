@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
 import { getCurrentPlayer, updatePlayerProgress } from '@/lib/gameSession';
+import { Timer } from 'lucide-react';
 
 export default function JoinQuizPage(): React.JSX.Element | null {
     const router = useRouter();
@@ -14,6 +15,20 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     const [showCountdown, setShowCountdown] = useState<boolean>(false);
     const [countdownNumber, setCountdownNumber] = useState<number>(3);
     const [isFreezing, setIsFreezing] = useState<boolean>(false); // Freeze overlay to prevent question leak
+    const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const formatTime = (seconds: number): string => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
 
     // Redirect if no questions
     useEffect(() => {
@@ -36,6 +51,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     };
 
     const scorePerQuestion = getScorePerQuestion();
+    const currentScore = gameState.correctAnswers * scorePerQuestion;
 
     // Sync progress to session
     const syncProgress = (questionsAnswered: number, score: number) => {
@@ -155,14 +171,37 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                 }} />
             )}
 
-            <section id="screen-quiz" className="screen active">
+            <section id="screen-quiz" className="screen active quiz-background">
                 <div className="container">
+                    {/* Quiz Page Header */}
+                    <header className="quiz-page-header">
+                        <div className="brand-left">
+                            <img src="/assets/logo2.webp" alt="Space Quiz" className="quiz-logo-left" />
+                        </div>
+                        <div className="brand-right">
+                            <img src="/assets/logo.webp" alt="Gameforsmart" className="quiz-logo-right" />
+                        </div>
+                    </header>
+
                     <div className="glass-panel">
                         <div className="quiz-header">
-                            <div className="quiz-info">
-                                <span className="quiz-counter">
-                                    Question <span id="current-question">{gameState.currentQuestionIndex + 1}</span> / <span id="total-questions">{gameState.selectedQuestions}</span>
-                                </span>
+                            <div className="quiz-meta-row">
+                                <div className="quiz-meta-left">
+                                    <span className="quiz-counter">
+                                        Question <span className="highlight-text">{gameState.currentQuestionIndex + 1}</span> / {gameState.selectedQuestions}
+                                    </span>
+                                </div>
+                                <div className="quiz-meta-center">
+                                    <div className="quiz-timer">
+                                        <Timer className="timer-icon" size={18} />
+                                        <span className="timer-text">{formatTime(timeLeft)}</span>
+                                    </div>
+                                </div>
+                                <div className="quiz-meta-right">
+                                    <div className="quiz-score">
+                                        Score: <span className="highlight-text warning">{currentScore}</span>
+                                    </div>
+                                </div>
                             </div>
                             <div className="progress-bar">
                                 <div className="progress-fill" id="progress-fill" style={{ width: `${progress}%` }}></div>
@@ -181,7 +220,8 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                                         onClick={() => checkAnswer(index)}
                                         disabled={buttonsDisabled}
                                     >
-                                        {option}
+                                        <div className="answer-label">{String.fromCharCode(65 + index)}</div>
+                                        <div className="answer-text">{option}</div>
                                     </button>
                                 ))}
                             </div>
