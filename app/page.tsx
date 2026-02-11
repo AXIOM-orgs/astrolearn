@@ -75,7 +75,7 @@ export default function LandingPage(): React.JSX.Element {
             const { data, error } = await supabaseGame.rpc('join_game', {
                 p_room_code: code,
                 p_nickname: name,
-                p_user_id: user?.id || null
+                p_user_id: profile?.id || null
             });
 
             if (error) {
