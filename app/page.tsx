@@ -57,44 +57,7 @@ export default function LandingPage(): React.JSX.Element {
         }
     };
 
-    const autoJoinAttempted = useRef(false);
-    useEffect(() => {
-        if (loading || autoJoinAttempted.current) return;
-
-        const pendingCode = localStorage.getItem("pendingRoomCode");
-        if (!pendingCode) return;
-
-        // Ada pending code dan user sudah login → redirect ke join page untuk auto-join
-        if (user && profile?.id && !profile.id.startsWith('fallback-')) {
-            autoJoinAttempted.current = true;
-            router.replace(`/join/${pendingCode}`);
-        }
-    }, [loading, user, profile, router]);
-
-    const handleCreateRoom = (): void => {
-        if (!nickname.trim()) {
-            showWarning('Please enter a nickname first!');
-            return;
-        }
-
-        localStorage.setItem(PLAYER_NAME_KEY, nickname);
-        setGameState(prev => ({ ...prev, playerName: nickname }));
-
-        showLoading();
-        setTimeout(() => {
-            router.push('/host/select-quiz');
-        }, 500);
-    };
-
-    const handleLaunchMission = async (): Promise<void> => {
-        if (!sectorCode.trim()) {
-            showWarning('Please enter a game code!');
-            return;
-        }
-        if (!nickname.trim()) {
-            showWarning('Please enter a nickname!');
-            return;
-        }
+    const executeJoinGame = async (code: string, name: string): Promise<void> => {
         if (isJoining) return;
 
         setIsJoining(true);
@@ -103,8 +66,8 @@ export default function LandingPage(): React.JSX.Element {
         try {
             // Call Supabase RPC to join game
             const { data, error } = await supabaseGame.rpc('join_game', {
-                p_room_code: sectorCode.trim(),
-                p_nickname: nickname.trim(),
+                p_room_code: code,
+                p_nickname: name,
                 p_user_id: user?.id || null
             });
 
@@ -137,25 +100,70 @@ export default function LandingPage(): React.JSX.Element {
             }
 
             // Success - save to localStorage and navigate
-            localStorage.setItem(PLAYER_NAME_KEY, nickname);
-            localStorage.setItem(GAME_CODE_KEY, sectorCode.trim());
+            localStorage.setItem(PLAYER_NAME_KEY, name);
+            localStorage.setItem(GAME_CODE_KEY, code);
             localStorage.setItem('cosmicquest_participant_id', data.participant_id);
             localStorage.setItem('cosmicquest_session_id', data.session_id);
             localStorage.setItem('cosmicquest_spacecraft', data.spacecraft || '');
 
+            // Clean up pending code
+            localStorage.removeItem('pendingRoomCode');
+
             setGameState(prev => ({
                 ...prev,
-                playerName: nickname
+                playerName: name
             }));
 
             // Navigate to select character page
-            router.push(`/player/${sectorCode.trim()}/waiting`);
+            router.push(`/player/${code}/waiting`);
         } catch (err) {
             console.error('Join game exception:', err);
             showError('Something went wrong. Please try again.');
             hideLoading();
             setIsJoining(false);
         }
+    };
+
+    const autoJoinAttempted = useRef(false);
+    useEffect(() => {
+        if (loading || autoJoinAttempted.current) return;
+
+        const pendingCode = localStorage.getItem("pendingRoomCode");
+
+        // Ada pending code dan user sudah login → auto-join langsung
+        if (pendingCode && user && profile?.id) {
+            autoJoinAttempted.current = true;
+            const nameToUse = profile.nickname || profile.fullname || user.email?.split('@')[0] || nickname;
+            executeJoinGame(pendingCode, nameToUse);
+        }
+    }, [loading, user, profile, router, nickname]);
+
+    const handleCreateRoom = (): void => {
+        if (!nickname.trim()) {
+            showWarning('Please enter a nickname first!');
+            return;
+        }
+
+        localStorage.setItem(PLAYER_NAME_KEY, nickname);
+        setGameState(prev => ({ ...prev, playerName: nickname }));
+
+        showLoading();
+        setTimeout(() => {
+            router.push('/host/select-quiz');
+        }, 500);
+    };
+
+    const handleLaunchMission = async (): Promise<void> => {
+        if (!sectorCode.trim()) {
+            showWarning('Please enter a game code!');
+            return;
+        }
+        if (!nickname.trim()) {
+            showWarning('Please enter a nickname!');
+            return;
+        }
+
+        await executeJoinGame(sectorCode.trim(), nickname.trim());
     };
 
     const toggleSidebar = (): void => {

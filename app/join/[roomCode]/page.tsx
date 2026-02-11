@@ -71,7 +71,7 @@ export default function AutoJoinPage() {
         }
 
         // Tunggu profile loaded
-        if (!profile?.id || profile.id.startsWith('fallback-')) return;
+        if (!profile?.id) return;
 
         hasAttempted.current = true;
 
