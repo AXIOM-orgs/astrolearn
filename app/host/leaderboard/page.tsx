@@ -132,7 +132,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                                         <span style={{ fontSize: '3rem' }}>🚀</span>
                                     )}
                                 </div>
-                                <h3 className="podium-name" title={top3[1].username}>
+                                <h3 className="podium-name has-tooltip" data-tooltip={top3[1].username}>
                                     {truncateName(top3[1].username).display}
                                 </h3>
                                 <div className="podium-score">{formatScore(top3[1].score)}</div>
@@ -150,7 +150,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                                         <span style={{ fontSize: '3.5rem' }}>🚀</span>
                                     )}
                                 </div>
-                                <h3 className="podium-name" title={top3[0].username}>
+                                <h3 className="podium-name has-tooltip" data-tooltip={top3[0].username}>
                                     {truncateName(top3[0].username).display}
                                 </h3>
                                 <div className="podium-score">{formatScore(top3[0].score)}</div>
@@ -168,7 +168,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                                         <span style={{ fontSize: '2.5rem' }}>🚀</span>
                                     )}
                                 </div>
-                                <h3 className="podium-name" title={top3[2].username}>
+                                <h3 className="podium-name has-tooltip" data-tooltip={top3[2].username}>
                                     {truncateName(top3[2].username).display}
                                 </h3>
                                 <div className="podium-score">{formatScore(top3[2].score)}</div>
@@ -193,8 +193,8 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                             {remaining.map((player, index) => (
                                 <tr key={player.id}>
                                     <td className="rank-cell">#{index + 4}</td>
-                                    <td className="player-cell" title={player.username}>
-                                        {truncateName(player.username).display}
+                                    <td className="player-cell">
+                                        {player.username}
                                     </td>
                                     <td className="score-cell">{formatScore(player.score)}</td>
                                 </tr>
