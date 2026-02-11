@@ -3,12 +3,22 @@
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 export type WeaponType = 'spread' | 'laser' | 'magnetic';
 
+export interface AnswerOption {
+    id: string;
+    answer: string;
+    image: string | null;
+}
+
 export interface QuizQuestion {
-    id: number;
-    difficulty: DifficultyLevel;
+    id: string | number; // Support both for backward compatibility
+    difficulty?: DifficultyLevel;
     question: string;
-    options: string[];
-    correctAnswer: number;
+    options?: string[]; // Legacy
+    answers?: AnswerOption[]; // New structure
+    correctAnswer?: number; // Legacy
+    correct?: string; // New structure (ID of correct answer)
+    image?: string | null;
+    type?: string;
 }
 
 export interface Spaceship {
