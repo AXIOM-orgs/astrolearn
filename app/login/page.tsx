@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import { AtSign, Lock, Eye, EyeOff } from 'lucide-react';
+import { Lock, Eye, EyeOff, Mail } from 'lucide-react';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -137,9 +137,9 @@ export default function LoginPage() {
         fontWeight: 700,
         textTransform: 'uppercase',
         letterSpacing: '2px',
-        background: 'linear-gradient(45deg, var(--primary-color), var(--secondary-color))',
+        background: 'linear-gradient(180deg, #22d3ee 0%, #06b6d4 100%)', // Cyan Gradient (Top Light -> Bottom Dark)
         border: 'none',
-        borderBottom: '4px solid #5a2d9c',
+        borderBottom: '4px solid #0891b2', // Darker Cyan/Teal
         borderRadius: '12px',
         color: 'white',
         cursor: isLoading ? 'not-allowed' : 'pointer',
@@ -149,7 +149,7 @@ export default function LoginPage() {
     };
 
     return (
-        <section className="screen active" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', backgroundColor: 'rgba(0, 0, 0, 0.010)' }}>
+        <section className="screen active login-page-bg" style={{ alignItems: 'center', justifyContent: 'center' }}>
             {/* Brand Logos - Outside Card */}
             <img
                 className="desktop-view"
@@ -194,7 +194,16 @@ export default function LoginPage() {
                 }}></div>
 
                 <div style={{ textAlign: 'center', marginBottom: '1rem', position: 'relative', zIndex: 1 }}>
-                    <h1 className="neon-title" style={{ fontSize: '3rem', marginBottom: '0.25rem', letterSpacing: '0.1rem', fontWeight: '800' }}>
+                    <h1 className="neon-title" style={{
+                        fontSize: '3rem',
+                        marginBottom: '0.25rem',
+                        letterSpacing: '0.1rem',
+                        fontWeight: '800',
+                        background: 'linear-gradient(180deg, #E0F7FA 0%, #00E5FF 100%)', // White/Light Cyan to Cyan
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        filter: 'drop-shadow(0 0 10px rgba(0, 229, 255, 0.5))'
+                    }}>
                         LOGIN
                     </h1>
                 </div>
@@ -253,7 +262,7 @@ export default function LoginPage() {
                             EMAIL OR USERNAME
                         </label>
                         <div style={{ position: 'relative' }}>
-                            <AtSign size={18} style={iconStyle} />
+                            <Mail size={18} style={iconStyle} />
                             <input
                                 type="text"
                                 value={identifier}
@@ -309,19 +318,19 @@ export default function LoginPage() {
                         onMouseDown={(e) => {
                             if (!isLoading) {
                                 e.currentTarget.style.transform = 'translateY(2px)';
-                                e.currentTarget.style.borderBottom = '2px solid #5a2d9c';
+                                e.currentTarget.style.borderBottom = '2px solid #0891b2';
                             }
                         }}
                         onMouseUp={(e) => {
                             if (!isLoading) {
                                 e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.borderBottom = '4px solid #5a2d9c';
+                                e.currentTarget.style.borderBottom = '4px solid #0891b2';
                             }
                         }}
                         onMouseLeave={(e) => {
                             if (!isLoading) {
                                 e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.borderBottom = '4px solid #5a2d9c';
+                                e.currentTarget.style.borderBottom = '4px solid #0891b2';
                             }
                         }}
                     >
@@ -342,21 +351,21 @@ export default function LoginPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                                color: '#a855f7', // Purple/Violet Neon
+                                color: '#22d3ee', // Lighter Cyan
                                 fontWeight: '700', // Bold
                                 textDecoration: 'none', // Remove underline
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
-                                textShadow: '0 0 10px rgba(168, 85, 247, 0.5)' // Glow effect
+                                textShadow: '0 0 10px rgba(34, 211, 238, 0.5)' // Cyan Glow
                             }}
                             onMouseOver={(e) => {
-                                e.currentTarget.style.color = '#c084fc';
-                                e.currentTarget.style.textShadow = '0 0 15px rgba(192, 132, 252, 0.8)';
+                                e.currentTarget.style.color = '#67e8f9'; // Even lighter on hover
+                                e.currentTarget.style.textShadow = '0 0 15px rgba(103, 232, 249, 0.8)';
                                 e.currentTarget.style.textDecoration = 'underline';
                             }}
                             onMouseOut={(e) => {
-                                e.currentTarget.style.color = '#a855f7';
-                                e.currentTarget.style.textShadow = '0 0 10px rgba(168, 85, 247, 0.5)';
+                                e.currentTarget.style.color = '#22d3ee';
+                                e.currentTarget.style.textShadow = '0 0 10px rgba(34, 211, 238, 0.5)';
                                 e.currentTarget.style.textDecoration = 'none';
                             }}
                         >
