@@ -162,7 +162,6 @@ let onComplete: MiniGameCallback | null = null;
 let callbackCalled: boolean = false;
 
 // ============ OBJECT POOLING SYSTEM ============
-// Reduces garbage collection by reusing objects instead of creating/destroying
 
 interface ObjectPool<T> {
     pool: T[];
