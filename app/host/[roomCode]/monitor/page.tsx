@@ -154,7 +154,7 @@ export default function HostMonitorPage(): React.JSX.Element {
                 payload => {
                     setSession(payload.new as Session);
                     if (payload.new.status === 'finished') {
-                        setTimeout(() => router.push('/host/leaderboard'), 1500);
+                        setTimeout(() => router.push(`/host/${gamePin}/leaderboard`), 1500);
                     }
                 }
             )
@@ -222,7 +222,7 @@ export default function HostMonitorPage(): React.JSX.Element {
 
             if (partError) throw partError;
 
-            router.push('/host/leaderboard');
+            router.push(`/host/${gamePin}/leaderboard`);
         } catch (err) {
             hideLoading();
             console.error('Gagal mengakhiri game:', err);
