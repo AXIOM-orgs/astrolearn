@@ -13,24 +13,10 @@ interface ClientLayoutProps {
 export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element {
     const { isLoading } = useGame();
     const pathname = usePathname();
-    const customCursorRef = useRef<HTMLDivElement | null>(null);
     const fallingAsteroidsRef = useRef<HTMLDivElement | null>(null);
 
-    // Initialize custom cursor and falling asteroids
+    // Initialize falling asteroids
     useEffect(() => {
-        // Custom cursor
-        const customCursor = document.createElement('div');
-        customCursor.className = 'custom-cursor';
-        customCursor.innerHTML = '<div class="cursor-asteroid"></div>';
-        document.body.appendChild(customCursor);
-        customCursorRef.current = customCursor;
-
-        const handleMouseMove = (e: MouseEvent): void => {
-            customCursor.style.left = e.clientX + 'px';
-            customCursor.style.top = e.clientY + 'px';
-        };
-        document.addEventListener('mousemove', handleMouseMove);
-
         // Falling asteroids container
         const fallingAsteroidsContainer = document.createElement('div');
         fallingAsteroidsContainer.className = 'falling-asteroids';
@@ -65,36 +51,27 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
 
         // Cleanup
         return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
             clearInterval(asteroidInterval);
-            customCursor.remove();
             fallingAsteroidsContainer.remove();
         };
     }, []);
 
-    // Hide cursor when mini-game is active
-    useEffect(() => {
-        if (customCursorRef.current) {
-            customCursorRef.current.style.display = pathname === '/join/game' ? 'none' : 'block';
-        }
-    }, [pathname]);
-
     return (
         <DialogProvider>
-                <AuthGate>
-                    {/* Loading Overlay */}
-                    <div className={`loading-overlay ${!isLoading ? 'hidden' : ''}`} id="loading-overlay">
-                        <img src="/assets/loading.gif" alt="Loading" className="loading-gif" />
-                        <div className="loading-text">Loading...</div>
-                    </div>
+            <AuthGate>
+                {/* Loading Overlay */}
+                <div className={`loading-overlay ${!isLoading ? 'hidden' : ''}`} id="loading-overlay">
+                    <img src="/assets/loading.gif" alt="Loading" className="loading-gif" />
+                    <div className="loading-text">Loading...</div>
+                </div>
 
-                    {/* Animated Background */}
-                    <div className="stars"></div>
-                    <div className="stars2"></div>
-                    <div className="stars3"></div>
+                {/* Animated Background */}
+                <div className="stars"></div>
+                <div className="stars2"></div>
+                <div className="stars3"></div>
 
-                    {children}
-                </AuthGate>
+                {children}
+            </AuthGate>
         </DialogProvider>
     );
 }

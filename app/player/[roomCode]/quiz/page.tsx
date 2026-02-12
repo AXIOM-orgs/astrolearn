@@ -394,30 +394,57 @@ export default function JoinQuizPage(): React.JSX.Element | null {
             )}
 
             <section id="screen-quiz" className="screen active">
-                <div className="container">
+                {/* Background is handled by CSS on #screen-quiz */}
+
+                <div className="container" style={{ maxWidth: '850px', zIndex: 2 }}>
+
+                    {/* Logos Header */}
+                    <div className="quiz-logo-header">
+                        <Image
+                            src="/assets/logo2.webp"
+                            alt="Logo Left"
+                            width={150}
+                            height={50}
+                            className="quiz-logo-left"
+                            unoptimized
+                        />
+                        <Image
+                            src="/assets/logo.webp"
+                            alt="Logo Right"
+                            width={150}
+                            height={50}
+                            className="quiz-logo-right"
+                            unoptimized
+                        />
+                    </div>
+
                     <div className="glass-panel">
-                        <div className="quiz-header flex justify-between">
-                            <div className="quiz-info">
-                                <span className="quiz-counter text-xl md:text-2xl font-bold text-primary flex items-baseline">
-                                    Questions&nbsp;<span id="current-question" className="text-2xl">{gameState.currentQuestionIndex + 1}</span>
-                                    <span className="text-gray-400 text-lg mx-1">/</span>
-                                    <span id="total-questions" className="text-lg">{gameState.selectedQuestions}</span>
+
+                        {/* Header: Question Count | Timer | Score */}
+                        <div className="quiz-header-grid">
+                            <div className="quiz-info-left">
+                                <span className="text-xl md:text-md font-bold text-white font-orbitron">
+                                    Question <span className="text-primary">{gameState.currentQuestionIndex + 1}</span> <span className="text-gray-500 text-lg">/ {gameState.selectedQuestions}</span>
                                 </span>
                             </div>
-                            <div className="quiz-timer">
-                                <div className={`flex items-center gap-2 text-xl md:text-2xl font-mono ${timeLeft < 30 ? 'text-red-500 animate-pulse' : 'text-cyan-400'}`}>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                    <span>{formatTime(timeLeft)}</span>
-                                </div>
+
+                            <div className={`timer-pill ${timeLeft < 10 ? 'urgent' : ''}`}>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                <span>{formatTime(timeLeft)}</span>
+                            </div>
+
+                            <div className="quiz-info-right">
+                                Score: <span className="text-yellow-400">{gameState.score}</span>
                             </div>
                         </div>
 
-                        {/* Divider */}
-                        <div style={{
-                            height: '1px',
-                            background: 'linear-gradient(90deg, transparent, rgba(6, 255, 165, 0.3), transparent)',
-                            marginBottom: '1rem'
-                        }} />
+                        {/* Progress Bar */}
+                        <div className="quiz-progress-container">
+                            <div
+                                className="quiz-progress-bar"
+                                style={{ width: `${((gameState.currentQuestionIndex + 1) / gameState.selectedQuestions) * 100}%` }}
+                            />
+                        </div>
 
                         <div className="question-container">
                             {/* Question Image */}
@@ -428,55 +455,68 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                                         alt="Question"
                                         width={600}
                                         height={400}
-                                        className="rounded-lg max-h-80 object-contain cursor-pointer shadow-lg"
+                                        className="rounded-lg max-h-80 object-contain cursor-pointer shadow-lg hover:scale-105 transition-transform duration-300"
                                         unoptimized
                                         onClick={() => setZoomedImage(currentQuestion.image!)}
                                     />
                                 </div>
                             )}
 
-                            <h3 className="question-text text-left text-xl md:text-2xl mb-8" id="question-text">
+                            {/* Centered Question Text */}
+                            <h3 className="question-text-centered">
                                 {currentQuestion.question}
                             </h3>
 
-                            <div className="answers-grid grid grid-cols-1 md:grid-cols-2 gap-4" id="answers-grid">
-                                {(currentQuestion.answers || []).map((ans: any, index: number) => (
-                                    <button
-                                        key={index}
-                                        className={`answer-btn relative flex items-center gap-4 p-4 text-left transition-all hover:bg-white/10 ${answeredIndex === index
-                                            ? index === correctIndex
-                                                ? 'correct !bg-green-500/20 !border-green-500' // Selected & Correct
-                                                : 'incorrect !bg-red-500/20 !border-red-500'   // Selected & Incorrect
-                                            : ''
-                                            }`}
-                                        onClick={() => checkAnswer(index)}
-                                        disabled={buttonsDisabled}
-                                    >
-                                        <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-primary/20 text-primary font-bold rounded-lg border border-primary/30">
-                                            {String.fromCharCode(65 + index)}
-                                        </div>
+                            {/* New Answer Grid */}
+                            <div className="answers-grid-new">
+                                {(currentQuestion.answers || []).map((ans: any, index: number) => {
+                                    const letter = String.fromCharCode(65 + index); // A, B, C, D
 
-                                        <div className="flex-grow">
-                                            {ans.image && (
-                                                <div className="mb-2">
-                                                    <Image
-                                                        src={ans.image}
-                                                        alt={`Option ${String.fromCharCode(65 + index)}`}
-                                                        width={200}
-                                                        height={150}
-                                                        className="rounded-md max-h-32 object-contain cursor-pointer"
-                                                        unoptimized
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setZoomedImage(ans.image);
-                                                        }}
-                                                    />
-                                                </div>
-                                            )}
-                                            <span className="text-lg">{ans.answer}</span>
-                                        </div>
-                                    </button>
-                                ))}
+                                    // Determine button state class
+                                    let stateClass = '';
+                                    if (answeredIndex === index) {
+                                        stateClass = 'selected';
+                                        if (correctIndex !== null) {
+                                            stateClass = index === correctIndex ? 'correct' : 'incorrect';
+                                        }
+                                    }
+
+                                    return (
+                                        <button
+                                            key={index}
+                                            className={`answer-card ${buttonsDisabled ? 'disabled' : ''} ${stateClass}`}
+                                            onClick={() => checkAnswer(index)}
+                                            disabled={buttonsDisabled}
+                                        >
+                                            <div className="option-letter-box">
+                                                {letter}
+                                            </div>
+
+                                            <div className="answer-content">
+                                                {ans.image ? (
+                                                    <div className="flex flex-col gap-2 w-full">
+                                                        <div className="h-32 relative w-full">
+                                                            <Image
+                                                                src={ans.image}
+                                                                alt={`Option ${letter}`}
+                                                                fill
+                                                                className="object-contain rounded-md"
+                                                                unoptimized
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setZoomedImage(ans.image);
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-center">{ans.answer}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span>{ans.answer}</span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

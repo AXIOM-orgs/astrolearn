@@ -315,6 +315,8 @@ export default function SelectQuizPage(): React.JSX.Element {
         if (cat.includes('science') || cat.includes('alam')) return 'badge-science';
         if (cat.includes('math') || cat.includes('hitung') || cat.includes('penjumlahan')) return 'badge-math';
         if (cat.includes('history') || cat.includes('sejarah') || cat.includes('umum')) return 'badge-history';
+        if (cat.includes('business') || cat.includes('ekonomi') || cat.includes('bisnis')) return 'badge-business';
+        if (cat.includes('sport') || cat.includes('olahraga')) return 'badge-sports';
         if (cat.includes('language') || cat.includes('bahasa')) return 'badge-language';
         return 'badge-general';
     };
@@ -400,14 +402,17 @@ export default function SelectQuizPage(): React.JSX.Element {
                                 <div
                                     key={quiz.id}
                                     className={`quiz-card relative ${isThisQuizCreating ? 'creating' : ''} ${creating && !isThisQuizCreating ? 'disabled' : ''}`}
-                                    onClick={() => !creating && handleStartQuiz(quiz.id)}
-                                    onMouseMove={(e) => handleMouseMove(e, quiz.title)}
-                                    onMouseLeave={handleMouseLeave}
-                                    style={{ cursor: creating ? (isThisQuizCreating ? 'wait' : 'not-allowed') : 'pointer' }}
+                                    style={{ cursor: creating ? (isThisQuizCreating ? 'wait' : 'not-allowed') : 'default' }}
                                 >
                                     <div className="quiz-card-content justify-between">
                                         <div className="quiz-card-header">
-                                            <h3 className="quiz-card-title line-clamp-3">{quiz.title}</h3>
+                                            <h3
+                                                className="quiz-card-title line-clamp-3"
+                                                onMouseMove={(e) => handleMouseMove(e, quiz.title)}
+                                                onMouseLeave={handleMouseLeave}
+                                            >
+                                                {quiz.title}
+                                            </h3>
                                             <button
                                                 className={`card-favorite-btn ${isFavorite ? 'active' : ''}`}
                                                 onClick={(e) => { e.stopPropagation(); toggleFavorite(quiz.id); }}
@@ -434,7 +439,10 @@ export default function SelectQuizPage(): React.JSX.Element {
                                                     {quiz.question_count || 0}
                                                 </span>
                                             </div>
-                                            <button className="btn-card-start">
+                                            <button
+                                                className="btn-card-start"
+                                                onClick={() => !creating && handleStartQuiz(quiz.id)}
+                                            >
                                                 START
                                             </button>
                                         </div>
