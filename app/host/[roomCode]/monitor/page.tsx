@@ -356,9 +356,9 @@ export default function HostMonitorPage(): React.JSX.Element {
             </header>
 
             {/* Title */}
-            <div className="monitor-title-section">
+            {/* <div className="monitor-title-section">
                 <h2 className="monitor-title">MONITOR</h2>
-            </div>
+            </div> */}
 
             {/* Monitor Info Bar */}
             <div className="monitor-info-bar">

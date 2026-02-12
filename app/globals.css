@@ -1282,7 +1282,6 @@ input[type="text"]:focus {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
   width: 100%;
   max-width: 700px;
   margin: 0 auto;
@@ -4291,7 +4290,7 @@ input[type="text"]:focus {
 .monitor-title {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
   font-size: 3.5rem;
-  font-weight: 900;
+  font-weight: 300;
   text-align: center;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -5071,8 +5070,7 @@ input[type="text"]:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0;
-  margin-bottom: 1.5rem;
+  margin-top: -80px;
 }
 
 .waiting-brand {
@@ -6222,4 +6220,29 @@ input[type="text"]:focus {
   background-position: center !important;
   background-repeat: no-repeat !important;
   background-blend-mode: normal, luminosity, overlay, normal !important;
+}
+
+/* ----------------------
+   RESULT PAGE
+   ---------------------- */
+.result-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 1rem 2rem;
+  position: relative;
+  z-index: 10;
+  background-color: #0c1229 !important;
+  background-image:
+    linear-gradient(to bottom, rgba(5, 8, 20, 0.3), rgba(5, 8, 20, 0.6)),
+    url('/assets/bgbarucuy.jpg?v=3'),
+    url('/assets/bgbarucuy2.jpg?v=3'),
+    url('/assets/bgbarucuy3.jpg?v=3') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+  background-blend-mode: normal, luminosity, overlay, normal !important;
+  align-items: center;
+  justify-content: center;
 }
