@@ -3,8 +3,25 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Home, RotateCcw } from 'lucide-react';
-import { supabaseGame } from '@/lib/supabase'; // pastikan path sesuai
-import { useGame } from '@/context/GameContext';
+import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai
+import { useGame } from '@/context/GameContext'; // pastikan path sesuai
+import { generateXID } from '@/lib/id-generator';
+
+// Helper: Generate game PIN
+function generateGamePin(length = 6): string {
+  const digits = '0123456789';
+  return Array.from({ length }, () => digits[Math.floor(Math.random() * digits.length)]).join('');
+}
+
+// Helper: Shuffle Array
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
 
 interface Participant {
   id: string;
@@ -25,21 +42,116 @@ export default function HostLeaderboardPage(): React.JSX.Element {
   const [players, setPlayers] = useState<Participant[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [visibleRanks, setVisibleRanks] = useState<number[]>([]);
+  const [isRestarting, setIsRestarting] = useState(false);
 
-  // Fetch session + participants yang sudah selesai
+
+
+  const handleHome = () => {
+    router.push('/');
+  };
+
+  const handleRestart = async () => {
+    if (isRestarting) return;
+    setIsRestarting(true);
+    showLoading();
+
+    try {
+      // 1. Ambil session lama
+      const { data: oldSess, error: oldSessErr } = await supabaseGame
+        .from("sessions")
+        .select("quiz_id, host_id, question_limit, total_time_minutes, difficulty, current_questions")
+        .eq("game_pin", gamePin)
+        .single();
+
+      if (oldSessErr || !oldSess) throw new Error("Session lama tidak ditemukan");
+
+      // 2. Persiapkan data baru
+      const questions = oldSess.current_questions || [];
+      const shuffled = shuffleArray(questions);
+      const limit = oldSess.question_limit || 5;
+      const sliced = shuffled.slice(0, limit);
+
+      const newPin = generateGamePin(6);
+      const newSessionId = generateXID();
+
+      const sessionData = {
+        id: newSessionId,
+        game_pin: newPin,
+        quiz_id: oldSess.quiz_id,
+        host_id: oldSess.host_id,
+        status: "waiting",
+        question_limit: limit,
+        total_time_minutes: oldSess.total_time_minutes,
+        difficulty: oldSess.difficulty,
+        current_questions: sliced,
+      };
+
+      // 3. Insert ke supabaseGame (gameplay)
+      const { error: gameError } = await supabaseGame
+        .from("sessions")
+        .insert(sessionData);
+
+      if (gameError) throw gameError;
+
+      // 4. Insert ke supabase utama (join functionality)
+      const mainSessionData = {
+        ...sessionData,
+        application: "crazyrace",
+        participants: [],
+        responses: [],
+        // Convert numbers/arrays to strings if needed by main DB schema, 
+        // but usually main DB schema matches if standardized.
+        // Check previous implementation: main DB might expect string for question_limit?
+        // In settings-form it was sent as number. Let's assume number is fine or handled.
+        // Actually checking settings-form again... 
+        // supabase.from('game_sessions').insert(newMainSession) where inputs are from state.
+        // Let's stick to the object structure.
+      };
+
+      const { error: mainError } = await supabase
+        .from("game_sessions")
+        .insert(mainSessionData);
+
+      if (mainError) {
+        // Cleanup game session if main fails
+        await supabaseGame.from("sessions").delete().eq("id", newSessionId);
+        throw mainError;
+      }
+
+      // 5. Success -> Redirect
+      console.log("Restart successful. New PIN:", newPin);
+      router.push(`/host/${newPin}/lobby`);
+
+    } catch (err: any) {
+      console.error("Restart failed:", err);
+      alert("Gagal merestart game: " + err.message);
+      setIsRestarting(false);
+      hideLoading();
+    }
+  };
   useEffect(() => {
     if (!gamePin) return;
 
     const init = async () => {
-      // Ambil session untuk dapatkan ID
+      // Ambil session untuk dapatkan ID & Status
       const { data: sess } = await supabaseGame
         .from('sessions')
-        .select('id')
+        .select('id, status')
         .eq('game_pin', gamePin)
         .single();
 
       if (!sess) {
         router.push('/host');
+        return;
+      }
+
+      // Guard: Redirect jika status belum finished
+      if (sess.status === 'waiting') {
+        router.replace(`/host/${gamePin}/lobby`);
+        return;
+      }
+      if (sess.status === 'active') {
+        router.replace(`/host/${gamePin}/monitor`);
         return;
       }
 
@@ -115,13 +227,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
     }
   }, [players]);
 
-  const handleHome = () => {
-    router.push('/');
-  };
 
-  const handleRestart = () => {
-    router.push('/host/select-quiz');
-  };
 
   const formatScore = (score: number): string => score.toLocaleString();
 
@@ -145,115 +251,115 @@ export default function HostLeaderboardPage(): React.JSX.Element {
 
   return (
     <>
-    <section className="leaderboard-screen">
-      {/* Header - tetap sama */}
-      <header className="leaderboard-header">
-        <div className="leaderboard-brand">
-          <img src="/assets/logo2.webp" alt="Astro Learning" className="brand-logo-image" />
-        </div>
-        <img src="/assets/logo.webp" alt="Gameforsmart Logo" className="header-logo" />
-      </header>
-
-      {/* Floating Buttons - tetap sama */}
-      <button className="floating-btn home-btn" onClick={handleHome} title="Home">
-        <Home size={28} />
-      </button>
-      <button className="floating-btn restart-btn" onClick={handleRestart} title="Restart">
-        <RotateCcw size={28} />
-      </button>
-
-      {/* Podium - tetap sama, tanpa duration */}
-      <div className="vanguard-section">
-        {players.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-            <p>No players participated in this game.</p>
+      <section className="leaderboard-screen">
+        {/* Header - tetap sama */}
+        <header className="leaderboard-header">
+          <div className="leaderboard-brand">
+            <img src="/assets/logo2.webp" alt="Astro Learning" className="brand-logo-image" />
           </div>
-        ) : (
-          <div className="podium-container">
-            {/* 2nd Place */}
-            {top3[1] && (
-              <div className={`podium-card silver ${visibleRanks.includes(2) ? 'visible' : 'hidden'}`}>
-                <div className="rank-badge">#2</div>
-                <div className="podium-image">
-                  {top3[1].spacecraft ? (
-                    <img src={`/assets/${top3[1].spacecraft}`} alt="spacecraft" />
-                  ) : (
-                    <span style={{ fontSize: '3rem' }}>🚀</span>
-                  )}
-                </div>
-                <h3 className="podium-name has-tooltip" data-tooltip={top3[1].nickname}>
-                  {truncateName(top3[1].nickname).display}
-                </h3>
-                <div className="podium-score">{formatScore(top3[1].score)}</div>
-              </div>
-            )}
+          <img src="/assets/logo.webp" alt="Gameforsmart Logo" className="header-logo" />
+        </header>
 
-            {/* 1st Place */}
-            {top3[0] && (
-              <div className={`podium-card gold center ${visibleRanks.includes(1) ? 'visible' : 'hidden'}`}>
-                <div className="rank-badge">#1</div>
-                <div className="podium-image">
-                  {top3[0].spacecraft ? (
-                    <img src={`/assets/${top3[0].spacecraft}`} alt="spacecraft" />
-                  ) : (
-                    <span style={{ fontSize: '3.5rem' }}>🚀</span>
-                  )}
-                </div>
-                <h3 className="podium-name has-tooltip" data-tooltip={top3[0].nickname}>
-                  {truncateName(top3[0].nickname).display}
-                </h3>
-                <div className="podium-score">{formatScore(top3[0].score)}</div>
-              </div>
-            )}
+        {/* Floating Buttons - tetap sama */}
+        <button className="floating-btn home-btn" onClick={handleHome} title="Home">
+          <Home size={28} />
+        </button>
+        <button className="floating-btn restart-btn" onClick={handleRestart} title="Restart" disabled={isRestarting}>
+          <RotateCcw size={28} className={isRestarting ? 'animate-spin' : ''} />
+        </button>
 
-            {/* 3rd Place */}
-            {top3[2] && (
-              <div className={`podium-card bronze ${visibleRanks.includes(3) ? 'visible' : 'hidden'}`}>
-                <div className="rank-badge">#3</div>
-                <div className="podium-image">
-                  {top3[2].spacecraft ? (
-                    <img src={`/assets/${top3[2].spacecraft}`} alt="spacecraft" />
-                  ) : (
-                    <span style={{ fontSize: '2.5rem' }}>🚀</span>
-                  )}
+        {/* Podium - tetap sama, tanpa duration */}
+        <div className="vanguard-section">
+          {players.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+              <p>No players participated in this game.</p>
+            </div>
+          ) : (
+            <div className="podium-container">
+              {/* 2nd Place */}
+              {top3[1] && (
+                <div className={`podium-card silver ${visibleRanks.includes(2) ? 'visible' : 'hidden'}`}>
+                  <div className="rank-badge">#2</div>
+                  <div className="podium-image">
+                    {top3[1].spacecraft ? (
+                      <img src={`/assets/${top3[1].spacecraft}`} alt="spacecraft" />
+                    ) : (
+                      <span style={{ fontSize: '3rem' }}>🚀</span>
+                    )}
+                  </div>
+                  <h3 className="podium-name has-tooltip" data-tooltip={top3[1].nickname}>
+                    {truncateName(top3[1].nickname).display}
+                  </h3>
+                  <div className="podium-score">{formatScore(top3[1].score)}</div>
                 </div>
-                <h3 className="podium-name has-tooltip" data-tooltip={top3[2].nickname}>
-                  {truncateName(top3[2].nickname).display}
-                </h3>
-                <div className="podium-score">{formatScore(top3[2].score)}</div>
-              </div>
-            )}
+              )}
+
+              {/* 1st Place */}
+              {top3[0] && (
+                <div className={`podium-card gold center ${visibleRanks.includes(1) ? 'visible' : 'hidden'}`}>
+                  <div className="rank-badge">#1</div>
+                  <div className="podium-image">
+                    {top3[0].spacecraft ? (
+                      <img src={`/assets/${top3[0].spacecraft}`} alt="spacecraft" />
+                    ) : (
+                      <span style={{ fontSize: '3.5rem' }}>🚀</span>
+                    )}
+                  </div>
+                  <h3 className="podium-name has-tooltip" data-tooltip={top3[0].nickname}>
+                    {truncateName(top3[0].nickname).display}
+                  </h3>
+                  <div className="podium-score">{formatScore(top3[0].score)}</div>
+                </div>
+              )}
+
+              {/* 3rd Place */}
+              {top3[2] && (
+                <div className={`podium-card bronze ${visibleRanks.includes(3) ? 'visible' : 'hidden'}`}>
+                  <div className="rank-badge">#3</div>
+                  <div className="podium-image">
+                    {top3[2].spacecraft ? (
+                      <img src={`/assets/${top3[2].spacecraft}`} alt="spacecraft" />
+                    ) : (
+                      <span style={{ fontSize: '2.5rem' }}>🚀</span>
+                    )}
+                  </div>
+                  <h3 className="podium-name has-tooltip" data-tooltip={top3[2].nickname}>
+                    {truncateName(top3[2].nickname).display}
+                  </h3>
+                  <div className="podium-score">{formatScore(top3[2].score)}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Rankings Table - tambah kolom Duration */}
+        {sortedPlayers.length > 0 && (
+          <div className="rankings-table-container">
+            <table className="rankings-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Player</th>
+                  <th>Duration</th>
+                  <th>Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedPlayers.map((player, index) => (
+                  <tr key={player.id}>
+                    <td className="rank-cell">#{index + 1}</td>
+                    <td className="player-cell">{player.nickname}</td>
+                    <td className="score-cell">{formatDuration(player.duration)}</td>
+                    <td className="score-cell">{formatScore(player.score)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
-
-      {/* Rankings Table - tambah kolom Duration */}
-      {sortedPlayers.length > 0 && (
-        <div className="rankings-table-container">
-          <table className="rankings-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Player</th>
-                <th>Time</th>
-                <th>Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedPlayers.map((player, index) => (
-                <tr key={player.id}>
-                  <td className="rank-cell">#{index + 1}</td>
-                  <td className="player-cell">{player.nickname}</td>
-                  <td className="score-cell">{formatDuration(player.duration)}</td>
-                  <td className="score-cell">{formatScore(player.score)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
-    <style jsx>{`
+      </section>
+      <style jsx>{`
     .rankings-table {
   table-layout: fixed;
   width: 100%; 

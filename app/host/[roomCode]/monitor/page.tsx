@@ -4,7 +4,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
 import { useDialog } from '@/context/AlertContext'; // Import AlertContext
-import { supabaseGame } from '@/lib/supabase'; // pastikan path sesuai supabase.ts kamu
+import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai supabase.ts kamu
+import { generateXID } from '@/lib/id-generator';
 import { Users, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EndGameConfirmationDialog } from '@/app/components/ui/EndGameConfirmationDialog';
@@ -18,6 +19,10 @@ interface Participant {
     finished_at: string | null;
     joined_at: string;
     score?: number;
+    user_id?: string;
+    correct?: number;
+    duration?: number;
+    started_at?: string;
 }
 
 interface Session {
@@ -27,7 +32,10 @@ interface Session {
     question_limit: number;
     total_time_minutes: number;
     started_at: string;
+    ended_at?: string;
     current_questions?: any[];
+    host_id?: string;
+    quiz_id?: string;
 }
 
 export default function HostMonitorPage(): React.JSX.Element {
@@ -124,13 +132,25 @@ export default function HostMonitorPage(): React.JSX.Element {
                 return;
             }
 
+            // Cek jika session masih waiting -> redirect ke lobby
+            if (sess.status === 'waiting') {
+                router.replace(`/host/${gamePin}/lobby`);
+                return;
+            }
+
+            // Cek jika session sudah selesai -> redirect ke leaderboard
+            if (sess.status === 'finished') {
+                router.replace(`/host/${gamePin}/leaderboard`);
+                return;
+            }
+
             setSession(sess);
             setTotalQuestions(sess.question_limit || 5);
 
             // Fetch participants
             const { data: parts } = await supabaseGame
                 .from('participants')
-                .select('id, nickname, spacecraft, answers, current_question, finished_at, joined_at, score')
+                .select('*')
                 .eq('session_id', sess.id)
                 .order('joined_at', { ascending: true });
 
@@ -195,6 +215,83 @@ export default function HostMonitorPage(): React.JSX.Element {
         };
     }, [session?.id, gamePin]);
 
+    const syncResultsToMainSupabase = async (sessionId: string) => {
+        try {
+            const { data: sess } = await supabaseGame
+                .from("sessions")
+                .select("id, host_id, quiz_id, question_limit, total_time_minutes, current_questions, started_at, ended_at")
+                .eq("id", sessionId)
+                .single();
+
+            if (!sess) throw new Error("Session tidak ditemukan");
+
+            const totalQuestionsLimit = sess.question_limit || (sess.current_questions || []).length;
+
+            const { data: participantsData } = await supabaseGame
+                .from("participants")
+                .select("id, user_id, nickname, spacecraft, score, correct, answers, duration, eliminated, current_question, finished_at")
+                .eq("session_id", sessionId);
+
+            if (!participantsData || participantsData.length === 0) return;
+
+            // FORMAT PARTICIPANTS
+            const formattedParticipants = participantsData.map(p => {
+                const correctCount = p.correct || 0;
+                const accuracy = totalQuestionsLimit > 0
+                    ? Number(((correctCount / totalQuestionsLimit) * 100).toFixed(2))
+                    : 0;
+
+                return {
+                    id: p.id,
+                    user_id: p.user_id || null,
+                    nickname: p.nickname,
+                    spacecraft: p.spacecraft || "space1.png",
+                    score: p.score || 0,
+                    correct: correctCount,
+                    eliminated: p.eliminated || false,
+                    started: sess.started_at,
+                    ended: p.finished_at,
+                    total_question: totalQuestionsLimit,
+                    current_question: p.current_question || 0,
+                    accuracy: accuracy.toFixed(2),
+                };
+            });
+
+            // FORMAT RESPONSES
+            const formattedResponses = participantsData
+                .filter(p => (p.answers || []).length > 0)
+                .map(p => ({
+                    id: generateXID(),
+                    participant: p.id,
+                    answers: p.answers || [],
+                }));
+
+            // INSERT KE SUPABASE UTAMA → WAJIB ADA host_id!
+            const { error } = await supabase
+                .from("game_sessions")
+                .upsert({
+                    game_pin: gamePin,
+                    quiz_id: sess.quiz_id,
+                    host_id: sess.host_id,
+                    status: "finished",
+                    application: "axiom",
+                    total_time_minutes: sess.total_time_minutes || 5,
+                    question_limit: totalQuestionsLimit.toString(),
+                    started_at: sess.started_at,
+                    ended_at: sess.ended_at,
+                    participants: formattedParticipants,
+                    responses: formattedResponses,
+                    current_questions: sess.current_questions,
+                }, { onConflict: "game_pin" });
+
+            if (error) throw error;
+
+            console.log("Hasil berhasil disinkronkan ke supabase utama!");
+        } catch (err: any) {
+            console.error("Gagal sync:", err);
+        }
+    };
+
     const handleEndGame = async () => {
         if (!session) return;
         showLoading();
@@ -215,12 +312,15 @@ export default function HostMonitorPage(): React.JSX.Element {
             const { error: partError } = await supabaseGame
                 .from('participants')
                 .update({
-                    finished_at: new Date().toISOString(),
+                    finished_at: new Date().toISOString()
                 })
                 .eq('session_id', session.id)
                 .is('finished_at', null);
 
             if (partError) throw partError;
+
+            // SYNC TO MAIN SUPABASE
+            await syncResultsToMainSupabase(session.id);
 
             router.push(`/host/${gamePin}/leaderboard`);
         } catch (err) {

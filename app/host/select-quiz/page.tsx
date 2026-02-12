@@ -13,6 +13,14 @@ function generateGamePin(length = 6): string {
     return Array.from({ length }, () => digits[Math.floor(Math.random() * digits.length)]).join('');
 }
 
+// Helper to detect Arabic text
+function isArabic(text: string): boolean {
+    const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+    const isAr = arabicPattern.test(text);
+    if (isAr) console.log('Detected Arabic text:', text);
+    return isAr;
+}
+
 const DESKTOP_CARDS_PER_PAGE = 8;
 const MOBILE_CARDS_PER_PAGE = 4;
 
@@ -245,7 +253,7 @@ export default function SelectQuizPage(): React.JSX.Element {
             allow_join_after_start: false,
             participants: [],
             responses: [],
-            application: 'astrolearn'
+            application: 'axiom'
         };
 
         try {
@@ -398,6 +406,8 @@ export default function SelectQuizPage(): React.JSX.Element {
                             const isFavorite = favorites.includes(quiz.id);
                             const isThisQuizCreating = creatingQuizId === quiz.id;
                             const badgeClass = getCategoryBadgeClass(quiz.category || '');
+                            const isTitleArabic = isArabic(quiz.title);
+
                             return (
                                 <div
                                     key={quiz.id}
@@ -407,7 +417,8 @@ export default function SelectQuizPage(): React.JSX.Element {
                                     <div className="quiz-card-content justify-between">
                                         <div className="quiz-card-header">
                                             <h3
-                                                className="quiz-card-title line-clamp-3"
+                                                className={`w-full quiz-card-title line-clamp-3 ${isTitleArabic ? 'font-arabic' : ''}`}
+                                                dir={isTitleArabic ? 'rtl' : 'ltr'}
                                                 onMouseMove={(e) => handleMouseMove(e, quiz.title)}
                                                 onMouseLeave={handleMouseLeave}
                                             >
@@ -495,11 +506,12 @@ export default function SelectQuizPage(): React.JSX.Element {
             {/* Floating Dynamic Tooltip */}
             {tooltipData && (
                 <div
-                    className="cosmic-dynamic-tooltip"
+                    className={`cosmic-dynamic-tooltip ${isArabic(tooltipData.title) ? 'font-arabic' : ''}`}
                     style={{
                         left: tooltipData.x + 15,
                         top: tooltipData.y + 15
                     }}
+                    dir={isArabic(tooltipData.title) ? 'rtl' : 'ltr'}
                 >
                     {tooltipData.title}
                 </div>
