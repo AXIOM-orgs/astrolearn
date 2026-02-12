@@ -39,6 +39,21 @@ body {
   position: relative;
 }
 
+@font-face {
+  font-family: 'LPMQ Isep Misbah';
+  src: url('/fonts/LPMQ_IsepMisbah.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-arabic {
+  font-family: 'LPMQ Isep Misbah', sans-serif !important;
+  font-size: 1.25rem !important;
+  line-height: 1.5 !important;
+  font-weight: normal !important;
+}
+
 body::before {
   content: "";
   position: fixed;

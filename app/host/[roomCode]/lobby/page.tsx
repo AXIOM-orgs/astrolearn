@@ -72,6 +72,16 @@ export default function HostLobbyPage(): React.JSX.Element {
                     return;
                 }
 
+                if (sessionData.status === 'active') {
+                    router.replace(`/host/${roomCode}/monitor`);
+                    return;
+                }
+
+                if (sessionData.status === 'finished') {
+                    router.replace(`/host/${roomCode}/leaderboard`);
+                    return;
+                }
+
                 setSession(sessionData);
 
                 // Fetch initial participants

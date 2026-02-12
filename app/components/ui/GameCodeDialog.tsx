@@ -38,7 +38,7 @@ export function GameCodeDialog({ isOpen, onClose, gameCode, joinUrl }: GameCodeD
                     <span>✕</span>
                 </button>
 
-                <div className="qr-code-large">
+                <div className="qr-code-large over">
                     <div className="qr-code-frame">
                         <div className="qr-corner top-left"></div>
                         <div className="qr-corner top-right"></div>
@@ -46,7 +46,7 @@ export function GameCodeDialog({ isOpen, onClose, gameCode, joinUrl }: GameCodeD
                         <div className="qr-corner bottom-right"></div>
                         <QRCodeSVG
                             value={joinUrl}
-                            size={435}
+                            size={545}
                             bgColor="transparent"
                             fgColor="#00d4ff"
                             level="H"
