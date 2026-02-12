@@ -1,39 +1,155 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
-import { clearCurrentPlayer, getSessionPlayers, getCurrentPlayer } from '@/lib/gameSession';
+import { clearCurrentPlayer } from '@/lib/gameSession';
+import { supabaseGame } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
+import { Home, BarChart2 } from 'lucide-react';
+
+interface ParticipantData {
+    id: string;
+    score: number;
+    duration: number; // in seconds
+    correct: number;
+    nickname: string;
+    user_id: string;
+    spacecraft?: string;
+}
 
 export default function JoinResultsPage(): React.JSX.Element {
     const router = useRouter();
-    const { gameState, resetGame, showLoading, hideLoading } = useGame();
-    const [actualRank, setActualRank] = useState<number>(1);
+    const params = useParams();
+    const { user, profile } = useAuth();
+    const { resetGame, showLoading, hideLoading } = useGame();
+
+    // State for DB data
+    const [myRank, setMyRank] = useState<number | string>('?');
+    const [myStats, setMyStats] = useState<ParticipantData | null>(null);
+    const [isSessionFinished, setIsSessionFinished] = useState(false);
+    const [loadingData, setLoadingData] = useState(true);
+    const [totalQuestions, setTotalQuestions] = useState(0);
 
     // Hide loading overlay when results page loads
     useEffect(() => {
         hideLoading();
     }, [hideLoading]);
 
-    // Calculate actual rank from session players
+    // Main Logic: Fetch Session -> Fetch My Participant Data -> Calculate Rank (if finished)
     useEffect(() => {
-        const currentPlayer = getCurrentPlayer();
-        if (currentPlayer) {
-            const allPlayers = getSessionPlayers();
-            // Sort by score descending
-            const sorted = [...allPlayers].sort((a, b) => b.score - a.score);
-            // Find current player's rank
-            const rank = sorted.findIndex(p => p.id === currentPlayer.id) + 1;
-            setActualRank(rank > 0 ? rank : 1);
-        }
-    }, []);
+        const roomCode = params?.roomCode as string;
 
-    // Redirect if no player name
-    useEffect(() => {
-        if (!gameState.playerName) {
-            router.push('/');
-        }
-    }, [gameState.playerName, router]);
+        // Wait for auth to load.
+        if (!roomCode || !user) return;
+
+        const fetchData = async () => {
+            try {
+                setLoadingData(true);
+                console.log('Fetching result data for room:', roomCode);
+
+                // 1. Get Session Status & Details
+                const { data: sessionData, error: sessionError } = await supabaseGame
+                    .from('sessions')
+                    .select('id, status, question_limit')
+                    .eq('game_pin', roomCode)
+                    .maybeSingle();
+
+                if (sessionError || !sessionData) {
+                    console.error('Error fetching session:', sessionError);
+                    setLoadingData(false);
+                    return;
+                }
+
+                setTotalQuestions(sessionData.question_limit || 0);
+                const sessionId = sessionData.id;
+
+                // 2. Fetch My Participant Data from DB
+                let myData: ParticipantData | null = null;
+
+                if (profile?.id) {
+                    const userIdToMatch = profile?.id;
+                    const { data: pData, error: pError } = await supabaseGame
+                        .from('participants')
+                        .select('id, score, duration, correct, nickname, user_id, spacecraft')
+                        .eq('session_id', sessionId)
+                        .eq('user_id', userIdToMatch)
+                        .maybeSingle();
+
+                    if (pData) {
+                        myData = pData;
+                    } else {
+                        console.warn('Participant not found for user_id:', userIdToMatch);
+                    }
+                }
+
+                if (myData) {
+                    setMyStats(myData);
+                }
+
+                // 3. Status & Rank Logic
+                const handleStatusChange = async (status: string) => {
+                    if (status === 'finished') {
+                        setIsSessionFinished(true);
+                        if (sessionId && myData?.id) {
+                            await calculateRank(sessionId, myData.id);
+                        }
+                    } else {
+                        setIsSessionFinished(false);
+                        setMyRank('?');
+                    }
+                };
+
+                await handleStatusChange(sessionData.status);
+
+                // Real-time subscription
+                const channel = supabaseGame.channel(`session_updates_${roomCode}`)
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: 'UPDATE',
+                            schema: 'public',
+                            table: 'sessions',
+                            filter: `id=eq.${sessionId}`
+                        },
+                        async (payload) => {
+                            const newStatus = (payload.new as any).status;
+                            await handleStatusChange(newStatus);
+                        }
+                    )
+                    .subscribe();
+
+                return () => {
+                    supabaseGame.removeChannel(channel);
+                };
+
+            } catch (err) {
+                console.error('Error in fetchData:', err);
+            } finally {
+                setLoadingData(false);
+            }
+        };
+
+        // Helper to calculate rank
+        const calculateRank = async (sessionId: string, myParticipantId: string) => {
+            const { data: participants, error: partError } = await supabaseGame
+                .from('participants')
+                .select('id, score, duration')
+                .eq('session_id', sessionId)
+                .order('score', { ascending: false })
+                .order('duration', { ascending: true });
+
+            if (partError || !participants) return;
+
+            const rankIndex = participants.findIndex(p => p.id === myParticipantId);
+            if (rankIndex !== -1) {
+                setMyRank(rankIndex + 1);
+            }
+        };
+
+        fetchData();
+
+    }, [params?.roomCode, user, profile, user?.id]);
 
     const handleRestart = (): void => {
         clearCurrentPlayer();
@@ -46,102 +162,129 @@ export default function JoinResultsPage(): React.JSX.Element {
         }, 500);
     };
 
-    // Calculate score per correct answer based on selected questions
-    const getScorePerQuestion = (): number => {
-        switch (gameState.selectedQuestions) {
-            case 5: return 20;
-            case 10: return 10;
-            case 20: return 5;
-            default: return 10;
-        }
-    };
-
-    const scorePerQuestion = getScorePerQuestion();
-    const quizScore = gameState.correctAnswers * scorePerQuestion;
-
     // Get ordinal suffix for rank
-    const getOrdinal = (n: number): string => {
+    const getOrdinal = (n: number | string): string => {
+        if (typeof n === 'string') return '';
         const s = ['th', 'st', 'nd', 'rd'];
         const v = n % 100;
         return s[(v - 20) % 10] || s[v] || s[0];
     };
 
-    // Format duration mm:ss
-    const formatDuration = (seconds: number | null): string => {
-        if (seconds === null) return '--:--';
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
+    // Format duration mm:ss from SECONDS
+    const formatDuration = (seconds: number | undefined | null): string => {
+        if (seconds === undefined || seconds === null) return '--:--';
+        // Ensure we treat it as seconds.
+        const totalSeconds = Math.floor(Number(seconds));
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
+    // Helper to get image path:
+    const getSpacecraftImage = (sc: string | undefined) => {
+        if (!sc) return null;
+        if (sc.startsWith('/') || sc.startsWith('http')) return sc;
+        // Check if user confirmed assets are in public/assets. 
+        // Logic: if filename only, prepend /assets/
+        return `/assets/${sc}`;
+    };
+
     return (
-        <section id="screen-results" className="screen active">
+        <section id="screen-results" className="result-screen">
+            {/* Header */}
+            <header className="waiting-header w-full">
+                <div className="waiting-brand">
+                    <img
+                        src="/assets/logo2.webp"
+                        alt="Astro Learning"
+                        className="brand-logo-image"
+                    />
+                </div>
+                <img
+                    src="/assets/logo.webp"
+                    alt="Gameforsmart Logo"
+                    className="header-logo"
+                />
+            </header>
+
+            {/* Navigation Buttons */}
+            <button className="floating-btn home-btn" onClick={handleRestart} title="Home">
+                <Home size={28} />
+            </button>
+
+            <button className="floating-btn restart-btn" title="Statistics">
+                <BarChart2 size={28} />
+            </button>
+
             <div className="results-wrapper">
-                {/* Top Card: Spaceship + Pilot Name */}
+                {/* Top Card: Spacecraft Image */}
                 <div className="result-top-card">
-                    {gameState.selectedSpaceship?.image && (
+                    {/* Display Spacecraft Image */}
+                    {myStats?.spacecraft ? (
                         <img
-                            src={gameState.selectedSpaceship.image}
-                            alt="Spaceship"
+                            src={getSpacecraftImage(myStats.spacecraft) || ''}
+                            alt="Spacecraft"
                             id="result-character-img"
                             className="result-spaceship-img"
+                            // Remove borderRadius: 50% because spaceships are usually ships, not round avatars.
+                            style={{ objectFit: 'contain', width: '120px', height: '120px' }}
                         />
+                    ) : (
+                        <div className="result-spaceship-placeholder" style={{ fontSize: '4rem' }}>🚀</div>
                     )}
                     <div className="result-top-info">
-                        <p className="result-pilot-name" id="result-name-display">{gameState.playerName || '-'}</p>
-                        <p className="result-ship-name" id="result-ship">{gameState.selectedSpaceship?.name || '-'}</p>
+                        <p className="result-pilot-name" id="result-name-display">
+                            {myStats?.nickname || profile?.nickname || profile?.username || 'Pilot'}
+                        </p>
+
                     </div>
                 </div>
 
-                {/* Eliminated Banner */}
-                {gameState.isEliminated && (
-                    <div className="eliminated-banner" style={{
-                        background: 'linear-gradient(135deg, #ff0044, #cc0033)',
-                        color: '#ffffff',
-                        padding: '15px 30px',
-                        borderRadius: '12px',
-                        textAlign: 'center',
-                        marginBottom: '10px',
-                        boxShadow: '0 4px 20px rgba(255, 0, 68, 0.4)'
-                    }}>
-                        <span style={{ fontSize: '20px', fontWeight: 'bold', textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-                            TERELIMINASI
-                        </span>
-                    </div>
-                )}
-
                 <div className="result-stats-row">
+                    {/* Rank Card */}
                     <div className="result-stat-card rank-card">
                         <div className="rank-display">
                             <span className="trophy-icon">🏆</span>
                             <span className="result-stat-value rank-value">
-                                {gameState.isEliminated ? '-' : <>{actualRank}<sup>{getOrdinal(actualRank)}</sup></>}
+                                {myRank}
+                                {typeof myRank === 'number' && <sup>{getOrdinal(myRank)}</sup>}
                             </span>
                         </div>
-                        <span className="result-stat-label">{gameState.isEliminated ? 'Eliminated' : 'Rank'}</span>
+                        <span className="result-stat-label">
+                            {isSessionFinished ? 'Rank' : 'Waiting...'}
+                        </span>
                     </div>
+
+                    {/* Score Card - FROM DB */}
                     <div className="result-stat-card">
-                        <span className="result-stat-value" id="result-score">{quizScore}</span>
+                        <span className="result-stat-value" id="result-score">
+                            {myStats?.score ?? '-'}
+                        </span>
                         <span className="result-stat-label">Score</span>
                     </div>
+
+                    {/* Correct Card - FROM DB */}
                     <div className="result-stat-card">
                         <span className="result-stat-value">
-                            <span id="result-correct">{gameState.correctAnswers}</span>/<span id="result-total">{gameState.selectedQuestions}</span>
+                            <span id="result-correct">{myStats?.correct ?? '-'}</span>
+                            /<span id="result-total">{totalQuestions}</span>
                         </span>
                         <span className="result-stat-label">Correct</span>
                     </div>
+
+                    {/* Duration Card - FROM DB */}
                     <div className="result-stat-card">
                         <span className="result-stat-value">
-                            {formatDuration(gameState.duration)}
+                            {formatDuration(myStats?.duration)}
                         </span>
                         <span className="result-stat-label">Duration</span>
                     </div>
                 </div>
 
                 {/* Home Button */}
-                <button className="btn-home" onClick={handleRestart}>
+                {/* <button className="btn-home" onClick={handleRestart}>
                     <span>HOME</span>
-                </button>
+                </button> */}
             </div>
         </section>
     );
