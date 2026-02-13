@@ -6,7 +6,7 @@ import { useGame } from '@/context/GameContext';
 import { clearCurrentPlayer } from '@/lib/gameSession';
 import { supabaseGame } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import { Home, BarChart2 } from 'lucide-react';
+import { Home, BarChart2, BarChart3 } from 'lucide-react';
 
 interface ParticipantData {
     id: string;
@@ -28,6 +28,7 @@ export default function JoinResultsPage(): React.JSX.Element {
     const [myRank, setMyRank] = useState<number | string>('?');
     const [myStats, setMyStats] = useState<ParticipantData | null>(null);
     const [isSessionFinished, setIsSessionFinished] = useState(false);
+    const [sessionId, setSessionId] = useState<string | null>(null);
     const [loadingData, setLoadingData] = useState(true);
     const [totalQuestions, setTotalQuestions] = useState(0);
 
@@ -63,6 +64,7 @@ export default function JoinResultsPage(): React.JSX.Element {
 
                 setTotalQuestions(sessionData.question_limit || 0);
                 const sessionId = sessionData.id;
+                setSessionId(sessionId);
 
                 // 2. Fetch My Participant Data from DB
                 let myData: ParticipantData | null = null;
@@ -196,7 +198,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                 <div className="waiting-brand">
                     <img
                         src="/assets/logoal.webp"
-                        alt="Astro Learning"
+                        alt="Axiom"
                         className="brand-logo-image"
                     />
                 </div>
@@ -212,9 +214,27 @@ export default function JoinResultsPage(): React.JSX.Element {
                 <Home size={28} />
             </button>
 
-            <button className="floating-btn restart-btn" title="Statistics">
-                <BarChart2 size={28} />
-            </button>
+            {/* Tombol Statistik */}
+            {isSessionFinished && sessionId && myStats?.id ? (
+                <a
+                    href={`https://gameforsmart2026.vercel.app/results/${sessionId}/answer-details?participant=${myStats.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="floating-btn restart-btn"
+                    title="See Statistics"
+                >
+                    <BarChart3 size={28} />
+                </a>
+            ) : (
+                <button
+                    disabled
+                    className="floating-btn restart-btn"
+                    style={{ opacity: 0.5, cursor: 'not-allowed', filter: 'grayscale(100%)' }}
+                    title="Waiting for host to finish game"
+                >
+                    <BarChart3 size={28} />
+                </button>
+            )}
 
             <div className="results-wrapper">
                 {/* Top Card: Spacecraft Image */}

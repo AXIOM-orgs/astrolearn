@@ -96,7 +96,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
       // 4. Insert ke supabase utama (join functionality)
       const mainSessionData = {
         ...sessionData,
-        application: "crazyrace",
+        application: "axiom",
         participants: [],
         responses: [],
         // Convert numbers/arrays to strings if needed by main DB schema, 
@@ -129,51 +129,84 @@ export default function HostLeaderboardPage(): React.JSX.Element {
       hideLoading();
     }
   };
+  // Fetch data with new logic
   useEffect(() => {
     if (!gamePin) return;
 
-    const init = async () => {
-      // Ambil session untuk dapatkan ID & Status
-      const { data: sess } = await supabaseGame
-        .from('sessions')
-        .select('id, status')
-        .eq('game_pin', gamePin)
-        .single();
+    const fetchData = async () => {
+      try {
+        showLoading();
 
-      if (!sess) {
-        router.push('/host');
-        return;
+        // 1. Ambil session untuk dapatkan ID & Status
+        const { data: sess, error: sessErr } = await supabaseGame
+          .from('sessions')
+          .select('id, status, question_limit, current_questions')
+          .eq('game_pin', gamePin)
+          .single();
+
+        if (sessErr || !sess) {
+          console.error("Session tidak ditemukan");
+          router.push('/host');
+          return;
+        }
+
+        // Guard: Redirect jika status belum finished
+        if (sess.status === 'waiting') {
+          router.replace(`/host/${gamePin}/lobby`);
+          return;
+        }
+        if (sess.status === 'active') {
+          router.replace(`/host/${gamePin}/monitor`);
+          return;
+        }
+
+        setSessionId(sess.id);
+
+        // 2. Ambil semua participant yang finished (finished_at IS NOT NULL)
+        const { data: participants, error: partErr } = await supabaseGame
+          .from('participants')
+          .select('id, nickname, spacecraft, score, duration, finished_at, joined_at')
+          .eq('session_id', sess.id)
+          .not('finished_at', 'is', null);
+
+        if (partErr || !participants || participants.length === 0) {
+          setPlayers([]);
+          hideLoading();
+          return;
+        }
+
+        // 3. Proses data (handle null duration, formatting, etc if needed)
+        const processed = participants.map(p => {
+          // Jika duration null/0, anggap sangat lama (misal 999999) agar di urutan bawah
+          // Tapi karena query .not('finished_at', 'is', null), seharusnya duration ada.
+          // Jaga-jaga:
+          const safeDuration = p.duration || 999999;
+
+          return {
+            ...p,
+            duration: safeDuration
+          };
+        });
+
+        // 4. Urutkan client-side: Score (DESC) -> Duration (ASC)
+        const sorted = processed.sort((a, b) => {
+          if (b.score !== a.score) {
+            return b.score - a.score; // Higher score first
+          }
+          return a.duration - b.duration; // Lower duration first
+        });
+
+        setPlayers(sorted);
+
+      } catch (err: any) {
+        console.error("Error load leaderboard:", err);
+      } finally {
+        hideLoading();
       }
-
-      // Guard: Redirect jika status belum finished
-      if (sess.status === 'waiting') {
-        router.replace(`/host/${gamePin}/lobby`);
-        return;
-      }
-      if (sess.status === 'active') {
-        router.replace(`/host/${gamePin}/monitor`);
-        return;
-      }
-
-      setSessionId(sess.id);
-
-      // Ambil participants yang sudah finished
-      const { data: parts } = await supabaseGame
-        .from('participants')
-        .select('id, nickname, spacecraft, score, duration, finished_at, joined_at')
-        .eq('session_id', sess.id)
-        .not('finished_at', 'is', null)
-        .order('score', { ascending: false });
-
-      if (parts) {
-        setPlayers(parts);
-      }
-
-      hideLoading();
     };
 
-    init();
-  }, [gamePin, router]);
+    fetchData();
+  }, [gamePin, router, showLoading, hideLoading]);
 
   // Realtime update participants (jika ada yang baru selesai setelah leaderboard dibuka)
   useEffect(() => {
@@ -191,7 +224,12 @@ export default function HostLeaderboardPage(): React.JSX.Element {
               setPlayers(prev => {
                 const filtered = prev.filter(x => x.id !== p.id);
                 const updated = [...filtered, p];
-                return updated.sort((a, b) => b.score - a.score);
+                return updated.sort((a, b) => {
+                  if (b.score !== a.score) return b.score - a.score;
+                  const durA = a.duration || 999999;
+                  const durB = b.duration || 999999;
+                  return durA - durB;
+                });
               });
             }
           } else if (payload.eventType === 'DELETE') {
@@ -214,13 +252,13 @@ export default function HostLeaderboardPage(): React.JSX.Element {
       const timers: NodeJS.Timeout[] = [];
 
       if (players.length >= 3) {
-        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 3]), 350));
+        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 3]), 500));
       }
       if (players.length >= 2) {
-        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 2]), 450));
+        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 2]), 750));
       }
       if (players.length >= 1) {
-        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 1]), 550));
+        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 1]), 1000));
       }
 
       return () => timers.forEach(clearTimeout);
@@ -246,7 +284,12 @@ export default function HostLeaderboardPage(): React.JSX.Element {
     return { display: name, full: name, isTruncated: false };
   };
 
-  const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+  const sortedPlayers = [...players].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    const durA = a.duration || 999999;
+    const durB = b.duration || 999999;
+    return durA - durB;
+  });
   const top3 = sortedPlayers.slice(0, 3);
 
   return (

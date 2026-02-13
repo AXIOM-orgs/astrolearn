@@ -6,7 +6,7 @@ import { useGame } from '@/context/GameContext';
 import { useDialog } from '@/context/AlertContext'; // Import AlertContext
 import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai supabase.ts kamu
 import { generateXID } from '@/lib/id-generator';
-import { Users, Check } from 'lucide-react';
+import { Users, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EndGameConfirmationDialog } from '@/app/components/ui/EndGameConfirmationDialog';
 
@@ -23,6 +23,7 @@ interface Participant {
     correct?: number;
     duration?: number;
     started_at?: string;
+    eliminated?: boolean;
 }
 
 interface Session {
@@ -73,6 +74,7 @@ export default function HostMonitorPage(): React.JSX.Element {
                 questionsAnswered,
                 progress,
                 isCompleted,
+                isEliminated: p.eliminated || false,
             };
         });
     }, [participants, totalQuestions]);
@@ -411,18 +413,22 @@ export default function HostMonitorPage(): React.JSX.Element {
                                     exit={{ opacity: 0, scale: 0.9 }}
                                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                                     whileHover={{ scale: 1.05 }}
-                                    className={`progress-card ${player.isCompleted ? 'completed' : ''} ${isActive ? 'animate-pulse-glow' : ''}`}
+                                    className={`progress-card ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'completed' : '')} ${isActive ? 'animate-pulse-glow' : ''}`}
                                 >
                                     <div className="progress-card-header">
                                         <div className="progress-bar-container">
                                             <div
-                                                className={`progress-bar-fill ${player.isCompleted ? 'complete' : ''}`}
+                                                className={`progress-bar-fill ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'complete' : '')}`}
                                                 style={{ width: `${player.progress}%` }}
                                             />
                                         </div>
                                         <span className="progress-indicator">
                                             {player.questionsAnswered}/{totalQuestions}
-                                            {player.isCompleted && <Check className="inline w-4 h-4 ml-1 text-green-400" />}
+                                            {player.isEliminated ? (
+                                                <X className="inline w-4 h-4 ml-1 text-red-500" />
+                                            ) : (
+                                                player.isCompleted && <Check className="inline w-4 h-4 ml-1 text-green-400" />
+                                            )}
                                         </span>
                                     </div>
                                     <div className="progress-card-body">
@@ -430,7 +436,7 @@ export default function HostMonitorPage(): React.JSX.Element {
                                             <img
                                                 src={`/assets/${player.spacecraft}`}
                                                 alt="spacecraft"
-                                                className={`progress-spacecraft ${!player.isCompleted ? 'animate-float' : ''}`}
+                                                className={`progress-spacecraft ${!player.isCompleted && !player.isEliminated ? 'animate-float' : ''}`}
                                             />
                                         ) : (
                                             <div className="progress-icon">🚀</div>
@@ -452,6 +458,13 @@ export default function HostMonitorPage(): React.JSX.Element {
         }
         .progress-bar-fill.complete {
           background: linear-gradient(90deg, #00ff00, #00cc00);
+        }
+        .progress-card.eliminated {
+          border: 3px solid #ff0000;
+          box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
+        }
+        .progress-bar-fill.eliminated {
+          background: linear-gradient(90deg, #ff0000, #cc0000);
         }
         .animate-pulse-glow {
           animation: glowPulse 2s ease-in-out infinite;
