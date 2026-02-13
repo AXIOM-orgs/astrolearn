@@ -393,130 +393,132 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                 />
             )}
 
-            <section id="screen-quiz" className="screen active">
-                {/* Background is handled by CSS on #screen-quiz */}
-
-                <div className="container" style={{ maxWidth: '850px', zIndex: 2 }}>
-
-                    {/* Logos Header */}
-                    <div className="quiz-logo-header">
+            <section id="screen-quiz" className="screen active" style={{ justifyContent: 'flex-start', paddingTop: 0 }}>
+                {/* Logos Header Moved Outside Container */}
+                <header className="waiting-header w-full pt-4 mt-5">
+                    <div className="waiting-brand">
                         <Image
-                            src="/assets/logo2.webp"
+                            src="/assets/logoal.webp"
                             alt="Logo Left"
                             width={150}
                             height={50}
-                            className="quiz-logo-left"
-                            unoptimized
-                        />
-                        <Image
-                            src="/assets/logo.webp"
-                            alt="Logo Right"
-                            width={150}
-                            height={50}
-                            className="quiz-logo-right"
+                            className="brand-logo-image"
                             unoptimized
                         />
                     </div>
+                    <Image
+                        src="/assets/logo.webp"
+                        alt="Logo Right"
+                        width={150}
+                        height={50}
+                        className="header-logo"
+                        unoptimized
+                    />
+                </header>
 
-                    <div className="glass-panel">
+                <div className="flex-1 w-full flex flex-col items-center justify-center p-4">
+                    <div className="container" style={{ maxWidth: '850px', zIndex: 2 }}>
 
-                        {/* Header: Question Count | Timer | Score */}
-                        <div className="quiz-header-grid">
-                            <div className="quiz-info-left">
-                                <span className="text-xl md:text-md font-bold text-white font-orbitron">
-                                    Question <span className="text-primary">{gameState.currentQuestionIndex + 1}</span> <span className="text-gray-500 text-lg">/ {gameState.selectedQuestions}</span>
-                                </span>
-                            </div>
+                        <div className="glass-panel">
 
-                            <div className={`timer-pill ${timeLeft < 10 ? 'urgent' : ''}`}>
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                <span>{formatTime(timeLeft)}</span>
-                            </div>
-
-                            <div className="quiz-info-right">
-                                Score: <span className="text-yellow-400">{gameState.score}</span>
-                            </div>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="quiz-progress-container">
-                            <div
-                                className="quiz-progress-bar"
-                                style={{ width: `${((gameState.currentQuestionIndex + 1) / gameState.selectedQuestions) * 100}%` }}
-                            />
-                        </div>
-
-                        <div className="question-container">
-                            {/* Question Image */}
-                            {currentQuestion.image && (
-                                <div className="mb-6 flex justify-center">
-                                    <Image
-                                        src={currentQuestion.image}
-                                        alt="Question"
-                                        width={600}
-                                        height={400}
-                                        className="rounded-lg max-h-80 object-contain cursor-pointer shadow-lg hover:scale-105 transition-transform duration-300"
-                                        unoptimized
-                                        onClick={() => setZoomedImage(currentQuestion.image!)}
-                                    />
+                            {/* Header: Question Count | Timer | Score */}
+                            <div className="quiz-header-grid">
+                                <div className="quiz-info-left">
+                                    <span className="text-xl md:text-md font-bold text-white font-orbitron">
+                                        Question <span className="text-primary">{gameState.currentQuestionIndex + 1}</span><span className="text-gray-500 text-lg">/{gameState.selectedQuestions}</span>
+                                    </span>
                                 </div>
-                            )}
 
-                            {/* Centered Question Text */}
-                            <h3 className="question-text-centered">
-                                {currentQuestion.question}
-                            </h3>
+                                <div className={`timer-pill ${timeLeft < 10 ? 'urgent' : ''}`}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                    <span>{formatTime(timeLeft)}</span>
+                                </div>
 
-                            {/* New Answer Grid */}
-                            <div className="answers-grid-new">
-                                {(currentQuestion.answers || []).map((ans: any, index: number) => {
-                                    const letter = String.fromCharCode(65 + index); // A, B, C, D
+                                <div className="quiz-info-right">
+                                    Score: <span className="text-yellow-400">{gameState.score}</span>
+                                </div>
+                            </div>
 
-                                    // Determine button state class
-                                    let stateClass = '';
-                                    if (answeredIndex === index) {
-                                        stateClass = 'selected';
-                                        if (correctIndex !== null) {
-                                            stateClass = index === correctIndex ? 'correct' : 'incorrect';
+                            {/* Progress Bar */}
+                            <div className="quiz-progress-container">
+                                <div
+                                    className="quiz-progress-bar"
+                                    style={{ width: `${((gameState.currentQuestionIndex + 1) / gameState.selectedQuestions) * 100}%` }}
+                                />
+                            </div>
+
+                            <div className="question-container">
+                                {/* Question Image */}
+                                {currentQuestion.image && (
+                                    <div className="mb-6 flex justify-center">
+                                        <Image
+                                            src={currentQuestion.image}
+                                            alt="Question"
+                                            width={600}
+                                            height={400}
+                                            className="rounded-lg max-h-80 object-contain cursor-pointer shadow-lg hover:scale-105 transition-transform duration-300"
+                                            unoptimized
+                                            onClick={() => setZoomedImage(currentQuestion.image!)}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Centered Question Text */}
+                                <h3 className="question-text-centered">
+                                    {currentQuestion.question}
+                                </h3>
+
+                                {/* New Answer Grid */}
+                                <div className="answers-grid-new">
+                                    {(currentQuestion.answers || []).map((ans: any, index: number) => {
+                                        const letter = String.fromCharCode(65 + index); // A, B, C, D
+
+                                        // Determine button state class
+                                        let stateClass = '';
+                                        if (answeredIndex === index) {
+                                            stateClass = 'selected';
+                                            if (correctIndex !== null) {
+                                                stateClass = index === correctIndex ? 'correct' : 'incorrect';
+                                            }
                                         }
-                                    }
 
-                                    return (
-                                        <button
-                                            key={index}
-                                            className={`answer-card ${buttonsDisabled ? 'disabled' : ''} ${stateClass}`}
-                                            onClick={() => checkAnswer(index)}
-                                            disabled={buttonsDisabled}
-                                        >
-                                            <div className="option-letter-box">
-                                                {letter}
-                                            </div>
+                                        return (
+                                            <button
+                                                key={index}
+                                                className={`answer-card ${buttonsDisabled ? 'disabled' : ''} ${stateClass}`}
+                                                onClick={() => checkAnswer(index)}
+                                                disabled={buttonsDisabled}
+                                            >
+                                                <div className="option-letter-box">
+                                                    {letter}
+                                                </div>
 
-                                            <div className="answer-content">
-                                                {ans.image ? (
-                                                    <div className="flex flex-col gap-2 w-full">
-                                                        <div className="h-32 relative w-full">
-                                                            <Image
-                                                                src={ans.image}
-                                                                alt={`Option ${letter}`}
-                                                                fill
-                                                                className="object-contain rounded-md"
-                                                                unoptimized
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setZoomedImage(ans.image);
-                                                                }}
-                                                            />
+                                                <div className="answer-content">
+                                                    {ans.image ? (
+                                                        <div className="flex flex-col gap-2 w-full">
+                                                            <div className="h-32 relative w-full">
+                                                                <Image
+                                                                    src={ans.image}
+                                                                    alt={`Option ${letter}`}
+                                                                    fill
+                                                                    className="object-contain rounded-md"
+                                                                    unoptimized
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setZoomedImage(ans.image);
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-center">{ans.answer}</span>
                                                         </div>
-                                                        <span className="text-center">{ans.answer}</span>
-                                                    </div>
-                                                ) : (
-                                                    <span>{ans.answer}</span>
-                                                )}
-                                            </div>
-                                        </button>
-                                    );
-                                })}
+                                                    ) : (
+                                                        <span>{ans.answer}</span>
+                                                    )}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </div>

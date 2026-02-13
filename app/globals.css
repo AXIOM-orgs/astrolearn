@@ -1006,7 +1006,7 @@ input[type="text"]:focus {
 }
 
 .quiz-logo-left {
-  height: 50px !important;
+  height: 60px !important;
   width: auto !important;
   max-width: 800px !important;
   object-fit: contain !important;
@@ -4005,8 +4005,8 @@ input[type="text"]:focus {
   position: relative;
   background: transparent !important;
   border-radius: 12px;
-  padding: 1rem;
-  margin: 0.5rem auto;
+  padding:0.5rem;
+  margin: 0;
   display: inline-block;
 }
 
@@ -4475,7 +4475,7 @@ input[type="text"]:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 0;
+  padding: 0rem 0;
 }
 
 .leaderboard-brand {
