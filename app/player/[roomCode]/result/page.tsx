@@ -195,7 +195,7 @@ export default function JoinResultsPage(): React.JSX.Element {
             <header className="waiting-header w-full">
                 <div className="waiting-brand">
                     <img
-                        src="/assets/logo2.webp"
+                        src="/assets/logoal.webp"
                         alt="Astro Learning"
                         className="brand-logo-image"
                     />

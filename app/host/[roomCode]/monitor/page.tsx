@@ -342,10 +342,10 @@ export default function HostMonitorPage(): React.JSX.Element {
             <header className="monitor-header">
                 <div className="monitor-brand">
                     <img
-                        src="/assets/logo2.webp"
+                        src="/assets/logoal.webp"
                         alt="Astro Learning"
                         className="brand-logo-image"
-                        style={{ height: 'auto', width: '300px', objectFit: 'contain' }}
+                        style={{ height: '75px', width: 'auto', objectFit: 'contain' }}
                     />
                 </div>
                 <img

@@ -214,13 +214,13 @@ export default function HostLeaderboardPage(): React.JSX.Element {
       const timers: NodeJS.Timeout[] = [];
 
       if (players.length >= 3) {
-        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 3]), 500));
+        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 3]), 350));
       }
       if (players.length >= 2) {
-        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 2]), 1500));
+        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 2]), 450));
       }
       if (players.length >= 1) {
-        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 1]), 2500));
+        timers.push(setTimeout(() => setVisibleRanks(prev => [...prev, 1]), 550));
       }
 
       return () => timers.forEach(clearTimeout);
@@ -255,7 +255,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         {/* Header - tetap sama */}
         <header className="leaderboard-header">
           <div className="leaderboard-brand">
-            <img src="/assets/logo2.webp" alt="Astro Learning" className="brand-logo-image" />
+            <img src="/assets/logo2new.webp" alt="Astro Learning" className="brand-logo-image" />
           </div>
           <img src="/assets/logo.webp" alt="Gameforsmart Logo" className="header-logo" />
         </header>

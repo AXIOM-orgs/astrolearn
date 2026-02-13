@@ -291,7 +291,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             <header className="waiting-header">
                 <div className="waiting-brand">
                     <img
-                        src="/assets/logo2.webp"
+                        src="/assets/logoal.webp"
                         alt="Astro Learning"
                         className="brand-logo-image"
                     />
@@ -308,7 +308,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
 
                 {/* Player Panel Wrapper */}
                 <div className="relative">
-                    {/* Title (Overlapping Border) */}
+                    {/* Title (Overlapping Border)
                     <h1 className="absolute -top-5 md:-top-7 left-1/2 -translate-x-1/2 text-4xl md:text-5xl font-black tracking-widest text-center drop-shadow-[0_0_15px_rgba(0,212,255,0.8)] z-20 pointer-events-none"
                         style={{
                             fontFamily: 'var(--font-orbitron)',
@@ -319,7 +319,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                             textShadow: '0 4px 10px rgba(0,0,0,0.5)'
                         }}>
                         WAITING ROOM
-                    </h1>
+                    </h1> */}
 
                     {/* Player Panel*/}
                     <div className="player-panel">

@@ -153,9 +153,9 @@ export default function LoginPage() {
             {/* Brand Logos - Outside Card */}
             <img
                 className="desktop-view"
-                src="/assets/logo2.webp"
+                src="/assets/logoal.webp"
                 alt="Astro Learning"
-                style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', height: '60px', objectFit: 'contain' }}
+                style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', height: '75px', objectFit: 'contain' }}
             />
             <img
                 className="desktop-view"
