@@ -341,8 +341,8 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                 <tr>
                   <th>Rank</th>
                   <th>Player</th>
-                  <th>Duration</th>
                   <th>Score</th>
+                  <th>Duration</th>
                 </tr>
               </thead>
               <tbody>
@@ -350,8 +350,8 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                   <tr key={player.id}>
                     <td className="rank-cell">#{index + 1}</td>
                     <td className="player-cell">{player.nickname}</td>
-                    <td className="score-cell">{formatDuration(player.duration)}</td>
                     <td className="score-cell">{formatScore(player.score)}</td>
+                    <td className="score-cell">{formatDuration(player.duration)}</td>
                   </tr>
                 ))}
               </tbody>

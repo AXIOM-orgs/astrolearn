@@ -357,16 +357,16 @@ export default function HostLobbyPage(): React.JSX.Element {
                     <div className="qr-section desktop-view">
                         <div className="qr-container" onClick={() => setShowQRDialog(true)}>
                             <div className="qr-frame">
-                                <div className="qr-corner top-left"></div>
+                                {/* <div className="qr-corner top-left"></div>
                                 <div className="qr-corner top-right"></div>
                                 <div className="qr-corner bottom-left"></div>
-                                <div className="qr-corner bottom-right"></div>
+                                <div className="qr-corner bottom-right"></div> */}
                                 <QRCodeSVG
                                     value={joinUrl}
-                                    size={160}
+                                    size={250}
                                     bgColor="transparent"
-                                    fgColor="#46a7bb"
-                                    level="H"
+                                    fgColor="#d9d9d9"
+                                    // level="H"
                                 />
                             </div>
                         </div>
