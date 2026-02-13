@@ -314,7 +314,7 @@ export default function HostLobbyPage(): React.JSX.Element {
             <header className="host-header">
                 <div className="host-brand">
                     <img
-                        src="/assets/logo2.webp"
+                        src="/assets/logoal.webp"
                         alt="Astro Learning"
                         className="brand-logo-image"
                     />
