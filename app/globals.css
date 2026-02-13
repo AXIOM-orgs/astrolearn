@@ -1006,7 +1006,7 @@ input[type="text"]:focus {
 }
 
 .quiz-logo-left {
-  height: 50px !important;
+  height: 60px !important;
   width: auto !important;
   max-width: 800px !important;
   object-fit: contain !important;
@@ -5071,7 +5071,7 @@ input[type="text"]:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0px;
+  margin-top: 10px;
 }
 
 .waiting-brand {
