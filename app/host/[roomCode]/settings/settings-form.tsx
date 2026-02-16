@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, supabaseGame } from '@/lib/supabase';
 import { useGame } from '@/context/GameContext';
+import { isArabic } from '@/lib/utils';
 import type { SettingsInitialData } from '@/lib/supabase-server';
 
 // Utility to shuffle array
@@ -155,7 +156,11 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
 
                     {/* Quiz Info */}
                     <div style={{ marginBottom: '1.5rem' }}>
-                        <p style={{ color: '#06ffa5', fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '0.3rem' }}>
+                        <p
+                            className={isArabic(quizDetail.title) ? 'font-arabic' : ''}
+                            dir={isArabic(quizDetail.title) ? 'rtl' : 'ltr'}
+                            style={{ color: '#06ffa5', fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '0.3rem' }}
+                        >
                             {quizDetail.title}
                         </p>
                     </div>

@@ -9,6 +9,7 @@ import { generateXID } from '@/lib/id-generator';
 import { Users, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EndGameConfirmationDialog } from '@/app/components/ui/EndGameConfirmationDialog';
+import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
 
 interface Participant {
     id: string;
@@ -37,6 +38,7 @@ interface Session {
     current_questions?: any[];
     host_id?: string;
     quiz_id?: string;
+    countdown_started_at?: string;
 }
 
 export default function HostMonitorPage(): React.JSX.Element {
@@ -135,7 +137,8 @@ export default function HostMonitorPage(): React.JSX.Element {
             }
 
             // Cek jika session masih waiting -> redirect ke lobby
-            if (sess.status === 'waiting') {
+            // KECUALI jika countdown sudah dimulai (status waiting tapi ada countdown_started_at)
+            if (sess.status === 'waiting' && !sess.countdown_started_at) {
                 router.replace(`/host/${gamePin}/lobby`);
                 return;
             }
@@ -162,7 +165,54 @@ export default function HostMonitorPage(): React.JSX.Element {
         };
 
         init();
-    }, [gamePin, router]);
+    }, [gamePin, router, hideLoading]);
+
+    // Handle Countdown to Active Transition
+    useEffect(() => {
+        if (session?.status === 'waiting' && session?.countdown_started_at) {
+            const startDate = new Date(session.countdown_started_at);
+            const targetTime = startDate.getTime() + 10000; // 10 seconds countdown
+            const now = Date.now();
+            const diff = targetTime - now;
+
+            if (diff > 0) {
+                const timer = setTimeout(async () => {
+                    // Activate Game
+                    try {
+                        const { error } = await supabaseGame
+                            .from('sessions')
+                            .update({
+                                status: 'active',
+                                started_at: new Date().toISOString()
+                            })
+                            .eq('id', session.id);
+
+                        if (error) console.error("Failed to activate session:", error);
+                    } catch (e) {
+                        console.error("Error activating session:", e);
+                    }
+                }, diff);
+
+                return () => clearTimeout(timer);
+            } else {
+                // If time already passed, activate immediately
+                const activate = async () => {
+                    // Double check status to avoid loop if update failed
+                    const { data } = await supabaseGame.from('sessions').select('status').eq('id', session.id).single();
+                    if (data?.status === 'waiting') {
+                        await supabaseGame
+                            .from('sessions')
+                            .update({
+                                status: 'active',
+                                started_at: new Date().toISOString()
+                            })
+                            .eq('id', session.id);
+                    }
+                }
+                activate();
+            }
+        }
+    }, [session]);
 
     // Realtime session
     useEffect(() => {
@@ -393,6 +443,11 @@ export default function HostMonitorPage(): React.JSX.Element {
                 }}
             />
 
+            <CountdownOverlay
+                isActive={!!session?.countdown_started_at && session?.status === 'waiting'}
+                targetDate={session?.countdown_started_at ? new Date(new Date(session.countdown_started_at).getTime() + 10000).toISOString() : undefined}
+            />
+
             {/* Player Progress Grid */}
             <div className="progress-grid">
                 {sortedPlayers.length === 0 ? (
@@ -416,6 +471,15 @@ export default function HostMonitorPage(): React.JSX.Element {
                                     className={`progress-card ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'completed' : '')} ${isActive ? 'animate-pulse-glow' : ''}`}
                                 >
                                     <div className="progress-card-header">
+                                        <div className="status-icon-container">
+                                            {player.isEliminated ? (
+                                                <X className="w-5 h-5 text-red-500" />
+                                            ) : player.isCompleted ? (
+                                                <Check className="w-5 h-5 text-green-400" />
+                                            ) : (
+                                                null
+                                            )}
+                                        </div>
                                         <div className="progress-bar-container">
                                             <div
                                                 className={`progress-bar-fill ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'complete' : '')}`}
@@ -424,11 +488,6 @@ export default function HostMonitorPage(): React.JSX.Element {
                                         </div>
                                         <span className="progress-indicator">
                                             {player.questionsAnswered}/{totalQuestions}
-                                            {player.isEliminated ? (
-                                                <X className="inline w-4 h-4 ml-1 text-red-500" />
-                                            ) : (
-                                                player.isCompleted && <Check className="inline w-4 h-4 ml-1 text-green-400" />
-                                            )}
                                         </span>
                                     </div>
                                     <div className="progress-card-body">
@@ -460,11 +519,16 @@ export default function HostMonitorPage(): React.JSX.Element {
           background: linear-gradient(90deg, #00ff00, #00cc00);
         }
         .progress-card.eliminated {
-          border: 3px solid #ff0000;
-          box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
+          border: 3px solid #ff0000 !important;
+          box-shadow: 0 0 15px rgba(255, 0, 0, 0.4) !important;
+          background: rgba(138, 5, 5, 0.473) !important; /* Similar opacity to completed but red */
         }
         .progress-bar-fill.eliminated {
           background: linear-gradient(90deg, #ff0000, #cc0000);
+        }
+        .progress-card.eliminated .progress-player-name {
+          color: #ff0000;
+          text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
         }
         .animate-pulse-glow {
           animation: glowPulse 2s ease-in-out infinite;

@@ -89,8 +89,8 @@ export default function PlayerWaitingPage(): React.JSX.Element {
 
             setSession(fetchedSession);
 
-            // If already active, redirect to game
-            if (fetchedSession.status === 'active') {
+            // If already active OR countdown started, redirect to game
+            if (fetchedSession.status === 'active' || (fetchedSession.status === 'waiting' && fetchedSession.countdown_started_at)) {
                 router.replace(`/player/${roomCode}/quiz`);
                 return;
             } else if (fetchedSession.status === 'finished') {
@@ -144,7 +144,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                         const newSession = payload.new as SessionData;
                         setSession(newSession);
 
-                        if (newSession.status === 'active') {
+                        if (newSession.status === 'active' || (newSession.status === 'waiting' && newSession.countdown_started_at)) {
                             showLoading();
                             router.replace(`/player/${roomCode}/quiz`);
                         } else if (newSession.status === 'finished') {
