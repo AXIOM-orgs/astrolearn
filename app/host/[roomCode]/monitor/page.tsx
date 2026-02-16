@@ -365,7 +365,8 @@ export default function HostMonitorPage(): React.JSX.Element {
                 .from('participants')
                 .update({
                     finished_at: new Date().toISOString(),
-                    eliminated: true
+                    eliminated: true,
+                    minigame: false
                 })
                 .eq('session_id', session.id)
                 .is('finished_at', null);
