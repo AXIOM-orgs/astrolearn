@@ -796,6 +796,35 @@ input[type="text"]:focus {
   position: relative;
 }
 
+/* Leaderboard Row Styling */
+.row-eliminated .rank-cell,
+.row-eliminated .score-cell {
+  color: #ff0000 !important; /* Red for eliminated */
+  font-weight: 700;
+}
+
+.row-winner .rank-cell,
+.row-winner .score-cell {
+  color: #06ffa5 !important; /* Green for winner */
+  font-weight: 700;
+}
+
+/* Ensure player name keeps default color */
+.player-cell {
+  color: var(--text-primary);
+}
+
+.row-eliminated:hover {
+  background-color: rgba(255, 0, 0, 0.1) !important;
+  transition: background-color 0.2s ease;
+}
+
+.row-winner:hover {
+  background-color: rgba(6, 255, 165, 0.1) !important;
+  transition: background-color 0.2s ease;
+}
+
+
 .quiz-progress-bar {
   height: 100%;
   background: linear-gradient(90deg, #00d4ff, #9d4edd);
@@ -806,8 +835,22 @@ input[type="text"]:focus {
 }
 
 /* Compact Question Text */
-.question-text-centered {
-  text-align: center;
+.question-text-left {
+  text-align: left;
+  font-size: 1.4rem;
+  /* Reduced from 1.8rem */
+  font-weight: 500;
+  margin-bottom: 2rem;
+  /* Reduced margin */
+  color: #fff;
+  line-height: 1.4;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.question-text-right {
+  text-align: right;
   font-size: 1.4rem;
   /* Reduced from 1.8rem */
   font-weight: 500;
@@ -961,7 +1004,12 @@ input[type="text"]:focus {
     position: relative;
   }
 
-  .question-text-centered {
+  .question-text-left {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .question-text-right {
     font-size: 1.1rem;
     margin-bottom: 1.5rem;
   }
@@ -4425,6 +4473,17 @@ input[type="text"]:focus {
 .progress-card.completed .progress-player-name {
   color: var(--success-color);
   text-shadow: 0 0 5px rgba(6, 255, 165, 0.5);
+}
+
+.progress-card.eliminated {
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.4) !important;
+  background: rgba(138, 5, 5, 0.473) !important; /* Similar opacity to completed but red */
+}
+
+.progress-card.eliminated .progress-player-name {
+  color: var(--accent-color);
+  text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
 }
 
 .progress-card-header {

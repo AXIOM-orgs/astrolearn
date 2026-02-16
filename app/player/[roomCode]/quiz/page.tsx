@@ -4,9 +4,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useGame, GameState, initialGameState } from '@/context/GameContext';
 import { supabaseGame } from '@/lib/supabase';
+import { isArabic } from '@/lib/utils';
 import Image from 'next/image';
 import { generateXID } from '@/lib/id-generator';
 import { QuizQuestion } from '@/lib/data';
+import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
 
 interface AnswerEntry {
     id: string;
@@ -34,6 +36,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     const [timeLeft, setTimeLeft] = useState<number>(0); // Seconds remaining
     const [sessionEndTime, setSessionEndTime] = useState<number | null>(null);
     const [startTime, setStartTime] = useState<number | null>(null);
+    const [sessionData, setSessionData] = useState<any>(null); // Store full session data for countdown checks
 
     const hasBootstrapped = useRef(false);
 
@@ -80,6 +83,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
 
                 const session = sessionResult.data;
                 const participant = participantResult.data;
+                setSessionData(session); // Store for Updates
 
                 // Parse questions from session
                 let questions: QuizQuestion[] = [];
@@ -110,6 +114,9 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                     const endTime = startTime + durationMs;
                     setSessionEndTime(endTime);
                     setStartTime(startTime);
+                } else if (session.status === 'waiting' && session.countdown_started_at && session.total_time_minutes) {
+                    // Pre-set time left to total duration so it doesn't show 0
+                    setTimeLeft(session.total_time_minutes * 60);
                 }
 
                 // Check if game already finished for this player
@@ -128,6 +135,33 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         };
 
         bootstrap();
+
+        // Realtime Session Subscription
+        const channel = supabaseGame
+            .channel(`quiz-session-${roomCode}`)
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `game_pin=eq.${roomCode}` },
+                (payload) => {
+                    const newSession = payload.new;
+                    setSessionData(newSession);
+
+                    // If game just started (became active)
+                    if (newSession.status === 'active' && newSession.started_at) {
+                        const start = new Date(newSession.started_at).getTime();
+                        setStartTime(start);
+                        if (newSession.total_time_minutes) {
+                            setSessionEndTime(start + newSession.total_time_minutes * 60 * 1000);
+                        }
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabaseGame.removeChannel(channel);
+        };
+
     }, [roomCode, router, setGameState, hideLoading]);
 
     const finishGame = useCallback(async (): Promise<void> => {
@@ -371,15 +405,21 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                     <Image
                         src={zoomedImage}
                         alt="Zoomed"
-                        width={1200}
-                        height={900}
+                        width={500}
+                        height={400}
                         className="max-w-full max-h-full object-contain rounded-lg"
                         unoptimized
                     />
                 </div>
             )}
 
-            {/* Countdown Overlay */}
+            {/* Global Countdown Overlay (Start Game) */}
+            <CountdownOverlay
+                isActive={!!sessionData?.countdown_started_at && sessionData?.status === 'waiting'}
+                targetDate={sessionData?.countdown_started_at ? new Date(new Date(sessionData.countdown_started_at).getTime() + 10000).toISOString() : undefined}
+            />
+
+            {/* Minigame Countdown Overlay */}
             {showCountdown && (
                 <div className="countdown-overlay">
                     <div className="countdown-number">{countdownNumber}</div>
@@ -454,7 +494,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                                         <Image
                                             src={currentQuestion.image}
                                             alt="Question"
-                                            width={600}
+                                            width={300}
                                             height={400}
                                             className="rounded-lg max-h-80 object-contain cursor-pointer shadow-lg hover:scale-105 transition-transform duration-300"
                                             unoptimized
@@ -464,7 +504,10 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                                 )}
 
                                 {/* Centered Question Text */}
-                                <h3 className="question-text-centered">
+                                <h3
+                                    className={`${isArabic(currentQuestion.question) ? 'font-arabic question-text-right' : 'question-text-left'} whitespace-pre-wrap`}
+                                    dir={isArabic(currentQuestion.question) ? 'rtl' : 'ltr'}
+                                >
                                     {currentQuestion.question}
                                 </h3>
 
@@ -509,10 +552,20 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                                                                     }}
                                                                 />
                                                             </div>
-                                                            <span className="text-center">{ans.answer}</span>
+                                                            <span
+                                                                className={`w-full ${isArabic(ans.answer) ? 'font-arabic text-right' : 'text-center'}`}
+                                                                dir={isArabic(ans.answer) ? 'rtl' : 'ltr'}
+                                                            >
+                                                                {ans.answer}
+                                                            </span>
                                                         </div>
                                                     ) : (
-                                                        <span>{ans.answer}</span>
+                                                        <span
+                                                            className={`w-full ${isArabic(ans.answer) ? 'font-arabic text-right block' : 'text-center'}`}
+                                                            dir={isArabic(ans.answer) ? 'rtl' : 'ltr'}
+                                                        >
+                                                            {ans.answer}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </button>

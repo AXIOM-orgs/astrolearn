@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Home, RotateCcw } from 'lucide-react';
+import { Home, RotateCcw, RotateCw } from 'lucide-react';
 import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai
 import { useGame } from '@/context/GameContext'; // pastikan path sesuai
 import { generateXID } from '@/lib/id-generator';
@@ -31,6 +31,7 @@ interface Participant {
   duration: number | null;
   finished_at: string | null;
   joined_at: string;
+  eliminated?: boolean;
 }
 
 export default function HostLeaderboardPage(): React.JSX.Element {
@@ -165,7 +166,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         // 2. Ambil semua participant yang finished (finished_at IS NOT NULL)
         const { data: participants, error: partErr } = await supabaseGame
           .from('participants')
-          .select('id, nickname, spacecraft, score, duration, finished_at, joined_at')
+          .select('id, nickname, spacecraft, score, duration, finished_at, joined_at, eliminated')
           .eq('session_id', sess.id)
           .not('finished_at', 'is', null);
 
@@ -308,7 +309,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
           <Home size={28} />
         </button>
         <button className="floating-btn restart-btn" onClick={handleRestart} title="Restart" disabled={isRestarting}>
-          <RotateCcw size={28} className={isRestarting ? 'animate-spin' : ''} />
+          <RotateCw size={28} className={isRestarting ? 'animate-spin' : ''} />
         </button>
 
         {/* Podium - tetap sama, tanpa duration */}
@@ -390,7 +391,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
               </thead>
               <tbody>
                 {sortedPlayers.map((player, index) => (
-                  <tr key={player.id}>
+                  <tr key={player.id} className={player.eliminated ? 'row-eliminated' : 'row-winner'}>
                     <td className="rank-cell">#{index + 1}</td>
                     <td className="player-cell">{player.nickname}</td>
                     <td className="score-cell">{formatScore(player.score)}</td>

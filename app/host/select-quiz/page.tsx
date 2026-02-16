@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase, supabaseGame } from '@/lib/supabase';
 import { generateXID } from '@/lib/id-generator';
 import { useGame } from '@/context/GameContext';
+import { isArabic } from '@/lib/utils';
 
 // Generate game PIN
 function generateGamePin(length = 6): string {
@@ -13,13 +14,8 @@ function generateGamePin(length = 6): string {
     return Array.from({ length }, () => digits[Math.floor(Math.random() * digits.length)]).join('');
 }
 
-// Helper to detect Arabic text
-function isArabic(text: string): boolean {
-    const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
-    const isAr = arabicPattern.test(text);
-    if (isAr) console.log('Detected Arabic text:', text);
-    return isAr;
-}
+// Helper to detect Arabic text - MOVED TO UTILS
+
 
 const DESKTOP_CARDS_PER_PAGE = 8;
 const MOBILE_CARDS_PER_PAGE = 4;

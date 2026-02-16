@@ -248,7 +248,6 @@ export default function HostLobbyPage(): React.JSX.Element {
         if (participants.length === 0 || isStarting) return;
 
         setIsStarting(true);
-        // showLoading(); // Removed to show countdown instead
 
         try {
             // Start countdown by setting timestamp
@@ -267,30 +266,9 @@ export default function HostLobbyPage(): React.JSX.Element {
                 return;
             }
 
-            // Optimistic update for immediate feedback
-            setSession(prev => prev ? { ...prev, countdown_started_at: now.toISOString() } : null);
-
-            // The useEffect above will detect the change and show the overlay
-            // We need another effect or timeout to actually start the game after 10s
-            // However, it's safer to let the Host (this component) be the source of truth for the transition
-            setTimeout(async () => {
-                try {
-                    const { error: startError } = await supabaseGame
-                        .from('sessions')
-                        .update({
-                            status: 'active',
-                            started_at: new Date().toISOString()
-                        })
-                        .eq('game_pin', roomCode);
-
-                    if (startError) throw startError;
-
-                    router.replace(`/host/${roomCode}/monitor`);
-                } catch (e) {
-                    console.error("Error transitioning to active:", e);
-                    setIsStarting(false);
-                }
-            }, 10000);
+            // Immediately redirect to monitor
+            // Monitor page will handle the countdown display and status update to 'active'
+            router.replace(`/host/${roomCode}/monitor`);
 
         } catch (err) {
             console.error('Error initiating launch:', err);
@@ -367,6 +345,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                     bgColor="#ffffff"
                                     fgColor="#000000"
                                     level="H"
+
                                 />
                             </div>
                         </div>
