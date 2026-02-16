@@ -848,12 +848,12 @@ export function startMiniGame(
     meteorImage = new Image();
     meteorImage.src = '/assets/meteor.png';
 
-    // Load background images (3-image loop: 1 → 3 → 2)
+    // Load background images (Using 1 asset for seamless looping)
     backgroundImages = [];
     const bgSources = [
-        '/assets/bgbarucuy.jpg',  // Image 1
-        '/assets/bgbarucuy3.jpg', // Image 3 (gap in middle)
-        '/assets/bgbarucuy2.jpg'  // Image 2 (dense)
+        '/assets/bgnewnih.jpg', // Main asset
+        '/assets/bgnewnih.jpg', // Repeat for loop
+        '/assets/bgnewnih.jpg'  // Repeat for loop
     ];
     for (const src of bgSources) {
         const img = new Image();
@@ -1632,19 +1632,19 @@ function drawBackground(): void {
                 const sX = (img.width - sW) / 2;
                 const sY = (img.height - sH) / 2;
 
-                // Draw strictly within the panel slot (No overlap)
+                // Draw strictly within the panel slot (Added +4px height for overlap to avoid seams)
                 ctx.drawImage(img,
                     sX, sY, sW, sH,
-                    0, Math.floor(bgPanelY[i]), canvas.width, canvas.height
+                    0, Math.floor(bgPanelY[i]), canvas.width, canvas.height + 4
                 );
             } else {
                 // Width is sufficient or larger.
-                // We center horizontally.
+                // We center horizontally. (Added +4px height for overlap to avoid seams)
                 const offX = (canvas.width - renderW) / 2;
 
                 ctx.drawImage(img,
                     0, 0, img.width, img.height,
-                    offX, Math.floor(bgPanelY[i]), renderW, renderH
+                    offX, Math.floor(bgPanelY[i]), renderW, renderH + 4
                 );
             }
         }
@@ -1889,23 +1889,14 @@ function drawUI(isInDodgePhase: boolean, elapsed: number): void {
     if (showBossWarning) {
         ctx.save();
 
-        // Red overlay for menacing atmosphere (pulsing)
-        const overlayAlpha = 0.15 + Math.sin(Date.now() / 200) * 0.1;
-        ctx.fillStyle = `rgba(255, 0, 0, ${overlayAlpha})`;
+        // Full-screen red flash for menacing atmosphere (pulsing)
+        // This covers the entire screen as requested ("satu layar")
+        const flashAlpha = 0.15 + Math.sin(Date.now() / 150) * 0.1;
+        ctx.fillStyle = `rgba(255, 0, 0, ${flashAlpha})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Vignette effect (darker edges)
-        const gradient = ctx.createRadialGradient(
-            canvas.width / 2, canvas.height / 2, 0,
-            canvas.width / 2, canvas.height / 2, canvas.width * 0.7
-        );
-        gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-        gradient.addColorStop(1, 'rgba(100, 0, 0, 0.4)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Warning Text
-        ctx.fillStyle = `rgba(255, 0, 0, ${0.5 + Math.sin(Date.now() / 100) * 0.5})`;
+        // Warning Text (with pulse)
+        ctx.fillStyle = `rgba(255, 0, 0, ${0.7 + Math.sin(Date.now() / 100) * 0.3})`;
         ctx.font = `bold ${Math.floor(48 * scale)}px "Orbitron", sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText('⚠ WARNING ⚠', canvas.width / 2, canvas.height / 2 - 20 * scale);

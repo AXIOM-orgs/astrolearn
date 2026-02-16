@@ -364,8 +364,8 @@ export default function HostLobbyPage(): React.JSX.Element {
                                 <QRCodeSVG
                                     value={joinUrl}
                                     size={300}
-                                    bgColor="transparent"
-                                    fgColor="#ffffff"
+                                    bgColor="#ffffff"
+                                    fgColor="#000000"
                                     level="H"
                                 />
                             </div>
