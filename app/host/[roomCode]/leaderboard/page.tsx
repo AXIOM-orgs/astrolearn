@@ -189,8 +189,11 @@ export default function HostLeaderboardPage(): React.JSX.Element {
           };
         });
 
-        // 4. Urutkan client-side: Score (DESC) -> Duration (ASC)
+        // 4. Urutkan client-side: Eliminated (False) -> Score (DESC) -> Duration (ASC)
         const sorted = processed.sort((a, b) => {
+          // 1. Prioritize Valid Players (Not Eliminated)
+          if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+
           if (b.score !== a.score) {
             return b.score - a.score; // Higher score first
           }
@@ -226,6 +229,9 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                 const filtered = prev.filter(x => x.id !== p.id);
                 const updated = [...filtered, p];
                 return updated.sort((a, b) => {
+                  // 1. Prioritize Valid Players (Not Eliminated)
+                  if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+
                   if (b.score !== a.score) return b.score - a.score;
                   const durA = a.duration || 999999;
                   const durB = b.duration || 999999;
@@ -286,6 +292,9 @@ export default function HostLeaderboardPage(): React.JSX.Element {
   };
 
   const sortedPlayers = [...players].sort((a, b) => {
+    // 1. Prioritize Valid Players (Not Eliminated)
+    if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+
     if (b.score !== a.score) return b.score - a.score;
     const durA = a.duration || 999999;
     const durB = b.duration || 999999;
