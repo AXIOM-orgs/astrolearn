@@ -423,14 +423,12 @@ export default function HostLeaderboardPage(): React.JSX.Element {
 
 .rankings-table th:nth-child(3),
 .rankings-table td:nth-child(3) {
-  width: 15%;         
-  text-align: left;
+  text-align: center;
 }
 
 .rankings-table th:nth-child(4),
 .rankings-table td:nth-child(4) {
-  width: 15%;          
-  text-align: left;
+  text-align: center;
 }
     `}</style>
     </>
