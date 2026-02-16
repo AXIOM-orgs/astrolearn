@@ -360,11 +360,12 @@ export default function HostMonitorPage(): React.JSX.Element {
 
             if (sessError) throw sessError;
 
-            // Force semua participant yang belum selesai jadi finished
+            // Force semua participant yang belum selesai jadi finished DAN eliminated
             const { error: partError } = await supabaseGame
                 .from('participants')
                 .update({
-                    finished_at: new Date().toISOString()
+                    finished_at: new Date().toISOString(),
+                    eliminated: true
                 })
                 .eq('session_id', session.id)
                 .is('finished_at', null);

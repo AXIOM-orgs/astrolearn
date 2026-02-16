@@ -798,13 +798,15 @@ input[type="text"]:focus {
 
 /* Leaderboard Row Styling */
 .row-eliminated .rank-cell,
-.row-eliminated .score-cell {
+.row-eliminated .score-cell,
+.row-eliminated .time-cell {
   color: #ff0000 !important; /* Red for eliminated */
   font-weight: 700;
 }
 
 .row-winner .rank-cell,
-.row-winner .score-cell {
+.row-winner .score-cell,
+.row-winner .time-cell {
   color: #06ffa5 !important; /* Green for winner */
   font-weight: 700;
 }
