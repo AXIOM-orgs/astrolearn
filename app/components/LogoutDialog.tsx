@@ -72,7 +72,7 @@ export function LogoutDialog({ open, onOpenChange }: LogoutDialogProps): React.J
                         onClick={handleLogout}
                         disabled={loading}
                     >
-                        {loading ? 'LOGGING OUT...' : 'LOGOUT'}
+                        {loading ? 'LOGOUT...' : 'LOGOUT'}
                     </button>
                 </div>
             </div>

@@ -28,11 +28,16 @@
 
 body {
   font-family: var(--font-space-mono), 'Space Mono', monospace;
-  /* background: linear-gradient(135deg, #0a0e27 0%, #1a1042 50%, #0a0e27 100%);
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite; */
-  background-image: url(/assets/bg3.png);
-  background-size: cover;
+  background-color: #0c1229 !important;
+  background-image:
+    linear-gradient(to bottom, rgba(5, 8, 20, 0.3), rgba(5, 8, 20, 0.6)),
+    url('/assets/bgbarucuy.jpg?v=3'),
+    url('/assets/bgbarucuy2.jpg?v=3'),
+    url('/assets/bgbarucuy3.jpg?v=3') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-blend-mode: normal, luminosity, overlay, normal !important;
   color: var(--text-primary);
   overflow-x: hidden;
   min-height: 100vh;
@@ -58,6 +63,7 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
+  display: none !important;
   background: linear-gradient(135deg, rgba(10, 14, 39, 0.808) 0%, rgb(26, 16, 66) 50%, rgba(10, 14, 39, 0.7) 100%);
   animation: gradientShift 15s ease infinite;
 }
@@ -91,7 +97,7 @@ body::before {
   background: url(/assets/meteor.png) center/contain no-repeat;
   border-radius: 50%;
   animation: fall linear infinite;
-  opacity: 0.6;
+  opacity: 1;
   box-shadow: 0 0 5px rgba(139, 69, 19, 0.5);
 }
 
@@ -710,16 +716,6 @@ input[type="text"]:focus {
 
 /* Quiz Interface */
 #screen-quiz {
-  background-color: #0c1229 !important;
-  background-image:
-    linear-gradient(to bottom, rgba(5, 8, 20, 0.3), rgba(5, 8, 20, 0.6)),
-    url('/assets/bgbarucuy.jpg?v=3'),
-    url('/assets/bgbarucuy2.jpg?v=3'),
-    url('/assets/bgbarucuy3.jpg?v=3') !important;
-  background-size: cover !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-  background-blend-mode: normal, luminosity, overlay, normal !important;
   min-height: 100vh;
   padding: 2rem;
   display: flex;
@@ -1250,6 +1246,8 @@ input[type="text"]:focus {
 
 /* Mini Game - Fullscreen 3D View */
 #screen-minigame {
+  background-color: #0c1229 !important;
+  background-image: none !important;
   height: 100vh;
   height: 100dvh;
   max-height: 100vh;
@@ -1324,7 +1322,34 @@ input[type="text"]:focus {
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
 }
 
-/* Results - New Layout */
+/* ----------------------
+   RESULT PAGE
+   ---------------------- */
+.results-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 1rem 2rem;
+  position: relative;
+  z-index: 10;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3px 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.results-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 20px;
+}
+
+
 .results-wrapper {
   display: flex;
   flex-direction: column;
@@ -1420,6 +1445,7 @@ input[type="text"]:focus {
   font-weight: 900;
   color: #d9d9d9;
   line-height: 1;
+  letter-spacing: 3px;
 }
 
 .result-stat-label {
@@ -2556,7 +2582,7 @@ input[type="text"]:focus {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(30, 30, 50, 0.6);
+  background: rgba(30, 30, 50, 0.822);
   border: 1px solid rgba(100, 100, 150, 0.3);
   border-radius: 10px;
   padding: 0 0 0 1rem;
@@ -2573,7 +2599,7 @@ input[type="text"]:focus {
   background: transparent;
   border: none;
   outline: none;
-  color: var(--text-primary);
+  color: #d9d9d9;
   font-family: var(--font-space-mono), 'Space Mono', monospace;
   font-size: 0.85rem;
   width: 100%;
@@ -2945,6 +2971,7 @@ input[type="text"]:focus {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  font-weight: 700;
   font-family: var(--font-orbitron), sans-serif;
   font-size: 0.75rem;
   color: var(--cyan-glow);
@@ -3521,16 +3548,6 @@ input[type="text"]:focus {
   padding: 1rem 2rem;
   position: relative;
   z-index: 10;
-  background-color: #0c1229 !important;
-  background-image:
-    linear-gradient(to bottom, rgba(5, 8, 20, 0.3), rgba(5, 8, 20, 0.6)),
-    url('/assets/bgbarucuy.jpg?v=3'),
-    url('/assets/bgbarucuy2.jpg?v=3'),
-    url('/assets/bgbarucuy3.jpg?v=3') !important;
-  background-size: cover !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-  background-blend-mode: normal, luminosity, overlay, normal !important;
 }
 
 .host-header {
@@ -3714,7 +3731,7 @@ input[type="text"]:focus {
 .player-grid-container {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 0 1.5rem;
   min-height: 200px;
 }
 
@@ -3938,11 +3955,12 @@ input[type="text"]:focus {
 }
 
 .game-code-section {
-  background: linear-gradient(135deg, rgba(0, 50, 60, 0.8) 0%, rgba(0, 30, 40, 0.9) 100%);
-  border: 1px solid var(--primary-color);
-  border-radius: 12px;
-  padding: 1rem;
+  background: transparent !important;
+  border: none !important;
+  padding: 0;
   text-align: center;
+  display: flex;
+  justify-content: center;
 }
 
 .section-label {
@@ -3954,19 +3972,33 @@ input[type="text"]:focus {
 }
 
 .game-code-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
   background: rgba(0, 0, 0, 0.4);
+  border: 2px solid var(--primary-color);
   border-radius: 8px;
-  padding: 0.1rem 0.3rem;
-  margin-bottom: 0.4rem;
+  width: 350px;
+  box-shadow: 0 0 20px rgba(70, 167, 187, 0.2);
 }
 
 .lobby-action-bar.right-panel-actions {
   background: transparent;
   border: none;
   padding: 0;
-  margin-top: 0.5rem;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  display: flex !important;
+  justify-content: flex-start !important;
+  gap: 0.5rem !important;
+}
+
+.lobby-action-bar.right-panel-actions .btn-end-session,
+.lobby-action-bar.right-panel-actions .btn-launch {
+  flex: 1 !important;
+  width: auto !important;
+  min-width: 0 !important;
 }
 
 .game-code {
@@ -4026,12 +4058,11 @@ input[type="text"]:focus {
 }
 
 .qr-section {
-  background: rgba(35, 41, 40, 0.904) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 12px;
-  padding: 1rem;
+  background: transparent !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none !important;
+  padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -4051,11 +4082,12 @@ input[type="text"]:focus {
 
 .qr-frame {
   position: relative;
-  background: transparent !important;
+  background: #ffffff !important;
   border-radius: 12px;
-  padding:0.5rem;
+  padding: 0.5rem;
   margin: 0;
   display: inline-block;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
 }
 
 .qr-corner {
@@ -4991,6 +5023,14 @@ input[type="text"]:focus {
   color: var(--success-color);
 }
 
+.time-cell {
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 4px;
+  font-weight: 700;
+  color: var(--success-color);
+}
+
 .ranking-card {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -5130,7 +5170,7 @@ input[type="text"]:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 0px;
+  padding-top: 10px;
 }
 
 .waiting-brand {
@@ -5597,7 +5637,7 @@ input[type="text"]:focus {
 }
 
 .url-card-panel {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
   width: 100%;
 }
 
@@ -6281,29 +6321,4 @@ input[type="text"]:focus {
   background-position: center !important;
   background-repeat: no-repeat !important;
   background-blend-mode: normal, luminosity, overlay, normal !important;
-}
-
-/* ----------------------
-   RESULT PAGE
-   ---------------------- */
-.result-screen {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  padding: 1rem 2rem;
-  position: relative;
-  z-index: 10;
-  background-color: #0c1229 !important;
-  background-image:
-    linear-gradient(to bottom, rgba(5, 8, 20, 0.3), rgba(5, 8, 20, 0.6)),
-    url('/assets/bgbarucuy.jpg?v=3'),
-    url('/assets/bgbarucuy2.jpg?v=3'),
-    url('/assets/bgbarucuy3.jpg?v=3') !important;
-  background-size: cover !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-  background-attachment: fixed !important;
-  background-blend-mode: normal, luminosity, overlay, normal !important;
-  align-items: center;
-  justify-content: center;
 }

@@ -341,10 +341,11 @@ export default function HostLobbyPage(): React.JSX.Element {
                                 <div className="qr-corner bottom-right"></div> */}
                                 <QRCodeSVG
                                     value={joinUrl}
-                                    size={250}
-                                    bgColor="transparent"
-                                    fgColor="#d9d9d9"
-                                // level="H"
+                                    size={300}
+                                    bgColor="#ffffff"
+                                    fgColor="#000000"
+                                    level="H"
+
                                 />
                             </div>
                         </div>

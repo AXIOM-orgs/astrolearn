@@ -219,7 +219,7 @@ export default function LandingPage(): React.JSX.Element {
             <div className="landing-content">
                 {/* Header */}
                 <header className="landing-header">
-                    <h1 className="cosmic-title">ASTRO LEARNING</h1>
+                    <h1 className="cosmic-title">AXIOM</h1>
                     <p className="cosmic-subtitle">ENTER THE COSMIC ARENA</p>
                 </header>
 
