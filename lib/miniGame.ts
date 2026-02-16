@@ -1451,7 +1451,7 @@ function drawScrollingDecors(): void {
             ctx.save();
             ctx.translate(decor.x, decor.y);
             ctx.rotate(decor.rotation);
-            ctx.globalAlpha = 0.8;
+            ctx.globalAlpha = 1;
             ctx.drawImage(img, -size / 2, -size / 2, size, size);
             ctx.restore();
         }

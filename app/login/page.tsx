@@ -267,7 +267,7 @@ export default function LoginPage() {
                                 type="text"
                                 value={identifier}
                                 onChange={(e) => setIdentifier(e.target.value)}
-                                placeholder="Enter your email or username"
+                                placeholder="example@gmail.com"
                                 required
                                 style={inputStyle}
                             />

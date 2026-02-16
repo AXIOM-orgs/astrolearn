@@ -40,15 +40,15 @@ export function GameCodeDialog({ isOpen, onClose, gameCode, joinUrl }: GameCodeD
 
                 <div className="qr-code-large over">
                     <div className="qr-code-frame">
-                        <div className="qr-corner top-left"></div>
+                        {/* <div className="qr-corner top-left"></div>
                         <div className="qr-corner top-right"></div>
                         <div className="qr-corner bottom-left"></div>
-                        <div className="qr-corner bottom-right"></div>
+                        <div className="qr-corner bottom-right"></div> */}
                         <QRCodeSVG
                             value={joinUrl}
                             size={500}
                             bgColor="transparent"
-                            fgColor="#00d4ff"
+                            fgColor="#ffffff"
                             level="H"
                         />
                     </div>
