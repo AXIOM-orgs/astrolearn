@@ -435,6 +435,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
             <CountdownOverlay
                 isActive={!!sessionData?.countdown_started_at && sessionData?.status === 'waiting'}
                 targetDate={targetDate}
+                max={10}
             />
 
             {/* Minigame Countdown Overlay */}
