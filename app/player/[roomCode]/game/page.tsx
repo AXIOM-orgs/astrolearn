@@ -138,6 +138,31 @@ export default function GamePage(): React.JSX.Element {
         }, 500);
     }, [gameState.currentQuestionIndex, gameState.selectedQuestions, gameState.score, roomCode, router, setGameState, showLoading, hideLoading]);
 
+    // Realtime Session Subscription to handle "End Game" from Host
+    useEffect(() => {
+        if (!roomCode) return;
+
+        const channel = supabaseGame
+            .channel(`minigame-session-${roomCode}`)
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `game_pin=eq.${roomCode}` },
+                (payload) => {
+                    const newSession = payload.new;
+                    if (newSession.status === 'finished') {
+                        // Stop any running game loops
+                        cleanupMiniGame();
+                        router.replace(`/player/${roomCode}/result`);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabaseGame.removeChannel(channel);
+        };
+    }, [roomCode, router]);
+
     useEffect(() => {
         if (isInitializing) return;
 

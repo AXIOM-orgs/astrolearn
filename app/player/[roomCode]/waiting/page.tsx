@@ -94,7 +94,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             if (fetchedSession.status === 'active' || (fetchedSession.status === 'waiting' && fetchedSession.countdown_started_at)) {
                 if (!isRedirecting.current) {
                     isRedirecting.current = true;
-                    showLoading();
+                    // showLoading();
                     router.replace(`/player/${roomCode}/quiz`);
                 }
                 return;
@@ -152,7 +152,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                         if (newSession.status === 'active' || (newSession.status === 'waiting' && newSession.countdown_started_at)) {
                             if (!isRedirecting.current) {
                                 isRedirecting.current = true;
-                                showLoading();
+                                // showLoading();
                                 router.replace(`/player/${roomCode}/quiz`);
                             }
                         } else if (newSession.status === 'finished') {
