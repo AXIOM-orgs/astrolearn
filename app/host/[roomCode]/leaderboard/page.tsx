@@ -299,7 +299,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         {/* Header - tetap sama */}
         <header className="leaderboard-header">
           <div className="leaderboard-brand">
-            <img src="/assets/logo2new.webp" alt="Astro Learning" className="brand-logo-image" />
+            <img src="/assets/logoal.webp" alt="Astro Learning" className="brand-logo-image" />
           </div>
           <img src="/assets/logo.webp" alt="Gameforsmart Logo" className="header-logo" />
         </header>
@@ -328,7 +328,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                     {top3[1].spacecraft ? (
                       <img src={`/assets/${top3[1].spacecraft}`} alt="spacecraft" />
                     ) : (
-                      <span style={{ fontSize: '3rem' }}>🚀</span>
+                      <span style={{ fontSize: '3rem' }}></span>
                     )}
                   </div>
                   <h3 className="podium-name has-tooltip" data-tooltip={top3[1].nickname}>
@@ -346,7 +346,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                     {top3[0].spacecraft ? (
                       <img src={`/assets/${top3[0].spacecraft}`} alt="spacecraft" />
                     ) : (
-                      <span style={{ fontSize: '3.5rem' }}>🚀</span>
+                      <span style={{ fontSize: '3.5rem' }}></span>
                     )}
                   </div>
                   <h3 className="podium-name has-tooltip" data-tooltip={top3[0].nickname}>
@@ -386,7 +386,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                   <th>Rank</th>
                   <th>Player</th>
                   <th>Score</th>
-                  <th>Duration</th>
+                  <th>Time</th>
                 </tr>
               </thead>
               <tbody>
@@ -395,7 +395,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                     <td className="rank-cell">#{index + 1}</td>
                     <td className="player-cell">{player.nickname}</td>
                     <td className="score-cell">{formatScore(player.score)}</td>
-                    <td className="score-cell">{formatDuration(player.duration)}</td>
+                    <td className="time-cell">{formatDuration(player.duration)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -194,8 +194,8 @@ export default function JoinResultsPage(): React.JSX.Element {
     return (
         <section id="screen-results" className="result-screen">
             {/* Header */}
-            <header className="waiting-header w-full">
-                <div className="waiting-brand">
+            <header className="results-header w-full">
+                <div className="results-brand">
                     <img
                         src="/assets/logoal.webp"
                         alt="Axiom"
@@ -297,7 +297,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                         <span className="result-stat-value">
                             {formatDuration(myStats?.duration)}
                         </span>
-                        <span className="result-stat-label">Duration</span>
+                        <span className="result-stat-label">Time</span>
                     </div>
                 </div>
 
