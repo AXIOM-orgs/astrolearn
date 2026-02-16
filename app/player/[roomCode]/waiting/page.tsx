@@ -63,6 +63,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
     const [currentSpaceship, setCurrentSpaceship] = useState<Spaceship | null>(spaceships[0]);
 
     const hasBootstrapped = useRef(false);
+    const isRedirecting = useRef(false);
 
     // Bootstrap: Fetch session & participants, setup realtime
     useEffect(() => {
@@ -91,7 +92,11 @@ export default function PlayerWaitingPage(): React.JSX.Element {
 
             // If already active OR countdown started, redirect to game
             if (fetchedSession.status === 'active' || (fetchedSession.status === 'waiting' && fetchedSession.countdown_started_at)) {
-                router.replace(`/player/${roomCode}/quiz`);
+                if (!isRedirecting.current) {
+                    isRedirecting.current = true;
+                    showLoading();
+                    router.replace(`/player/${roomCode}/quiz`);
+                }
                 return;
             } else if (fetchedSession.status === 'finished') {
                 router.replace(`/player/${roomCode}/result`);
@@ -145,8 +150,11 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                         setSession(newSession);
 
                         if (newSession.status === 'active' || (newSession.status === 'waiting' && newSession.countdown_started_at)) {
-                            showLoading();
-                            router.replace(`/player/${roomCode}/quiz`);
+                            if (!isRedirecting.current) {
+                                isRedirecting.current = true;
+                                showLoading();
+                                router.replace(`/player/${roomCode}/quiz`);
+                            }
                         } else if (newSession.status === 'finished') {
                             router.replace(`/player/${roomCode}/result`);
                         }

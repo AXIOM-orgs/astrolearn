@@ -38,6 +38,19 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     const [startTime, setStartTime] = useState<number | null>(null);
     const [sessionData, setSessionData] = useState<any>(null); // Store full session data for countdown checks
 
+    // Memoize target date to prevent blinking
+    const countdownTargetDate = useState<string | undefined>(undefined);
+    const [targetDate, setTargetDate] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        if (sessionData?.countdown_started_at) {
+            const date = new Date(new Date(sessionData.countdown_started_at).getTime() + 10000).toISOString();
+            setTargetDate(date);
+        } else {
+            setTargetDate(undefined);
+        }
+    }, [sessionData?.countdown_started_at]);
+
     const hasBootstrapped = useRef(false);
 
     // Bootstrap: Fetch session & restore state
@@ -153,6 +166,11 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                         if (newSession.total_time_minutes) {
                             setSessionEndTime(start + newSession.total_time_minutes * 60 * 1000);
                         }
+                    }
+
+                    // If game finished (Host ended it or time ran out)
+                    if (newSession.status === 'finished') {
+                        router.replace(`/player/${roomCode}/result`);
                     }
                 }
             )
@@ -416,7 +434,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
             {/* Global Countdown Overlay (Start Game) */}
             <CountdownOverlay
                 isActive={!!sessionData?.countdown_started_at && sessionData?.status === 'waiting'}
-                targetDate={sessionData?.countdown_started_at ? new Date(new Date(sessionData.countdown_started_at).getTime() + 10000).toISOString() : undefined}
+                targetDate={targetDate}
             />
 
             {/* Minigame Countdown Overlay */}

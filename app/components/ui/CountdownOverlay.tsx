@@ -9,7 +9,14 @@ interface CountdownOverlayProps {
 }
 
 export function CountdownOverlay({ isActive, onComplete, targetDate }: CountdownOverlayProps) {
-    const [count, setCount] = useState<number | null>(null);
+    const [count, setCount] = useState<number | null>(() => {
+        if (!isActive || !targetDate) return null;
+        const now = new Date().getTime();
+        const target = new Date(targetDate).getTime();
+        const difference = target - now;
+        if (difference <= 0) return 0;
+        return Math.ceil(difference / 1000);
+    });
 
     useEffect(() => {
         if (!isActive || !targetDate) {
