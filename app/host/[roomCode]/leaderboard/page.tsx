@@ -189,13 +189,28 @@ export default function HostLeaderboardPage(): React.JSX.Element {
           };
         });
 
-        // 4. Urutkan client-side: Score (DESC) -> Duration (ASC)
+        // 4. Urutkan client-side: Eliminated (False) -> Score (DESC) -> Duration (ASC) -> Joined at -> id
         const sorted = processed.sort((a, b) => {
-          if (b.score !== a.score) {
-            return b.score - a.score; // Higher score first
-          }
-          return a.duration - b.duration; // Lower duration first
+          // 1. Not eliminated first
+          if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+        
+          // 2. Higher score first
+          if (b.score !== a.score) return b.score - a.score;
+        
+          // 3. Lower duration first
+          const durA = a.duration ?? 999999;
+          const durB = b.duration ?? 999999;
+          if (durA !== durB) return durA - durB;
+        
+          // 4. Earlier join first (biar konsisten)
+          const joinA = new Date(a.joined_at).getTime();
+          const joinB = new Date(b.joined_at).getTime();
+          if (joinA !== joinB) return joinA - joinB;
+        
+          // 5. Final fallback (biar gak random)
+          return a.id.localeCompare(b.id);
         });
+
 
         setPlayers(sorted);
 
@@ -226,6 +241,9 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                 const filtered = prev.filter(x => x.id !== p.id);
                 const updated = [...filtered, p];
                 return updated.sort((a, b) => {
+                  // 1. Prioritize Valid Players (Not Eliminated)
+                  if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+
                   if (b.score !== a.score) return b.score - a.score;
                   const durA = a.duration || 999999;
                   const durB = b.duration || 999999;
@@ -286,6 +304,9 @@ export default function HostLeaderboardPage(): React.JSX.Element {
   };
 
   const sortedPlayers = [...players].sort((a, b) => {
+    // 1. Prioritize Valid Players (Not Eliminated)
+    if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+
     if (b.score !== a.score) return b.score - a.score;
     const durA = a.duration || 999999;
     const durB = b.duration || 999999;

@@ -6,10 +6,19 @@ interface CountdownOverlayProps {
     isActive: boolean;
     onComplete?: () => void;
     targetDate?: string; // ISO string when countdown should end
+    max?: number; // Maximum value to display (e.g. 10)
 }
 
-export function CountdownOverlay({ isActive, onComplete, targetDate }: CountdownOverlayProps) {
-    const [count, setCount] = useState<number | null>(null);
+export function CountdownOverlay({ isActive, onComplete, targetDate, max }: CountdownOverlayProps) {
+    const [count, setCount] = useState<number | null>(() => {
+        if (!isActive || !targetDate) return null;
+        const now = new Date().getTime();
+        const target = new Date(targetDate).getTime();
+        const difference = target - now;
+        if (difference <= 0) return 0;
+        const calculated = Math.ceil(difference / 1000);
+        return max ? Math.min(calculated, max) : calculated;
+    });
 
     useEffect(() => {
         if (!isActive || !targetDate) {
@@ -28,7 +37,8 @@ export function CountdownOverlay({ isActive, onComplete, targetDate }: Countdown
                 return;
             }
 
-            setCount(Math.ceil(difference / 1000));
+            const val = Math.ceil(difference / 1000);
+            setCount(max ? Math.min(val, max) : val);
         };
 
         calculateTimeLeft(); // Initial calc

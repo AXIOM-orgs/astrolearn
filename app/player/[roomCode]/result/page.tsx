@@ -134,19 +134,43 @@ export default function JoinResultsPage(): React.JSX.Element {
 
         // Helper to calculate rank
         const calculateRank = async (sessionId: string, myParticipantId: string) => {
-            const { data: participants, error: partError } = await supabaseGame
-                .from('participants')
-                .select('id, score, duration')
-                .eq('session_id', sessionId)
-                .order('score', { ascending: false })
-                .order('duration', { ascending: true });
-
-            if (partError || !participants) return;
-
-            const rankIndex = participants.findIndex(p => p.id === myParticipantId);
-            if (rankIndex !== -1) {
-                setMyRank(rankIndex + 1);
-            }
+          const { data: participants, error: partError } = await supabaseGame
+            .from('participants')
+            .select('id, score, duration, eliminated, joined_at')
+            .eq('session_id', sessionId);
+        
+          if (partError || !participants) return;
+        
+          // normalize data biar aman
+          const processed = participants.map(p => ({
+            ...p,
+            duration: p.duration ?? 999999
+          }));
+        
+          // sorting rules sama persis kayak leaderboard host
+          const sorted = processed.sort((a, b) => {
+            // 1. Not eliminated first
+            if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+        
+            // 2. Higher score first
+            if (b.score !== a.score) return b.score - a.score;
+        
+            // 3. Lower duration first
+            if (a.duration !== b.duration) return a.duration - b.duration;
+        
+            // 4. Earlier joined first
+            const joinA = new Date(a.joined_at).getTime();
+            const joinB = new Date(b.joined_at).getTime();
+            if (joinA !== joinB) return joinA - joinB;
+        
+            // 5. Final fallback biar gak random
+            return a.id.localeCompare(b.id);
+          });
+        
+          const rankIndex = sorted.findIndex(p => p.id === myParticipantId);
+          if (rankIndex !== -1) {
+            setMyRank(rankIndex + 1);
+          }
         };
 
         fetchData();
