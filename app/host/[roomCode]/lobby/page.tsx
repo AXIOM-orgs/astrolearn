@@ -8,6 +8,8 @@ import { supabaseGame } from '@/lib/supabase';
 import { GameCodeDialog } from '@/app/components/ui/GameCodeDialog';
 import { ExitConfirmationDialog } from '@/app/components/ui/ExitConfirmationDialog';
 import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
+import { KickPlayerDialog } from '@/app/components/ui/KickPlayerDialog';
+import { X as LucideX } from 'lucide-react';
 
 interface Participant {
     id: string;
@@ -41,6 +43,7 @@ export default function HostLobbyPage(): React.JSX.Element {
     const [copySuccess, setCopySuccess] = useState<boolean>(false);
     const [urlCopySuccess, setUrlCopySuccess] = useState<boolean>(false);
     const [joinUrl, setJoinUrl] = useState<string>('');
+    const [selectedPlayerToKick, setSelectedPlayerToKick] = useState<Participant | null>(null);
 
     const prevPlayerCount = useRef<number>(0);
     const channelRef = useRef<ReturnType<typeof supabaseGame.channel> | null>(null);
@@ -228,6 +231,29 @@ export default function HostLobbyPage(): React.JSX.Element {
         } finally {
             setIsDeleting(false);
             setShowExitDialog(false);
+        }
+    };
+
+    const handleKickPlayer = (player: Participant) => {
+        setSelectedPlayerToKick(player);
+    };
+
+    const handleConfirmKick = async () => {
+        if (!selectedPlayerToKick || !session?.id) return;
+
+        try {
+            const { error } = await supabaseGame
+                .from('participants')
+                .delete()
+                .eq('id', selectedPlayerToKick.id);
+
+            if (error) throw error;
+
+            console.log(`Player ${selectedPlayerToKick.nickname} kicked`);
+        } catch (err) {
+            console.error('Error kicking player:', err);
+        } finally {
+            setSelectedPlayerToKick(null);
         }
     };
 
@@ -440,6 +466,13 @@ export default function HostLobbyPage(): React.JSX.Element {
                             <div className="player-grid">
                                 {participants.map((player) => (
                                     <div key={player.id} className="player-card">
+                                        <button
+                                            className="btn-kick-player"
+                                            onClick={() => handleKickPlayer(player)}
+                                            title="Kick player"
+                                        >
+                                            <LucideX size={14} />
+                                        </button>
                                         <div className="player-icon">
                                             {player.spacecraft ? (
                                                 <img
@@ -476,6 +509,14 @@ export default function HostLobbyPage(): React.JSX.Element {
             <CountdownOverlay
                 isActive={!!countdownTarget}
                 targetDate={countdownTarget || undefined}
+            />
+
+            <KickPlayerDialog
+                isOpen={!!selectedPlayerToKick}
+                onClose={() => setSelectedPlayerToKick(null)}
+                onConfirm={handleConfirmKick}
+                playerNickname={selectedPlayerToKick?.nickname || ''}
+                playerSpacecraft={selectedPlayerToKick?.spacecraft || null}
             />
         </section>
     );

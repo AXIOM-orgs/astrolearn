@@ -235,7 +235,7 @@ export default function LandingPage(): React.JSX.Element {
                         </div>
                         <h2 className="card-title">HOST GAME</h2>
                         <p className="card-description card-description-host">
-                            Create Your Space and Invite Other Pilots.
+                            Create Your Own Space and Invite Players.
                         </p>
                         <button className="btn-create-room" onClick={handleCreateRoom}>
                             CREATE ROOM
