@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Home, RotateCcw, RotateCw } from 'lucide-react';
+import { Home, RotateCcw, RotateCw, BarChart3 } from 'lucide-react';
 import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai
 import { useGame } from '@/context/GameContext'; // pastikan path sesuai
 import { generateXID } from '@/lib/id-generator';
@@ -193,20 +193,20 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         const sorted = processed.sort((a, b) => {
           // 1. Not eliminated first
           if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
-        
+
           // 2. Higher score first
           if (b.score !== a.score) return b.score - a.score;
-        
+
           // 3. Lower duration first
           const durA = a.duration ?? 999999;
           const durB = b.duration ?? 999999;
           if (durA !== durB) return durA - durB;
-        
+
           // 4. Earlier join first (biar konsisten)
           const joinA = new Date(a.joined_at).getTime();
           const joinB = new Date(b.joined_at).getTime();
           if (joinA !== joinB) return joinA - joinB;
-        
+
           // 5. Final fallback (biar gak random)
           return a.id.localeCompare(b.id);
         });
@@ -325,13 +325,28 @@ export default function HostLeaderboardPage(): React.JSX.Element {
           <img src="/assets/logo.webp" alt="Gameforsmart Logo" className="header-logo" />
         </header>
 
-        {/* Floating Buttons - tetap sama */}
-        <button className="floating-btn home-btn" onClick={handleHome} title="Home">
-          <Home size={28} />
-        </button>
-        <button className="floating-btn restart-btn" onClick={handleRestart} title="Restart" disabled={isRestarting}>
-          <RotateCw size={28} className={isRestarting ? 'animate-spin' : ''} />
-        </button>
+        {/* Floating Buttons */}
+        <div className="left-floating-group">
+          <button className="floating-btn home-btn" onClick={handleHome} title="Home">
+            <Home size={28} />
+          </button>
+          <button className="floating-btn restart-btn" onClick={handleRestart} title="Restart" disabled={isRestarting}>
+            <RotateCw size={28} className={isRestarting ? 'animate-spin' : ''} />
+          </button>
+        </div>
+
+        {/* Statistics Button (Right Side) */}
+        {sessionId && (
+          <a
+            href={`https://gameforsmart2026.vercel.app/results/${sessionId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="floating-btn statistics-btn"
+            title="See Statistics"
+          >
+            <BarChart3 size={28} />
+          </a>
+        )}
 
         {/* Podium - tetap sama, tanpa duration */}
         <div className="vanguard-section">
@@ -450,6 +465,41 @@ export default function HostLeaderboardPage(): React.JSX.Element {
 .rankings-table th:nth-child(4),
 .rankings-table td:nth-child(4) {
   text-align: center;
+}
+
+.left-floating-group {
+  position: fixed;
+  left: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 100;
+}
+
+.left-floating-group .floating-btn {
+  position: static;
+  transform: none;
+}
+
+.left-floating-group .floating-btn:hover {
+  transform: scale(1.1);
+}
+
+.left-floating-group .floating-btn:active {
+  transform: scale(0.95);
+}
+
+.statistics-btn {
+  right: 30px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.statistics-btn:hover {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: 0 6px 25px rgba(245, 158, 11, 0.5);
 }
     `}</style>
     </>

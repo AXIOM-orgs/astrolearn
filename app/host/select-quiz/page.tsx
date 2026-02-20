@@ -30,6 +30,22 @@ interface Quiz {
     total_count?: number;
 }
 
+const SkeletonQuizCard = () => (
+    <div className="quiz-skeleton-card">
+        <div className="skeleton-shimmer"></div>
+        <div className="quiz-card-content justify-between">
+            <div className="quiz-card-header">
+                <div className="skeleton-title"></div>
+                <div className="skeleton-title" style={{ width: '60%' }}></div>
+            </div>
+            <div className="quiz-card-footer">
+                <div className="skeleton-badge"></div>
+                <div className="skeleton-button"></div>
+            </div>
+        </div>
+    </div>
+);
+
 export default function SelectQuizPage(): React.JSX.Element {
     const router = useRouter();
     const { profile } = useAuth();
@@ -395,9 +411,15 @@ export default function SelectQuizPage(): React.JSX.Element {
             </nav>
 
             {/* Quiz Grid */}
-            {quizzes.length > 0 ? (
+            {isFetching ? (
+                <div className="quiz-grid">
+                    {Array.from({ length: cardsPerPage }).map((_, i) => (
+                        <SkeletonQuizCard key={`skeleton-${i}`} />
+                    ))}
+                </div>
+            ) : quizzes.length > 0 ? (
                 <>
-                    <div className={`quiz-grid ${isFetching ? 'fetching' : ''}`}>
+                    <div className="quiz-grid">
                         {quizzes.map((quiz) => {
                             const isFavorite = favorites.includes(quiz.id);
                             const isThisQuizCreating = creatingQuizId === quiz.id;
@@ -498,6 +520,7 @@ export default function SelectQuizPage(): React.JSX.Element {
                     <p className="empty-state-subtitle">{getEmptyStateMessage().subtitle}</p>
                 </div>
             )}
+
 
             {/* Floating Dynamic Tooltip */}
             {tooltipData && (

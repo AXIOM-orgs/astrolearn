@@ -216,9 +216,17 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                         if (deletedId === myId) {
                             console.warn('You have been kicked from the session');
                             showLoading();
+
+                            // Clear local storage immediately
                             localStorage.removeItem('cosmicquest_participant_id');
                             localStorage.removeItem('cosmicquest_session_id');
-                            router.push('/');
+                            localStorage.removeItem('cosmicquest_spacecraft');
+
+                            // Delay redirection for visual "loading" effect as requested
+                            setTimeout(() => {
+                                router.push('/');
+                                hideLoading();
+                            }, 1500);
                         }
                     }
                 }
@@ -248,6 +256,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
         localStorage.removeItem('cosmicquest_session_id');
         localStorage.removeItem('cosmicquest_spacecraft');
         router.push('/');
+        hideLoading();
         setShowExitDialog(false);
     };
 
