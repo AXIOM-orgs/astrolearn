@@ -385,12 +385,12 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                     </div>
 
                     <button
-                        className="btn-primary"
+                        className="btn-cyan-style"
                         onClick={handleCreateRoom}
                         disabled={!isSetupComplete || saving}
+                        // style={{ maxWidth: '300px', marginInline: 'auto' }}
                     >
-                        <span>{saving ? 'Loading...' : 'Continue'}</span>
-                        <div className="btn-glow"></div>
+                        {saving ? 'Loading...' : 'Continue'}
                     </button>
                 </div>
             </div>

@@ -572,7 +572,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                                                                 />
                                                             </div>
                                                             <span
-                                                                className={`w-full ${isArabic(ans.answer) ? 'font-arabic text-right' : 'text-center'}`}
+                                                                className={`w-full ${isArabic(ans.answer) ? 'font-arabic text-right' : 'text-left'}`}
                                                                 dir={isArabic(ans.answer) ? 'rtl' : 'ltr'}
                                                             >
                                                                 {ans.answer}
@@ -580,7 +580,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                                                         </div>
                                                     ) : (
                                                         <span
-                                                            className={`w-full ${isArabic(ans.answer) ? 'font-arabic text-right block' : 'text-center'}`}
+                                                            className={`w-full ${isArabic(ans.answer) ? 'font-arabic text-right block' : 'text-left'}`}
                                                             dir={isArabic(ans.answer) ? 'rtl' : 'ltr'}
                                                         >
                                                             {ans.answer}

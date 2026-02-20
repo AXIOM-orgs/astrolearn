@@ -9,6 +9,22 @@ interface EndGameConfirmationDialogProps {
 }
 
 export function EndGameConfirmationDialog({ isOpen, onClose, onConfirm }: EndGameConfirmationDialogProps): React.JSX.Element | null {
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+        }
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     return (

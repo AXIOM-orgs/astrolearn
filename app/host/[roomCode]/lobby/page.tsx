@@ -9,7 +9,7 @@ import { GameCodeDialog } from '@/app/components/ui/GameCodeDialog';
 import { ExitConfirmationDialog } from '@/app/components/ui/ExitConfirmationDialog';
 import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
 import { KickPlayerDialog } from '@/app/components/ui/KickPlayerDialog';
-import { X as LucideX } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface Participant {
     id: string;
@@ -381,9 +381,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                     <div className="url-card-panel">
                         <div className="url-card compact">
                             <span className="url-text">
-                                {joinUrl.length > 30
-                                    ? `${joinUrl.substring(0, 30)}...`
-                                    : joinUrl}
+                                {joinUrl}
                             </span>
                             <button
                                 className={`url-copy-btn ${urlCopySuccess ? 'success' : ''}`}
@@ -430,7 +428,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                 {/* Right Panel - Player Grid */}
                 <div className="host-left-panel">
                     {/* Player Count Badge */}
-                    <div className="player-count-header">
+                    <div className="player-count-header !mb-1">
                         <div className="player-count-badge">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -443,7 +441,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                     </div>
 
                     {/* Player Grid Container - Scrollable */}
-                    <div className="player-grid-container">
+                    <div className="player-grid-container !pt-5">
                         {participants.length === 0 ? (
                             /* Waiting Animation */
                             <div className="waiting-animation">
@@ -454,7 +452,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                         className="waiting-astronaut"
                                     />
                                 </div>
-                                <p className="waiting-text">Waiting players to join...</p>
+                                <p className="waiting-text">WAITING FOR PLAYERS...</p>
                                 <div className="waiting-dots">
                                     <span></span>
                                     <span></span>
@@ -463,15 +461,15 @@ export default function HostLobbyPage(): React.JSX.Element {
                             </div>
                         ) : (
                             /* Player Cards */
-                            <div className="player-grid">
+                            <div className="player-grid p-2">
                                 {participants.map((player) => (
-                                    <div key={player.id} className="player-card">
+                                    <div key={player.id} className="player-card p-2">
                                         <button
                                             className="btn-kick-player"
                                             onClick={() => handleKickPlayer(player)}
                                             title="Kick player"
                                         >
-                                            <LucideX size={14} />
+                                            <X size={16} />
                                         </button>
                                         <div className="player-icon">
                                             {player.spacecraft ? (

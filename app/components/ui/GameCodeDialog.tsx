@@ -13,6 +13,22 @@ interface GameCodeDialogProps {
 export function GameCodeDialog({ isOpen, onClose, gameCode, joinUrl }: GameCodeDialogProps): React.JSX.Element | null {
     const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            window.addEventListener('keydown', handleKeyDown);
+        }
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     const handleCopyLink = async () => {
