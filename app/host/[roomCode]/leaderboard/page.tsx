@@ -413,29 +413,38 @@ export default function HostLeaderboardPage(): React.JSX.Element {
           )}
         </div>
 
-        {/* Rankings Table - tambah kolom Duration */}
+        {/* Rankings Table - Split into Header and Scrollable Body */}
         {sortedPlayers.length > 0 && (
           <div className="rankings-table-container">
-            <table className="rankings-table">
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Player</th>
-                  <th>Score</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedPlayers.map((player, index) => (
-                  <tr key={player.id} className={player.eliminated ? 'row-eliminated' : 'row-winner'}>
-                    <td className="rank-cell">#{index + 1}</td>
-                    <td className="player-cell">{player.nickname}</td>
-                    <td className="score-cell">{formatScore(player.score)}</td>
-                    <td className="time-cell">{formatDuration(player.duration)}</td>
+            {/* Header part */}
+            <div className="table-header-wrapper">
+              <table className="rankings-table header-only">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Player</th>
+                    <th>Score</th>
+                    <th>Time</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+              </table>
+            </div>
+
+            {/* Scrollable Body part */}
+            <div className="table-body-scroll">
+              <table className="rankings-table body-only">
+                <tbody>
+                  {sortedPlayers.map((player, index) => (
+                    <tr key={player.id} className={player.eliminated ? 'row-eliminated' : 'row-winner'}>
+                      <td className="rank-cell">#{index + 1}</td>
+                      <td className="player-cell">{player.nickname}</td>
+                      <td className="score-cell">{formatScore(player.score)}</td>
+                      <td className="time-cell">{formatDuration(player.duration)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </section>
@@ -447,23 +456,25 @@ export default function HostLeaderboardPage(): React.JSX.Element {
 
 .rankings-table th:nth-child(1),
 .rankings-table td:nth-child(1) {
-  width: 10%;
+  width: 15%;
   text-align: left;
 }
 
 .rankings-table th:nth-child(2),
 .rankings-table td:nth-child(2) {
-  width: 60%;   
+  width: 50%;   
   text-align: left;
 }
 
 .rankings-table th:nth-child(3),
 .rankings-table td:nth-child(3) {
+  width: 20%;
   text-align: center;
 }
 
 .rankings-table th:nth-child(4),
 .rankings-table td:nth-child(4) {
+  width: 15%;
   text-align: center;
 }
 
