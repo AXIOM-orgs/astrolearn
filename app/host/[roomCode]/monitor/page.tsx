@@ -53,6 +53,7 @@ export default function HostMonitorPage(): React.JSX.Element {
     const [totalQuestions, setTotalQuestions] = useState<number>(5);
     const [timeRemaining, setTimeRemaining] = useState<number>(300);
     const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
 
     // Hitung progress & status completed
     const processedPlayers = useMemo(() => {
@@ -267,6 +268,19 @@ export default function HostMonitorPage(): React.JSX.Element {
         };
     }, [session?.id, gamePin]);
 
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 20) {
+                setIsScrolled(true);
+            } else {
+                setIsScrolled(false);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     const syncResultsToMainSupabase = async (sessionId: string) => {
         try {
             const { data: sess } = await supabaseGame
@@ -415,7 +429,7 @@ export default function HostMonitorPage(): React.JSX.Element {
             </div> */}
 
             {/* Monitor Info Bar */}
-            <div className="monitor-info-bar">
+            <div className={`monitor-info-bar ${isScrolled ? 'scrolled' : ''}`}>
                 <div className="info-item completion-status">
                     <Users />
                     <span className="info-value">{participants.length}</span>
