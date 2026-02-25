@@ -388,7 +388,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                 <img
                     src="/assets/logo.webp"
                     alt="Gameforsmart Logo"
-                    className="header-logo"
+                    className="header-logo hidden-mobile"
                 />
             </header>
 
@@ -411,12 +411,6 @@ export default function HostLobbyPage(): React.JSX.Element {
                                 )}
                             </button>
                         </div>
-                        <div className="code-actions">
-                            <button
-                                className="btn-code-action mobile-view"
-                                onClick={() => setShowQRDialog(true)}
-                            />
-                        </div>
                     </div>
 
                     {/* Desktop QR Section */}
@@ -434,6 +428,21 @@ export default function HostLobbyPage(): React.JSX.Element {
                                     fgColor="#000000"
                                     level="H"
 
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Mobile QR Section (Inline) */}
+                    <div className="qr-section mobile-view-inline" style={{ display: 'none' }}>
+                        <div className="qr-container flex justify-center" onClick={() => setShowQRDialog(true)}>
+                            <div className="qr-frame bg-white p-2 rounded-lg" style={{ maxWidth: '280px' }}>
+                                <QRCodeSVG
+                                    value={joinUrl}
+                                    size={250}
+                                    bgColor="#ffffff"
+                                    fgColor="#000000"
+                                    level="H"
                                 />
                             </div>
                         </div>

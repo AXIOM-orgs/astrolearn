@@ -452,30 +452,29 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                 />
             )}
 
-            <section id="screen-quiz" className="screen active" style={{ justifyContent: 'flex-start', paddingTop: 0 }}>
-                {/* Logos Header Moved Outside Container */}
-                <header className="waiting-header w-full pt-4 mt-5">
-                    <div className="waiting-brand">
+            <section id="screen-quiz" className="screen active">
+                <div className="quiz-main-content">
+                    {/* Logos Header */}
+                    <header className="quiz-header">
+                        <div className="waiting-brand">
+                            <Image
+                                src="/assets/logoal.webp"
+                                alt="Logo Left"
+                                width={150}
+                                height={50}
+                                className="brand-logo-image"
+                                unoptimized
+                            />
+                        </div>
                         <Image
-                            src="/assets/logoal.webp"
-                            alt="Logo Left"
+                            src="/assets/logo.webp"
+                            alt="Logo Right"
                             width={150}
                             height={50}
-                            className="brand-logo-image"
+                            className="header-logo"
                             unoptimized
                         />
-                    </div>
-                    <Image
-                        src="/assets/logo.webp"
-                        alt="Logo Right"
-                        width={150}
-                        height={50}
-                        className="header-logo"
-                        unoptimized
-                    />
-                </header>
-
-                <div className="flex-1 w-full flex flex-col items-center justify-center p-4">
+                    </header>
                     <div className="container" style={{ maxWidth: '850px', zIndex: 2 }}>
 
                         <div className="glass-panel">
@@ -483,7 +482,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                             {/* Header: Question Count | Timer | Score */}
                             <div className="quiz-header-grid">
                                 <div className="quiz-info-left">
-                                    <span className="text-xl md:text-md font-bold text-white font-orbitron">
+                                    <span className="text-lg md:text-md font-bold text-white font-orbitron">
                                         Question <span className="text-primary">{gameState.currentQuestionIndex + 1}</span><span className="text-gray-500 text-lg">/{gameState.selectedQuestions}</span>
                                     </span>
                                 </div>
@@ -509,7 +508,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                             <div className="question-container">
                                 {/* Question Image */}
                                 {currentQuestion.image && (
-                                    <div className="mb-6 flex justify-center">
+                                    <div className="!mb-6 flex justify-center">
                                         <Image
                                             src={currentQuestion.image}
                                             alt="Question"
@@ -547,7 +546,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                                         return (
                                             <button
                                                 key={index}
-                                                className={`answer-card ${buttonsDisabled ? 'disabled' : ''} ${stateClass}`}
+                                                className={`answer-card ${isArabic(ans.answer) ? 'rtl' : ''} ${buttonsDisabled ? 'disabled' : ''} ${stateClass}`}
                                                 onClick={() => checkAnswer(index)}
                                                 disabled={buttonsDisabled}
                                             >
