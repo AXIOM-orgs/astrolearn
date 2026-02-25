@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Home, RotateCcw, RotateCw } from 'lucide-react';
+import { Home, RotateCw } from 'lucide-react';
 import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai
 import { useGame } from '@/context/GameContext'; // pastikan path sesuai
 import { generateXID } from '@/lib/id-generator';

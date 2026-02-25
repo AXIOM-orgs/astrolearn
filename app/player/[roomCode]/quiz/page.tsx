@@ -51,6 +51,12 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         }
     }, [sessionData?.countdown_started_at]);
 
+    useEffect(() => {
+        if (sessionData?.status === 'finished') {
+            router.replace(`/player/${roomCode}/result`);
+        }
+    }, [sessionData?.status, router, roomCode]);
+
     const hasBootstrapped = useRef(false);
 
     // Bootstrap: Fetch session & restore state
@@ -293,7 +299,8 @@ export default function JoinQuizPage(): React.JSX.Element | null {
             const updatedScore = updatedCorrect * scorePerQuestion;
             const nextQuestionIndex = gameState.currentQuestionIndex + 1;
 
-            const { error } = await supabaseGame
+            // Updated to select() and check for finished_at (race condition fix)
+            const { data: updatedParticipant, error } = await supabaseGame
                 .from('participants')
                 .update({
                     answers: updatedAnswers, // Supabase handles JSON array automatically if column is JSONB
@@ -301,9 +308,20 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                     score: updatedScore,
                     current_question: nextQuestionIndex,
                 })
-                .eq('id', participantId);
+                .eq('id', participantId)
+                .select()
+                .single();
 
             if (error) throw error;
+
+            // Race Condition Check:
+            // If the trigger detected the game was finished, it would have set finished_at and eliminated=true
+            // We must respect that and redirect immediately.
+            if (updatedParticipant?.finished_at) {
+                console.warn('Game ended during submission. Redirecting...');
+                router.replace(`/player/${roomCode}/result`);
+                return;
+            }
 
             // Update Context
             setGameState(prev => ({
@@ -342,7 +360,8 @@ export default function JoinQuizPage(): React.JSX.Element | null {
             // MiniGame Check: Every 3 questions, but not after the last one
             if (nextIndex % 3 === 0 && nextIndex < gameState.selectedQuestions) {
                 showMiniGame(nextIndex);
-            } else if (nextIndex >= gameState.selectedQuestions) {
+            }
+            if (nextIndex >= gameState.selectedQuestions) {
                 // Game Finished
                 setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
                 finishGame();
@@ -410,6 +429,11 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                 <p>No questions found.</p>
             </div>
         );
+    }
+
+    if (sessionData?.status === 'finished') {
+        router.replace(`/player/${roomCode}/result`);
+        return null; // atau loading
     }
 
     return (
