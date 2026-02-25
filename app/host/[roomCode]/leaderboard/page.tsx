@@ -504,13 +504,6 @@ export default function HostLeaderboardPage(): React.JSX.Element {
 
 .statistics-btn {
   right: 30px;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
-}
-
-.statistics-btn:hover {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  box-shadow: 0 6px 25px rgba(245, 158, 11, 0.5);
 }
     `}</style>
     </>

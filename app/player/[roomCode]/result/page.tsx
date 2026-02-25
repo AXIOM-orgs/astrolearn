@@ -245,7 +245,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                     href={`https://gameforsmart2026.vercel.app/results/${sessionId}/answer-details?participant=${myStats.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="floating-btn restart-btn"
+                    className="floating-btn statistics-btn"
                     title="See Statistics"
                 >
                     <BarChart3 size={28} />
@@ -253,7 +253,7 @@ export default function JoinResultsPage(): React.JSX.Element {
             ) : (
                 <button
                     disabled
-                    className="floating-btn restart-btn"
+                    className="floating-btn statistics-btn"
                     style={{ opacity: 0.5, cursor: 'not-allowed', filter: 'grayscale(100%)' }}
                     title="Waiting for host to finish game"
                 >
@@ -330,6 +330,31 @@ export default function JoinResultsPage(): React.JSX.Element {
                         </span>
                         <span className="result-stat-label">Time</span>
                     </div>
+                </div>
+
+                {/* Mobile Specific Actions */}
+                <div className="result-mobile-actions">
+                    <button className="btn-result-mobile home" onClick={handleRestart}>
+                        <Home size={20} />
+                        <span>Home</span>
+                    </button>
+
+                    {isSessionFinished && sessionId && myStats?.id ? (
+                        <a
+                            href={`https://gameforsmart2026.vercel.app/results/${sessionId}/answer-details?participant=${myStats.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-result-mobile stats"
+                        >
+                            <BarChart3 size={20} />
+                            <span>Statistics</span>
+                        </a>
+                    ) : (
+                        <button className="btn-result-mobile stats disabled" disabled>
+                            <BarChart3 size={20} />
+                            <span>Statistics</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Home Button */}
