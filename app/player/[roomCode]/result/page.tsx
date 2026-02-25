@@ -16,6 +16,7 @@ interface ParticipantData {
     nickname: string;
     user_id: string;
     spacecraft?: string;
+    eliminated?: boolean;
 }
 
 export default function JoinResultsPage(): React.JSX.Element {
@@ -73,7 +74,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                     const userIdToMatch = profile?.id;
                     const { data: pData, error: pError } = await supabaseGame
                         .from('participants')
-                        .select('id, score, duration, correct, nickname, user_id, spacecraft')
+                        .select('id, score, duration, correct, nickname, user_id, spacecraft, eliminated')
                         .eq('session_id', sessionId)
                         .eq('user_id', userIdToMatch)
                         .maybeSingle();
@@ -136,14 +137,38 @@ export default function JoinResultsPage(): React.JSX.Element {
         const calculateRank = async (sessionId: string, myParticipantId: string) => {
             const { data: participants, error: partError } = await supabaseGame
                 .from('participants')
-                .select('id, score, duration')
-                .eq('session_id', sessionId)
-                .order('score', { ascending: false })
-                .order('duration', { ascending: true });
+                .select('id, score, duration, eliminated, joined_at')
+                .eq('session_id', sessionId);
 
             if (partError || !participants) return;
 
-            const rankIndex = participants.findIndex(p => p.id === myParticipantId);
+            // normalize data biar aman
+            const processed = participants.map(p => ({
+                ...p,
+                duration: p.duration ?? 999999
+            }));
+
+            // sorting rules sama persis kayak leaderboard host
+            const sorted = processed.sort((a, b) => {
+                // 1. Not eliminated first
+                if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+
+                // 2. Higher score first
+                if (b.score !== a.score) return b.score - a.score;
+
+                // 3. Lower duration first
+                if (a.duration !== b.duration) return a.duration - b.duration;
+
+                // 4. Earlier joined first
+                const joinA = new Date(a.joined_at).getTime();
+                const joinB = new Date(b.joined_at).getTime();
+                if (joinA !== joinB) return joinA - joinB;
+
+                // 5. Final fallback biar gak random
+                return a.id.localeCompare(b.id);
+            });
+
+            const rankIndex = sorted.findIndex(p => p.id === myParticipantId);
             if (rankIndex !== -1) {
                 setMyRank(rankIndex + 1);
             }
@@ -220,7 +245,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                     href={`https://gameforsmart2026.vercel.app/results/${sessionId}/answer-details?participant=${myStats.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="floating-btn restart-btn"
+                    className="floating-btn statistics-btn"
                     title="See Statistics"
                 >
                     <BarChart3 size={28} />
@@ -228,7 +253,7 @@ export default function JoinResultsPage(): React.JSX.Element {
             ) : (
                 <button
                     disabled
-                    className="floating-btn restart-btn"
+                    className="floating-btn statistics-btn"
                     style={{ opacity: 0.5, cursor: 'not-allowed', filter: 'grayscale(100%)' }}
                     title="Waiting for host to finish game"
                 >
@@ -239,6 +264,12 @@ export default function JoinResultsPage(): React.JSX.Element {
             <div className="results-wrapper">
                 {/* Top Card: Spacecraft Image */}
                 <div className="result-top-card">
+                    {/* Elimination Message */}
+                    {myStats?.eliminated && (
+                        <div className="eliminated-badge">
+                            ELIMINATED
+                        </div>
+                    )}
                     {/* Display Spacecraft Image */}
                     {myStats?.spacecraft ? (
                         <img
@@ -299,6 +330,31 @@ export default function JoinResultsPage(): React.JSX.Element {
                         </span>
                         <span className="result-stat-label">Time</span>
                     </div>
+                </div>
+
+                {/* Mobile Specific Actions */}
+                <div className="result-mobile-actions">
+                    <button className="btn-result-mobile home" onClick={handleRestart}>
+                        <Home size={20} />
+                        <span>Home</span>
+                    </button>
+
+                    {isSessionFinished && sessionId && myStats?.id ? (
+                        <a
+                            href={`https://gameforsmart2026.vercel.app/results/${sessionId}/answer-details?participant=${myStats.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-result-mobile stats"
+                        >
+                            <BarChart3 size={20} />
+                            <span>Statistics</span>
+                        </a>
+                    ) : (
+                        <button className="btn-result-mobile stats disabled" disabled>
+                            <BarChart3 size={20} />
+                            <span>Statistics</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Home Button */}

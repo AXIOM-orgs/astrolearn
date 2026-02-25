@@ -8,6 +8,8 @@ import { supabaseGame } from '@/lib/supabase';
 import { GameCodeDialog } from '@/app/components/ui/GameCodeDialog';
 import { ExitConfirmationDialog } from '@/app/components/ui/ExitConfirmationDialog';
 import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
+import { KickPlayerDialog } from '@/app/components/ui/KickPlayerDialog';
+import { X } from 'lucide-react';
 
 interface Participant {
     id: string;
@@ -41,9 +43,15 @@ export default function HostLobbyPage(): React.JSX.Element {
     const [copySuccess, setCopySuccess] = useState<boolean>(false);
     const [urlCopySuccess, setUrlCopySuccess] = useState<boolean>(false);
     const [joinUrl, setJoinUrl] = useState<string>('');
+    const [selectedPlayerToKick, setSelectedPlayerToKick] = useState<Participant | null>(null);
+    const [isAddingBots, setIsAddingBots] = useState<boolean>(false);
 
     const prevPlayerCount = useRef<number>(0);
     const channelRef = useRef<ReturnType<typeof supabaseGame.channel> | null>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [startY, setStartY] = useState(0);
+    const [scrollTop, setScrollTop] = useState(0);
 
     // Set joinUrl on client side only
     useEffect(() => {
@@ -231,6 +239,29 @@ export default function HostLobbyPage(): React.JSX.Element {
         }
     };
 
+    const handleKickPlayer = (player: Participant) => {
+        setSelectedPlayerToKick(player);
+    };
+
+    const handleConfirmKick = async () => {
+        if (!selectedPlayerToKick || !session?.id) return;
+
+        try {
+            const { error } = await supabaseGame
+                .from('participants')
+                .delete()
+                .eq('id', selectedPlayerToKick.id);
+
+            if (error) throw error;
+
+            console.log(`Player ${selectedPlayerToKick.nickname} kicked`);
+        } catch (err) {
+            console.error('Error kicking player:', err);
+        } finally {
+            setSelectedPlayerToKick(null);
+        }
+    };
+
     // Countdown Logic
     const [countdownTarget, setCountdownTarget] = useState<string | null>(null);
 
@@ -276,6 +307,63 @@ export default function HostLobbyPage(): React.JSX.Element {
         }
     };
 
+    const handleAddBots = async () => {
+        if (!session?.id || isAddingBots) return;
+
+        setIsAddingBots(true);
+        try {
+            // Using spacecrafts from lib/data.ts (stripping /assets/ prefix)
+            const spacecrafts = [
+                'main_4_2_2.png',
+                'galaksi2.webp',
+                'galaksi3.webp',
+                'galaksi4.webp',
+                'galaksi5.gif',
+                'galaksi6.png'
+            ];
+            const startIdx = participants.length;
+            const bots = Array.from({ length: 15 }, (_, i) => ({
+                session_id: session.id,
+                nickname: `Bot-${i + 1 + startIdx}`,
+                spacecraft: spacecrafts[Math.floor(Math.random() * spacecrafts.length)],
+                joined_at: new Date().toISOString()
+            }));
+
+            const { error } = await supabaseGame
+                .from('participants')
+                .insert(bots);
+
+            if (error) throw error;
+        } catch (err) {
+            console.error('Error adding bots:', err);
+        } finally {
+            setIsAddingBots(false);
+        }
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (!scrollContainerRef.current) return;
+        setIsDragging(true);
+        setStartY(e.pageY - scrollContainerRef.current.offsetTop);
+        setScrollTop(scrollContainerRef.current.scrollTop);
+    };
+
+    const handleMouseLeave = () => {
+        setIsDragging(false);
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !scrollContainerRef.current) return;
+        e.preventDefault();
+        const y = e.pageY - scrollContainerRef.current.offsetTop;
+        const walk = (y - startY) * 2; // Scroll speed
+        scrollContainerRef.current.scrollTop = scrollTop - walk;
+    };
+
     if (loading) {
         return (
             <section className="host-lobby-screen">
@@ -300,7 +388,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                 <img
                     src="/assets/logo.webp"
                     alt="Gameforsmart Logo"
-                    className="header-logo"
+                    className="header-logo hidden-mobile"
                 />
             </header>
 
@@ -323,12 +411,6 @@ export default function HostLobbyPage(): React.JSX.Element {
                                 )}
                             </button>
                         </div>
-                        <div className="code-actions">
-                            <button
-                                className="btn-code-action mobile-view"
-                                onClick={() => setShowQRDialog(true)}
-                            />
-                        </div>
                     </div>
 
                     {/* Desktop QR Section */}
@@ -341,7 +423,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                 <div className="qr-corner bottom-right"></div> */}
                                 <QRCodeSVG
                                     value={joinUrl}
-                                    size={300}
+                                    size={320}
                                     bgColor="#ffffff"
                                     fgColor="#000000"
                                     level="H"
@@ -351,13 +433,26 @@ export default function HostLobbyPage(): React.JSX.Element {
                         </div>
                     </div>
 
+                    {/* Mobile QR Section (Inline) */}
+                    <div className="qr-section mobile-view-inline" style={{ display: 'none' }}>
+                        <div className="qr-container flex justify-center" onClick={() => setShowQRDialog(true)}>
+                            <div className="qr-frame bg-white p-2 rounded-lg" style={{ maxWidth: '280px' }}>
+                                <QRCodeSVG
+                                    value={joinUrl}
+                                    size={250}
+                                    bgColor="#ffffff"
+                                    fgColor="#000000"
+                                    level="H"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     {/* URL Card Panel */}
                     <div className="url-card-panel">
                         <div className="url-card compact">
                             <span className="url-text">
-                                {joinUrl.length > 30
-                                    ? `${joinUrl.substring(0, 30)}...`
-                                    : joinUrl}
+                                {joinUrl}
                             </span>
                             <button
                                 className={`url-copy-btn ${urlCopySuccess ? 'success' : ''}`}
@@ -404,7 +499,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                 {/* Right Panel - Player Grid */}
                 <div className="host-left-panel">
                     {/* Player Count Badge */}
-                    <div className="player-count-header">
+                    <div className="player-count-header !mb-1">
                         <div className="player-count-badge">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -414,10 +509,24 @@ export default function HostLobbyPage(): React.JSX.Element {
                             </svg>
                             <span>{totalCount} {totalCount === 1 ? 'Player' : 'Players'}</span>
                         </div>
+                        <button
+                            className={`btn-add-bots ${isAddingBots ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            onClick={handleAddBots}
+                            disabled={isAddingBots}
+                        >
+                            {isAddingBots ? 'ADDING...' : '+ ADD BOTS'}
+                        </button>
                     </div>
 
                     {/* Player Grid Container - Scrollable */}
-                    <div className="player-grid-container">
+                    <div
+                        ref={scrollContainerRef}
+                        className={`player-grid-container !pt-5 !pb-5 ${isDragging ? ' dragging' : ''}`}
+                        onMouseDown={handleMouseDown}
+                        onMouseLeave={handleMouseLeave}
+                        onMouseUp={handleMouseUp}
+                        onMouseMove={handleMouseMove}
+                    >
                         {participants.length === 0 ? (
                             /* Waiting Animation */
                             <div className="waiting-animation">
@@ -428,7 +537,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                         className="waiting-astronaut"
                                     />
                                 </div>
-                                <p className="waiting-text">Waiting players to join...</p>
+                                <p className="waiting-text">WAITING FOR PLAYERS...</p>
                                 <div className="waiting-dots">
                                     <span></span>
                                     <span></span>
@@ -437,9 +546,16 @@ export default function HostLobbyPage(): React.JSX.Element {
                             </div>
                         ) : (
                             /* Player Cards */
-                            <div className="player-grid">
+                            <div className="player-grid p-2">
                                 {participants.map((player) => (
                                     <div key={player.id} className="player-card">
+                                        <button
+                                            className="btn-kick-player"
+                                            onClick={() => handleKickPlayer(player)}
+                                            title="Kick player"
+                                        >
+                                            <X size={16} />
+                                        </button>
                                         <div className="player-icon">
                                             {player.spacecraft ? (
                                                 <img
@@ -476,6 +592,14 @@ export default function HostLobbyPage(): React.JSX.Element {
             <CountdownOverlay
                 isActive={!!countdownTarget}
                 targetDate={countdownTarget || undefined}
+            />
+
+            <KickPlayerDialog
+                isOpen={!!selectedPlayerToKick}
+                onClose={() => setSelectedPlayerToKick(null)}
+                onConfirm={handleConfirmKick}
+                playerNickname={selectedPlayerToKick?.nickname || ''}
+                playerSpacecraft={selectedPlayerToKick?.spacecraft || null}
             />
         </section>
     );

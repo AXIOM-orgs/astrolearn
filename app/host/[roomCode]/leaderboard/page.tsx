@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { Home, RotateCw } from 'lucide-react';
+import { Home, RotateCw, BarChart3 } from 'lucide-react';
 import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai
 import { useGame } from '@/context/GameContext'; // pastikan path sesuai
 import { generateXID } from '@/lib/id-generator';
@@ -189,16 +189,28 @@ export default function HostLeaderboardPage(): React.JSX.Element {
           };
         });
 
-        // 4. Urutkan client-side: Eliminated (False) -> Score (DESC) -> Duration (ASC)
+        // 4. Urutkan client-side: Eliminated (False) -> Score (DESC) -> Duration (ASC) -> Joined at -> id
         const sorted = processed.sort((a, b) => {
-          // 1. Prioritize Valid Players (Not Eliminated)
+          // 1. Not eliminated first
           if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
 
-          if (b.score !== a.score) {
-            return b.score - a.score; // Higher score first
-          }
-          return a.duration - b.duration; // Lower duration first
+          // 2. Higher score first
+          if (b.score !== a.score) return b.score - a.score;
+
+          // 3. Lower duration first
+          const durA = a.duration ?? 999999;
+          const durB = b.duration ?? 999999;
+          if (durA !== durB) return durA - durB;
+
+          // 4. Earlier join first (biar konsisten)
+          const joinA = new Date(a.joined_at).getTime();
+          const joinB = new Date(b.joined_at).getTime();
+          if (joinA !== joinB) return joinA - joinB;
+
+          // 5. Final fallback (biar gak random)
+          return a.id.localeCompare(b.id);
         });
+
 
         setPlayers(sorted);
 
@@ -313,13 +325,28 @@ export default function HostLeaderboardPage(): React.JSX.Element {
           <img src="/assets/logo.webp" alt="Gameforsmart Logo" className="header-logo" />
         </header>
 
-        {/* Floating Buttons - tetap sama */}
-        <button className="floating-btn home-btn" onClick={handleHome} title="Home">
-          <Home size={28} />
-        </button>
-        <button className="floating-btn restart-btn" onClick={handleRestart} title="Restart" disabled={isRestarting}>
-          <RotateCw size={28} className={isRestarting ? 'animate-spin' : ''} />
-        </button>
+        {/* Floating Buttons */}
+        <div className="left-floating-group">
+          <button className="floating-btn home-btn" onClick={handleHome} title="Home">
+            <Home size={28} />
+          </button>
+          <button className="floating-btn restart-btn" onClick={handleRestart} title="Restart" disabled={isRestarting}>
+            <RotateCw size={28} className={isRestarting ? 'animate-spin' : ''} />
+          </button>
+        </div>
+
+        {/* Statistics Button (Right Side) */}
+        {sessionId && (
+          <a
+            href={`https://gameforsmart2026.vercel.app/results/${sessionId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="floating-btn statistics-btn"
+            title="See Statistics"
+          >
+            <BarChart3 size={28} />
+          </a>
+        )}
 
         {/* Podium - tetap sama, tanpa duration */}
         <div className="vanguard-section">
@@ -386,29 +413,38 @@ export default function HostLeaderboardPage(): React.JSX.Element {
           )}
         </div>
 
-        {/* Rankings Table - tambah kolom Duration */}
+        {/* Rankings Table - Split into Header and Scrollable Body */}
         {sortedPlayers.length > 0 && (
           <div className="rankings-table-container">
-            <table className="rankings-table">
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Player</th>
-                  <th>Score</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedPlayers.map((player, index) => (
-                  <tr key={player.id} className={player.eliminated ? 'row-eliminated' : 'row-winner'}>
-                    <td className="rank-cell">#{index + 1}</td>
-                    <td className="player-cell">{player.nickname}</td>
-                    <td className="score-cell">{formatScore(player.score)}</td>
-                    <td className="time-cell">{formatDuration(player.duration)}</td>
+            {/* Header part */}
+            <div className="table-header-wrapper">
+              <table className="rankings-table header-only">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Player</th>
+                    <th>Score</th>
+                    <th>Time</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+              </table>
+            </div>
+
+            {/* Scrollable Body part */}
+            <div className="table-body-scroll">
+              <table className="rankings-table body-only">
+                <tbody>
+                  {sortedPlayers.map((player, index) => (
+                    <tr key={player.id} className={player.eliminated ? 'row-eliminated' : 'row-winner'}>
+                      <td className="rank-cell">#{index + 1}</td>
+                      <td className="player-cell">{player.nickname}</td>
+                      <td className="score-cell">{formatScore(player.score)}</td>
+                      <td className="time-cell">{formatDuration(player.duration)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </section>
@@ -420,24 +456,54 @@ export default function HostLeaderboardPage(): React.JSX.Element {
 
 .rankings-table th:nth-child(1),
 .rankings-table td:nth-child(1) {
-  width: 10%;
+  width: 15%;
   text-align: left;
 }
 
 .rankings-table th:nth-child(2),
 .rankings-table td:nth-child(2) {
-  width: 60%;   
+  width: 50%;   
   text-align: left;
 }
 
 .rankings-table th:nth-child(3),
 .rankings-table td:nth-child(3) {
+  width: 20%;
   text-align: center;
 }
 
 .rankings-table th:nth-child(4),
 .rankings-table td:nth-child(4) {
+  width: 15%;
   text-align: center;
+}
+
+.left-floating-group {
+  position: fixed;
+  left: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 100;
+}
+
+.left-floating-group .floating-btn {
+  position: static;
+  transform: none;
+}
+
+.left-floating-group .floating-btn:hover {
+  transform: scale(1.1);
+}
+
+.left-floating-group .floating-btn:active {
+  transform: scale(0.95);
+}
+
+.statistics-btn {
+  right: 30px;
 }
     `}</style>
     </>

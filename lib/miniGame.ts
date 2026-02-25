@@ -30,6 +30,9 @@ interface Bullet {
     targetAsteroid?: MovingAsteroid;
     angle?: number;
     isEnemy?: boolean;
+    dirX?: number;
+    dirY?: number;
+    isStationBullet?: boolean;
 }
 
 
@@ -160,6 +163,7 @@ let gameLoop: ReturnType<typeof requestAnimationFrame> | null = null;
 let isGameRunning: boolean = false;
 let onComplete: MiniGameCallback | null = null;
 let callbackCalled: boolean = false;
+let currentBgMode: 'starfield' | 'rocket_seq' | 'portrait_scene' = 'starfield';
 
 // ============ OBJECT POOLING SYSTEM ============
 
@@ -376,6 +380,7 @@ let bossRocketImage: HTMLImageElement | null = null;
 let bossBulletImage: HTMLImageElement | null = null; // bullet_4_2_0.png
 let laserBeamImage: HTMLImageElement | null = null; // laser_6.png
 let weaponPowerUpImage: HTMLImageElement | null = null;
+let stationBulletImage: HTMLImageElement | null = null; // bullet_1_1_4.png
 let loveImage: HTMLImageElement | null = null;
 let barHpImage: HTMLImageElement | null = null;
 
@@ -383,7 +388,7 @@ let barHpImage: HTMLImageElement | null = null;
 let spaceStation1Image: HTMLImageElement | null = null;
 let spaceStation2Image: HTMLImageElement | null = null;
 let rockImage: HTMLImageElement | null = null;
-interface ScrollingDecor { x: number; y: number; scale: number; rotation: number; rotationSpeed: number; type: 'station1' | 'station2' | 'rock'; }
+interface ScrollingDecor { x: number; y: number; scale: number; rotation: number; rotationSpeed: number; type: 'station1' | 'station2' | 'rock'; lastFireTime?: number; fireRate?: number; hp?: number; maxHp?: number; hitFlash?: number; }
 let scrollingDecors: ScrollingDecor[] = [];
 
 // Crosshair position
@@ -848,20 +853,38 @@ export function startMiniGame(
     meteorImage = new Image();
     meteorImage.src = '/assets/meteor.png';
 
-    // Load background images (Using 1 asset for seamless looping)
+    // Randomly select between 3 background modes
+    const bgRand = Math.floor(Math.random() * 3);
     backgroundImages = [];
-    const bgSources = [
-        '/assets/bgnewnih.jpg', // Main asset
-        '/assets/bgnewnih.jpg', // Repeat for loop
-        '/assets/bgnewnih.jpg'  // Repeat for loop
-    ];
-    for (const src of bgSources) {
-        const img = new Image();
-        img.src = src;
-        backgroundImages.push(img);
+
+    if (bgRand === 0) {
+        currentBgMode = 'starfield';
+        const src = '/assets/bgnewnih.jpg';
+        for (let i = 0; i < 4; i++) {
+            const img = new Image();
+            img.src = src;
+            backgroundImages.push(img);
+        }
+        bgPanelY = [0, -canvas.height, -canvas.height * 2, -canvas.height * 3];
+    } else if (bgRand === 1) {
+        currentBgMode = 'rocket_seq';
+        const sources = ['/assets/bgbarucuy.jpg', '/assets/bgbarucuy3.jpg', '/assets/bgbarucuy2.jpg'];
+        for (const src of sources) {
+            const img = new Image();
+            img.src = src;
+            backgroundImages.push(img);
+        }
+        bgPanelY = [0, -canvas.height, -canvas.height * 2];
+    } else {
+        currentBgMode = 'portrait_scene';
+        const src = '/assets/bg3new.png';
+        for (let i = 0; i < 4; i++) {
+            const img = new Image();
+            img.src = src;
+            backgroundImages.push(img);
+        }
+        bgPanelY = [0, -canvas.height, -canvas.height * 2, -canvas.height * 3]; // Initial guess, drawBackground will adjust
     }
-    // Initialize panel positions (stacked above each other)
-    bgPanelY = [0, -canvas.height, -canvas.height * 2];
 
     // Set difficulty-based scroll speed
     const scrollSpeeds = { easy: 3, medium: 5, hard: 7 };
@@ -929,13 +952,14 @@ export function startMiniGame(
     loveImage.src = '/assets/love.png';
     barHpImage = new Image();
     barHpImage.src = '/assets/bar_hp.png';
+    stationBulletImage = new Image();
+    stationBulletImage.src = '/assets/bullet_1_1_4.png';
 
-
-    // Load additional scrolling decoration images
+    // musuh hiasan
     spaceStation1Image = new Image();
     spaceStation1Image.src = '/assets/spaceStation_8.1.png';
     spaceStation2Image = new Image();
-    spaceStation2Image.src = '/assets/spacestation_1_0.png';
+    spaceStation2Image.src = '/assets/var_enemy3.png';
     rockImage = new Image();
     rockImage.src = '/assets/batu.png';
     initScrollingDecors(canvas);
@@ -1396,33 +1420,139 @@ function drawBoosterDecors(): void {
 
 function initScrollingDecors(canvasRef: HTMLCanvasElement): void {
     scrollingDecors = [];
-    const count = 6 + Math.floor(Math.random() * 4); // 6-9 decorations
+    const counts = { easy: 7, medium: 9, hard: 11 };
+    const baseCount = counts[currentDifficulty || 'easy'];
+    const count = baseCount + Math.floor(Math.random() * 2);
     const types: ('station1' | 'station2' | 'rock')[] = ['station1', 'station2', 'rock'];
 
+    // Difficulty based fire rates for station1 (shooter)
+    const fireRates = { easy: 5000, medium: 4000, hard: 3000 };
+    const baseFireRate = fireRates[currentDifficulty || 'easy'];
+
+    // Difficulty based HP for stations
+    const stationHP = {
+        easy: { station1: 100, station2: 80 },
+        medium: { station1: 200, station2: 150 },
+        hard: { station1: 350, station2: 250 }
+    };
+    const currentHP = stationHP[currentDifficulty || 'easy'];
+
     for (let i = 0; i < count; i++) {
+        const type = types[Math.floor(Math.random() * types.length)];
+        const hp = type === 'station1' ? currentHP.station1 : (type === 'station2' ? currentHP.station2 : undefined);
         scrollingDecors.push({
             x: Math.random() * canvasRef.width,
             y: Math.random() * canvasRef.height * 2 - canvasRef.height,
             scale: 0.3 + Math.random() * 0.5,
             rotation: Math.random() * Math.PI * 2,
             rotationSpeed: (Math.random() - 0.5) * 0.01,
-            type: types[Math.floor(Math.random() * types.length)]
+            type: type,
+            // Only station1 shoots
+            fireRate: type === 'station1' ? baseFireRate + Math.random() * 2000 : undefined,
+            lastFireTime: type === 'station1' ? Date.now() + Math.random() * 5000 : undefined,
+            hp: hp,
+            maxHp: hp,
+            hitFlash: 0
         });
     }
 }
 
-function updateScrollingDecors(): void {
-    if (!canvas) return;
+function spawnStationBullet(decor: ScrollingDecor): void {
+    if (!player || !canvas) return;
 
-    for (const decor of scrollingDecors) {
+    const dx = player.x - decor.x;
+    const dy = player.y - decor.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist > 0) {
+        enemyBullets.push({
+            id: bulletIdCounter++,
+            x: decor.x,
+            y: decor.y,
+            z: 0.8, // Match approximate depth
+            width: 30, // Increased size
+            height: 60, // Increased size
+            speed: 6,
+            damage: 1,
+            color: '#ffffff',
+            type: 'spread',
+            isEnemy: true,
+            // @ts-ignore
+            dirX: dx / dist,
+            dirY: dy / dist,
+            isStationBullet: true // Custom flag for rendering
+        } as any);
+    }
+}
+
+function updateScrollingDecors(): void {
+    if (!canvas || !player) return;
+
+    const now = Date.now();
+    const kamikazeSpeeds = { easy: 0.5, medium: 1.2, hard: 2.2 };
+    const chaseSpeed = kamikazeSpeeds[currentDifficulty || 'easy'];
+
+    for (let i = scrollingDecors.length - 1; i >= 0; i--) {
+        const decor = scrollingDecors[i];
+
+        // Decrement hit flash
+        if (decor.hitFlash && decor.hitFlash > 0) decor.hitFlash -= 0.1;
+
+        // Base scrolling
         decor.y += backgroundScrollSpeed * 0.6;
         decor.rotation += decor.rotationSpeed;
 
+        // Death Logic
+        if ((decor.type === 'station1' || decor.type === 'station2') && (decor.hp !== undefined && decor.hp <= 0)) {
+            spawnExplosion(decor.x, decor.y, 1.5);
+            // playSound('explosion'); // Assuming playSound exists or just use visual
+
+            // Reset decor
+            decor.y = -200 - Math.random() * 500;
+            decor.x = Math.random() * canvas.width;
+            decor.hp = decor.maxHp;
+            decor.hitFlash = 0;
+            continue;
+        }
+
+        // KAMIKAZE (Station 2)
+        if (decor.type === 'station2' && decor.y > 0 && decor.y < canvas.height) {
+            const dx = player.x - decor.x;
+            const dy = player.y - decor.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0) {
+                decor.x += (dx / dist) * chaseSpeed;
+                decor.y += (dy / dist) * chaseSpeed;
+            }
+
+            // Check Collision
+            const collDist = Math.sqrt(Math.pow(player.x - decor.x, 2) + Math.pow(player.y - decor.y, 2));
+            if (collDist < (player.width / 2 + 35) * 0.7) {
+                applyDamage(2);
+                spawnExplosion(decor.x, decor.y, 1.2);
+                // Reset decor instead of splicing to preserve count
+                decor.y = -150 - Math.random() * 300;
+                decor.x = Math.random() * canvas.width;
+                continue;
+            }
+        }
+
+        // SHOOTING (Station 1)
+        if (decor.type === 'station1' && decor.y > 0 && decor.y < canvas.height * 0.8) {
+            if (decor.fireRate && now - (decor.lastFireTime || 0) > decor.fireRate) {
+                spawnStationBullet(decor);
+                decor.lastFireTime = now;
+            }
+        }
+
         // Reset to top when scrolled past bottom
-        if (decor.y > canvas.height + 100) {
+        if (decor.y > canvas.height + 150) {
             decor.y = -150 - Math.random() * 300;
             decor.x = Math.random() * canvas.width;
             decor.scale = 0.3 + Math.random() * 0.5;
+            if (decor.type === 'station1') {
+                decor.lastFireTime = now + Math.random() * 2000;
+            }
         }
     }
 }
@@ -1452,6 +1582,12 @@ function drawScrollingDecors(): void {
             ctx.translate(decor.x, decor.y);
             ctx.rotate(decor.rotation);
             ctx.globalAlpha = 1;
+
+            // Apply hit flash effect for stations
+            if (decor.hitFlash && decor.hitFlash > 0) {
+                ctx.filter = `brightness(${1 + decor.hitFlash * 2})`;
+            }
+
             ctx.drawImage(img, -size / 2, -size / 2, size, size);
             ctx.restore();
         }
@@ -1524,17 +1660,20 @@ function updateSmokeParticles(): void {
 function drawBackground(): void {
     if (!ctx || !canvas) return;
 
-    const totalHeight = canvas.height * 3; // Total height of all 3 panels
-
-    // Scroll all panels
+    // Scroll and Reset Panels
     for (let i = 0; i < bgPanelY.length; i++) {
         bgPanelY[i] += backgroundScrollSpeed;
 
-        // Reset panel to top when it goes off screen bottom
+        // Reset panel based on its actual render height (to avoid gaps for tall assets)
+        const img = backgroundImages[i];
+        const isPortrait = img && img.complete && img.height > img.width;
+        const scale = isPortrait ? canvas.width / img.width : 1;
+        const panelHeight = isPortrait ? (img.height * scale) : canvas.height;
+
         if (bgPanelY[i] >= canvas.height) {
-            // Find the topmost panel and place this one above it
             const minY = Math.min(...bgPanelY);
-            bgPanelY[i] = minY - canvas.height;
+            // Place it exactly above the topmost panel, matching its full height
+            bgPanelY[i] = minY - (panelHeight - 4); // -4 for overlap
         }
     }
 
@@ -1542,111 +1681,47 @@ function drawBackground(): void {
     for (let i = 0; i < backgroundImages.length; i++) {
         const img = backgroundImages[i];
         if (img && img.complete) {
-            // "Cover" logic
-            // Calculate scale ratios
-            const scaleX = canvas.width / img.width;
-            const scaleY = canvas.height / img.height;
-            // Use maximum scale to ensure coverage (clipping overflow)
-            const scale = Math.max(scaleX, scaleY);
+            // Render Strategy: Dynamic Scaling based on Aspect Ratio and Mode
+            const isPortrait = currentBgMode === 'portrait_scene' || (img.height > img.width);
 
-            // Calculate new width and height based on scale
-            const newWidth = img.width * scale;
-            const newHeight = img.height * scale;
+            // 1. Calculate the 'cover' dimensions
+            // If portrait scene, scale to fill width. Otherwise, fill both (cover).
+            const scale = isPortrait
+                ? canvas.width / img.width
+                : Math.max(canvas.width / img.width, canvas.height / img.height);
 
-            // Center the image: (destX, destY)
-            const x = (canvas.width - newWidth) / 2;
-            const y = (canvas.height - newHeight) / 2;
+            // 2. Calculate source dimensions
+            // For portrait "level" backgrounds, we want the FULL source height
+            const sW = img.width - 2;
+            const sH = isPortrait ? img.height - 2 : (canvas.height / scale) - 2;
+            const sX = 1;
+            const sY = isPortrait ? 1 : ((img.height - (canvas.height / scale)) / 2) + 1;
 
-            // We draw the full image scaled and translated (some parts will be clipped by canvas)
-            // But we have scrolling Y offset (bgPanelY[i])
-            // Standard "cover" usually implies a static background, but here we scroll.
-            // If we want "scrolling cover", we need to apply the Y offset.
-            // However, bgPanelY logic assumes stretching.
+            // Calculate destination dimensions
+            const dW = canvas.width;
+            const dH = isPortrait ? (img.height * scale) : canvas.height;
 
-            // Alternative: Scale first to fill width (mobile) or height (desktop) then center, 
-            // BUT apply the scrolling offset to the destination Y.
+            ctx.save();
 
-            // Let's refine:
-            // The scrolling logic shifts the destination Y position of the whole panel.
-            // We want the panel content (image) to be "cover" scaled RELATIVE TO THE CANVAS DIMENSIONS.
-            // If the image is square and screen is portrait, we crop sides.
-            // If screen is landscape, we crop top/bottom (conceptually).
+            // 3. Mirror Tiling: Only for starfield mode
+            const useMirror = currentBgMode === 'starfield';
 
-            // Implementation:
-            // 1. Calculate the 'cover' dimensions for a single panel filling the screen
-            const coverScale = Math.max(canvas.width / img.width, canvas.height / img.height);
-            const coverW = img.width * coverScale;
-            // const coverH = img.height * coverScale; // We probably want to keep original aspect ratio
-
-            // For scrolling background, we usually want it to fill width at least.
-            // If we enforce 'cover' strictly, a very wide image on a tall phone gets zoomed in massively.
-            // User requested: "mobile ambil tengah-tengah gambar supaya tidak gepeng" -> "mobile take middle of picture so not flattened"
-
-            // If we just scale by Height (to fill vertical) on mobile, it might be too narrow? No, mobile is tall.
-            // Standard background: ensure it covers the screen.
-
-            // Let's us drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
-            // But we need to account for the scrolling `bgPanelY[i]`.
-            // The simplest approach that respects the "scrolling panel" system:
-            // Draw the image centered horizontally, scaled to fill HEIGHT (priority) or WIDTH?
-            // If flattened (squashed vertically) was the issue:
-            // It means canvas height > proportional image height.
-            // We should maintain aspect ratio.
-
-            // Render Strategy:
-            // Draw the image at `bgPanelY[i]`.
-            // Width: canvas.width (fills width) -> This causes stretching if aspect ratio differs.
-            // To fix: Calculate width based on Aspect Ratio given the Height (canvas.height).
-
-            // Actually, the panels stack. Each panel is supposed to be 1 screen height? 
-            // In init: bgPanelY = [0, -height, -2*height].
-            // So each panel height = canvas.height.
-            // If we change the drawing to NOT stretch, we might have gaps if we don't fill width.
-
-            // "Cover" strategy for a scrolling tile:
-            // The tile must be at least canvas.width wide and canvas.height high.
-            // We scale the image so that:
-            // w >= canvas.width AND h >= canvas.height.
-
-            const renderH = canvas.height; // The panel takes up full height of screen slot
-            // To maintain aspect ratio:
-            const ratio = img.width / img.height;
-            let renderW = renderH * ratio;
-
-            // If calculated width is less than canvas width (gap on sides), we must scale up by width instead
-            if (renderW < canvas.width) {
-                renderW = canvas.width;
-                // renderH would need to increase, but our scrolling logic dictates fixed height slots?
-                // Actually, if we increase renderH, it overlaps other panels?
-                // The scrolling logic just loops them.
-                // Ideally we want the image to "Cover" the designated slot (which matches screen size).
-
-                // If we scale up to cover, we potentially crop.
-
-                const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-
-                // Calculate source dimensions (Center Crop)
-                const sW = canvas.width / scale;
-                const sH = canvas.height / scale;
-
-                const sX = (img.width - sW) / 2;
-                const sY = (img.height - sH) / 2;
-
-                // Draw strictly within the panel slot (Added +4px height for overlap to avoid seams)
+            const isFlipped = useMirror && (i % 2 === 1);
+            if (isFlipped) {
+                // When flipped, translate to the bottom of the drawn area and scale -1
+                ctx.translate(0, Math.floor(bgPanelY[i]) + dH);
+                ctx.scale(1, -1);
                 ctx.drawImage(img,
                     sX, sY, sW, sH,
-                    0, Math.floor(bgPanelY[i]), canvas.width, canvas.height + 4
+                    0, 0, dW, dH + 4
                 );
             } else {
-                // Width is sufficient or larger.
-                // We center horizontally. (Added +4px height for overlap to avoid seams)
-                const offX = (canvas.width - renderW) / 2;
-
                 ctx.drawImage(img,
-                    0, 0, img.width, img.height,
-                    offX, Math.floor(bgPanelY[i]), renderW, renderH + 4
+                    sX, sY, sW, sH,
+                    0, Math.floor(bgPanelY[i]), dW, dH + 4
                 );
             }
+            ctx.restore();
         }
     }
 
@@ -3069,6 +3144,18 @@ function updateEnemyBullets(): void {
             } else {
                 ctx.drawImage(bossBulletImage, bullet.x - imgWidth / 2, bullet.y - imgHeight / 2, imgWidth, imgHeight);
             }
+        } else if (bullet.isStationBullet && stationBulletImage && stationBulletImage.complete) {
+            const imgWidth = bullet.width || 30; // Increased
+            const imgHeight = bullet.height || 60; // Increased
+            ctx.save();
+            ctx.translate(bullet.x, bullet.y);
+            // Rotate towards movement direction
+            if (bullet.dirX !== undefined && bullet.dirY !== undefined) {
+                const angle = Math.atan2(bullet.dirY, bullet.dirX);
+                ctx.rotate(angle + Math.PI / 2);
+            }
+            ctx.drawImage(stationBulletImage, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+            ctx.restore();
         } else {
             // Normal enemy bullet (red circle)
             ctx.fillStyle = '#ff4444';
@@ -3474,7 +3561,7 @@ function updateBullets(): void {
             if (!target || target.hp <= 0 || (target as any).x === undefined) {
                 const result = findNearestTarget(bullet.x, bullet.y);
                 if (result.target) {
-                    bullet.targetAsteroid = result.target as MovingAsteroid; // Type cast for convenience
+                    bullet.targetAsteroid = result.target as MovingAsteroid;
                     target = result.target as MovingAsteroid;
                 }
             }
@@ -3483,20 +3570,12 @@ function updateBullets(): void {
                 const dx = target.x - bullet.x;
                 const dy = target.y - bullet.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-
-                // Only home if within reasonable range (increase range for better feel)
                 if (dist < 600) {
                     const targetAngle = Math.atan2(dy, dx);
-
-                    // Smoothly rotate towards target
                     let angleDiff = targetAngle - bullet.angle;
-
-                    // Normalize angle to -PI to PI
                     while (angleDiff <= -Math.PI) angleDiff += Math.PI * 2;
                     while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-
-                    const turnRate = 0.15; // Turn speed (radians per frame)
-
+                    const turnRate = 0.15;
                     if (Math.abs(angleDiff) < turnRate) {
                         bullet.angle = targetAngle;
                     } else {
@@ -3504,99 +3583,93 @@ function updateBullets(): void {
                     }
                 }
             }
-        }
-        // Standard movement for other bullets
-        else {
-            // Move bullet STRAIGHT UP (decreasing Y and Z)
+        } else {
             bullet.y -= bullet.speed;
-
             if (bullet.type === 'spread' && bullet.angle !== undefined) {
                 bullet.x += Math.sin(bullet.angle) * bullet.speed * 0.4;
             }
         }
 
-        // Z-depth update for all bullets
         bullet.z -= 0.02;
 
-        // OPTIMIZED COLLISION: Use spatial grid instead of checking all objects
-        const nearbyObjects = getNearbyObjects(bullet.x, bullet.y);
+        // Boundary checks
+        if (bullet.y < -100 || bullet.y > canvas.height + 100 || bullet.x < -100 || bullet.x > canvas.width + 100 || bullet.z < 0.05) {
+            bulletHit = true;
+        }
 
-        // Check collision with nearby asteroids only
-        for (const obj of nearbyObjects) {
-            if ('baseSize' in obj) {
-                // This is an asteroid
-                const asteroid = obj as MovingAsteroid;
-                const size = asteroid.baseSize;
-                const dx = bullet.x - asteroid.x;
-                const dy = bullet.y - asteroid.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-
-                if (dist < size) {
-                    asteroid.hp -= bullet.damage;
-                    asteroid.hitFlash = 10;
-                    gameStats.hits++;
-
-                    if (hasWeapon) {
-                        gameStats.score += 100;
-                    }
-                    updateUI();
-
-                    if (asteroid.hp <= 0) {
-                        gameStats.asteroidsDestroyed++;
-                        if (asteroid.isBoss) {
-                            gameStats.bossDestroyed = true;
+        if (!bulletHit) {
+            const nearbyObjects = getNearbyObjects(bullet.x, bullet.y);
+            for (const obj of nearbyObjects) {
+                if ('baseSize' in obj) {
+                    const asteroid = obj as MovingAsteroid;
+                    const dx = bullet.x - asteroid.x;
+                    const dy = bullet.y - asteroid.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < asteroid.baseSize) {
+                        asteroid.hp -= bullet.damage;
+                        asteroid.hitFlash = 10;
+                        gameStats.hits++;
+                        if (hasWeapon) gameStats.score += 100;
+                        updateUI();
+                        if (asteroid.hp <= 0) {
+                            gameStats.asteroidsDestroyed++;
+                            if (asteroid.isBoss) gameStats.bossDestroyed = true;
+                            spawnExplosion(asteroid.x, asteroid.y, asteroid.isBoss ? 2 : 1);
+                            const idx = movingAsteroids.indexOf(asteroid);
+                            if (idx > -1) movingAsteroids.splice(idx, 1);
+                            audioManager.playSoundEffect('explosion');
                         }
-                        // Spawn explosion effect
-                        spawnExplosion(asteroid.x, asteroid.y, asteroid.isBoss ? 2 : 1);
-                        const asteroidIndex = movingAsteroids.indexOf(asteroid);
-                        if (asteroidIndex > -1) movingAsteroids.splice(asteroidIndex, 1);
-                        audioManager.playSoundEffect('explosion');
+                        bulletHit = true;
+                        break;
                     }
-
-                    bulletHit = true;
-                    break;
-                }
-            } else if ('lastFireTime' in obj && !bulletHit) {
-                // This is an enemy rocket
-                const enemy = obj as EnemyRocket;
-                const size = enemy.width;
-                const dx = bullet.x - enemy.x;
-                const dy = bullet.y - enemy.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-
-                if (dist < size) {
-                    enemy.hp -= bullet.damage;
-                    gameStats.hits++;
-
-                    if (hasWeapon) {
-                        gameStats.score += 150; // More points for enemy rockets
+                } else if ('lastFireTime' in obj) {
+                    const enemy = obj as EnemyRocket;
+                    const dx = bullet.x - enemy.x;
+                    const dy = bullet.y - enemy.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < enemy.width) {
+                        enemy.hp -= bullet.damage;
+                        gameStats.hits++;
+                        if (hasWeapon) gameStats.score += 150;
+                        updateUI();
+                        if (enemy.hp <= 0) {
+                            spawnExplosion(enemy.x, enemy.y, 1.2);
+                            const idx = enemyRockets.indexOf(enemy);
+                            if (idx > -1) enemyRockets.splice(idx, 1);
+                            audioManager.playSoundEffect('explosion');
+                        }
+                        bulletHit = true;
+                        break;
                     }
-                    updateUI();
-
-                    if (enemy.hp <= 0) {
-                        // Spawn explosion effect
-                        spawnExplosion(enemy.x, enemy.y, 1.2);
-                        const enemyIndex = enemyRockets.indexOf(enemy);
-                        if (enemyIndex > -1) enemyRockets.splice(enemyIndex, 1);
-                        audioManager.playSoundEffect('explosion');
-                    }
-
-                    bulletHit = true;
-                    break;
                 }
             }
         }
 
-
+        // Check hit scrolling decorations (Stations)
+        if (!bulletHit) {
+            for (const decor of scrollingDecors) {
+                if (decor.type !== 'rock' && decor.hp !== undefined) {
+                    const dx = bullet.x - decor.x;
+                    const dy = bullet.y - decor.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 50 * decor.scale) {
+                        decor.hp -= bullet.damage;
+                        decor.hitFlash = 1.0;
+                        bulletHit = true;
+                        gameStats.hits++;
+                        break;
+                    }
+                }
+            }
+        }
 
         // Check collision with boss minions (Phase 2)
         if (!bulletHit && bossRocket && bossRocket.phase === 2 && bossRocket.minions.length > 0) {
             for (let m = bossRocket.minions.length - 1; m >= 0; m--) {
                 const minion = bossRocket.minions[m];
-                const dist = Math.sqrt(
-                    Math.pow(bullet.x - minion.x, 2) +
-                    Math.pow(bullet.y - minion.y, 2)
-                );
+                const dx = bullet.x - minion.x;
+                const dy = bullet.y - minion.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
 
                 if (dist < minion.width / 2) {
                     minion.hp -= bullet.damage;
@@ -3607,76 +3680,57 @@ function updateBullets(): void {
                         spawnExplosion(minion.x, minion.y, 1.5);
                         bossRocket.minions.splice(m, 1);
                         audioManager.playSoundEffect('explosion');
-                        gameStats.score += 1000; // Bonus for killing minion
+                        gameStats.score += 1000;
                     }
 
                     bulletHit = true;
                     // Check if all minions dead -> Remove immunity
                     if (bossRocket.minions.length === 0) {
                         bossRocket.invulnerable = false;
-                        // Stay in Phase 2 but vulnerable. Phase 3 triggers at 33% HP in updateBossRocket.
-                        audioManager.playSoundEffect('powerup'); // Sound cue
+                        audioManager.playSoundEffect('powerup');
                     }
                     break;
                 }
             }
         }
 
-        // Check collision with boss rocket
+        // Boss Logic
         if (!bulletHit && bossRocket) {
-            const dist = Math.sqrt(
-                Math.pow(bullet.x - bossRocket.x, 2) +
-                Math.pow(bullet.y - bossRocket.y, 2)
-            );
-
+            const dx = bullet.x - bossRocket.x;
+            const dy = bullet.y - bossRocket.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < bossRocket.width * 0.4) {
-                // Immunity Check
                 if (bossRocket.invulnerable) {
                     bulletHit = true;
-                    // Deflect logic/effect - return bullet to pool
-                    returnBulletToPool(bullets.splice(i, 1)[0]);
-                    break;
+                } else {
+                    bossRocket.hp -= bullet.damage;
+                    gameStats.hits++;
+                    if (hasWeapon) gameStats.score += 500;
+                    updateUI();
+                    if (bossRocket.hp <= 0 && !bossRocket.isDying) {
+                        bossRocket.isDying = true;
+                        bossRocket.dyeStartTime = Date.now();
+                        bossRocket.hp = 0;
+                        bossRocket.isLaserFiring = false;
+                        bossRocket.invulnerable = true;
+                        audioManager.playSound('bossDead', 1.0);
+                    }
+                    bulletHit = true;
                 }
-
-                bossRocket.hp -= bullet.damage;
-                gameStats.hits++;
-
-                if (hasWeapon) {
-                    gameStats.score += 500; // Big points for hitting boss
-                }
-                updateUI();
-
-                if (bossRocket.hp <= 0 && !bossRocket.isDying) {
-                    // Trigger death sequence
-                    bossRocket.isDying = true;
-                    bossRocket.dyeStartTime = Date.now();
-                    bossRocket.hp = 0;
-
-                    // Stop firing and attacks
-                    bossRocket.isLaserFiring = false;
-                    bossRocket.invulnerable = true;
-
-                    // Play dying sound (long scream)
-                    audioManager.playSound('bossDead', 1.0);
-                }
-
-                bulletHit = true;
             }
         }
 
-        if (bulletHit || bullet.y < -50 || bullet.z < 0.05) {
-            // Return bullet to pool for reuse
-            returnBulletToPool(bullets.splice(i, 1)[0]);
-            continue;
+        if (bulletHit) {
+            returnBulletToPool(bullets[i]);
+            bullets.splice(i, 1);
+        } else {
+            drawBullet(bullet);
         }
-
-        drawBullet(bullet);
     }
 }
 
 function drawBullet(bullet: Bullet): void {
     if (!ctx) return;
-
     ctx.save();
 
     if (bullet.type === 'magnetic') {

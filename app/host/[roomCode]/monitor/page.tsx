@@ -54,6 +54,7 @@ export default function HostMonitorPage(): React.JSX.Element {
     const [timeRemaining, setTimeRemaining] = useState<number>(300);
     const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [isScrolled, setIsScrolled] = useState(false);
 
     // Hitung progress & status completed
     const processedPlayers = useMemo(() => {
@@ -269,6 +270,19 @@ export default function HostMonitorPage(): React.JSX.Element {
         };
     }, [session?.id, gamePin]);
 
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 20) {
+                setIsScrolled(true);
+            } else {
+                setIsScrolled(false);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     const syncResultsToMainSupabase = async (sessionId: string) => {
         try {
             const { data: sess } = await supabaseGame
@@ -434,12 +448,7 @@ export default function HostMonitorPage(): React.JSX.Element {
             </div> */}
 
             {/* Monitor Info Bar */}
-            <div className="monitor-info-bar">
-                <div className="info-item completion-status">
-                    <Users />
-                    <span className="info-value">{participants.length}</span>
-                </div>
-
+            <div className={`monitor-info-bar ${isScrolled ? 'scrolled' : ''}`}>
                 <div className="info-item timer-central">
                     <div className="timer-display">
                         <span className={`timer-value ${timeRemaining <= 30 ? 'text-red-500 animate-pulse' : ''}`}>
@@ -448,10 +457,17 @@ export default function HostMonitorPage(): React.JSX.Element {
                     </div>
                 </div>
 
-                <div className="info-item actions">
-                    <button className="btn-end-game" onClick={() => setIsEndConfirmOpen(true)}>
-                        <span>End Game</span>
-                    </button>
+                <div className="info-row-mobile">
+                    <div className="info-item completion-status">
+                        <Users />
+                        <span className="info-value">{participants.length}</span>
+                    </div>
+
+                    <div className="info-item actions">
+                        <button className="btn-red-3d" onClick={() => setIsEndConfirmOpen(true)}>
+                            <span>END</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -464,65 +480,76 @@ export default function HostMonitorPage(): React.JSX.Element {
                 }}
             />
 
-            {/* Player Progress Grid */}
-            <div className="progress-grid">
-                {sortedPlayers.length === 0 ? (
-                    <div className="empty-state" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem' }}>
-                        <p style={{ color: 'var(--text-secondary)' }}>No players have joined yet.</p>
-                    </div>
-                ) : (
-                    <AnimatePresence>
-                        {sortedPlayers.map((player) => {
-                            const isActive = !player.isCompleted && player.questionsAnswered > 0;
+            <CountdownOverlay
+                isActive={!!session?.countdown_started_at && session?.status === 'waiting'}
+                targetDate={session?.countdown_started_at ? new Date(new Date(session.countdown_started_at).getTime() + 10000).toISOString() : undefined}
+            />
 
-                            return (
-                                <motion.div
-                                    key={player.id}
-                                    layout
-                                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                    whileHover={{ scale: 1.05 }}
-                                    className={`progress-card ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'completed' : '')} ${isActive ? 'animate-pulse-glow' : ''}`}
-                                >
-                                    <div className="progress-card-header">
-                                        <div className="status-icon-container">
-                                            {player.isEliminated ? (
-                                                <X className="w-5 h-5 text-red-500" />
-                                            ) : player.isCompleted ? (
-                                                <Check className="w-5 h-5 text-green-400" />
-                                            ) : (
-                                                null
-                                            )}
-                                        </div>
-                                        <div className="progress-bar-container">
-                                            <div
-                                                className={`progress-bar-fill ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'complete' : '')}`}
-                                                style={{ width: `${player.progress}%` }}
-                                            />
-                                        </div>
-                                        <span className="progress-indicator">
-                                            {player.questionsAnswered}/{totalQuestions}
-                                        </span>
-                                    </div>
-                                    <div className="progress-card-body">
-                                        {player.spacecraft ? (
-                                            <img
-                                                src={`/assets/${player.spacecraft}`}
-                                                alt="spacecraft"
-                                                className={`progress-spacecraft ${!player.isCompleted && !player.isEliminated ? 'animate-float' : ''}`}
-                                            />
-                                        ) : (
-                                            <div className="progress-icon">🚀</div>
-                                        )}
-                                        <span className="progress-player-name">{player.nickname}</span>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
-                    </AnimatePresence>
-                )}
+            {/* Player Progress Grid Wrapped in Panel */}
+            <div className="monitor-main-content">
+                <div className="monitor-panel">
+                    <div className="monitor-grid-container">
+                        <div className="progress-grid">
+                            {sortedPlayers.length === 0 ? (
+                                <div className="empty-state" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem' }}>
+                                    <p style={{ color: 'var(--text-secondary)' }}>No players have joined yet.</p>
+                                </div>
+                            ) : (
+                                <AnimatePresence>
+                                    {sortedPlayers.map((player) => {
+                                        const isActive = !player.isCompleted && player.questionsAnswered > 0;
+
+                                        return (
+                                            <motion.div
+                                                key={player.id}
+                                                layout
+                                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                exit={{ opacity: 0, scale: 0.9 }}
+                                                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                                whileHover={{ scale: 1.05 }}
+                                                className={`progress-card ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'completed' : '')} ${isActive ? 'animate-pulse-glow' : ''}`}
+                                            >
+                                                <div className="progress-card-header">
+                                                    <div className="status-icon-container">
+                                                        {player.isEliminated ? (
+                                                            <X className="w-5 h-5 text-red-500" />
+                                                        ) : player.isCompleted ? (
+                                                            <Check className="w-5 h-5 text-green-400" />
+                                                        ) : (
+                                                            null
+                                                        )}
+                                                    </div>
+                                                    <div className="progress-bar-container">
+                                                        <div
+                                                            className={`progress-bar-fill ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'complete' : '')}`}
+                                                            style={{ width: `${player.progress}%` }}
+                                                        />
+                                                    </div>
+                                                    <span className="progress-indicator">
+                                                        {player.questionsAnswered}/{totalQuestions}
+                                                    </span>
+                                                </div>
+                                                <div className="progress-card-body">
+                                                    {player.spacecraft ? (
+                                                        <img
+                                                            src={`/assets/${player.spacecraft}`}
+                                                            alt="spacecraft"
+                                                            className={`progress-spacecraft ${!player.isCompleted && !player.isEliminated ? 'animate-float' : ''}`}
+                                                        />
+                                                    ) : (
+                                                        <div className="progress-icon">🚀</div>
+                                                    )}
+                                                    <span className="progress-player-name">{player.nickname}</span>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
+                                </AnimatePresence>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* CSS tambahan untuk animasi yang diminta */}
