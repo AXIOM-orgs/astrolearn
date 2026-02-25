@@ -50,6 +50,7 @@ export default function LandingPage(): React.JSX.Element {
         if (codeFromUrl) {
             setSectorCode(codeFromUrl.toUpperCase());
         }
+        hideLoading();
     }, [user, profile, loading]);
 
     const handleNicknameChange = (value: string): void => {
