@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useGame, GameState, initialGameState } from '@/context/GameContext';
 import { supabaseGame } from '@/lib/supabase';
@@ -38,17 +38,12 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     const [startTime, setStartTime] = useState<number | null>(null);
     const [sessionData, setSessionData] = useState<any>(null); // Store full session data for countdown checks
 
-    // Memoize target date to prevent blinking
-    const countdownTargetDate = useState<string | undefined>(undefined);
-    const [targetDate, setTargetDate] = useState<string | undefined>(undefined);
-
-    useEffect(() => {
+    // Compute target date as derived state (not via useEffect) to avoid 1-frame blink
+    const targetDate = useMemo(() => {
         if (sessionData?.countdown_started_at) {
-            const date = new Date(new Date(sessionData.countdown_started_at).getTime() + 10000).toISOString();
-            setTargetDate(date);
-        } else {
-            setTargetDate(undefined);
+            return new Date(new Date(sessionData.countdown_started_at).getTime() + 10000).toISOString();
         }
+        return undefined;
     }, [sessionData?.countdown_started_at]);
 
     useEffect(() => {
@@ -414,12 +409,20 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Loading State
+    // Loading State - shows black screen matching countdown overlay
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-screen bg-[#0a0e27]">
-                <div className="loading-spinner text-primary" />
-            </div>
+            <>
+                {/* Countdown overlay must render even during loading so player sees countdown synced with host */}
+                <CountdownOverlay
+                    isActive={!!sessionData?.countdown_started_at && sessionData?.status === 'waiting'}
+                    targetDate={targetDate}
+                    max={10}
+                />
+                <div className="fixed inset-0 flex items-center justify-center" style={{ background: 'black', zIndex: 9999 }}>
+                    <div className="loading-spinner text-primary" />
+                </div>
+            </>
         );
     }
 

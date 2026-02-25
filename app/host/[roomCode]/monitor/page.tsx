@@ -53,6 +53,7 @@ export default function HostMonitorPage(): React.JSX.Element {
     const [totalQuestions, setTotalQuestions] = useState<number>(5);
     const [timeRemaining, setTimeRemaining] = useState<number>(300);
     const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
 
     // Hitung progress & status completed
     const processedPlayers = useMemo(() => {
@@ -162,6 +163,7 @@ export default function HostMonitorPage(): React.JSX.Element {
             if (parts) setParticipants(parts);
 
             hideLoading();
+            setIsInitialLoading(false);
         };
 
         init();
@@ -390,8 +392,25 @@ export default function HostMonitorPage(): React.JSX.Element {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
+    // Determine if countdown is currently active
+    const isCountdownActive = !!session?.countdown_started_at && session?.status === 'waiting';
+    const countdownTargetDate = session?.countdown_started_at
+        ? new Date(new Date(session.countdown_started_at).getTime() + 10000).toISOString()
+        : undefined;
+
     return (
         <section className="host-monitor-screen">
+            {/* Black overlay during initial loading - prevents monitor UI flash */}
+            {isInitialLoading && (
+                <div className="countdown-overlay" style={{ background: 'black' }} />
+            )}
+
+            {/* Countdown Overlay - takes over seamlessly from loading overlay */}
+            <CountdownOverlay
+                isActive={isCountdownActive}
+                targetDate={countdownTargetDate}
+            />
+
             {/* Header */}
             <header className="monitor-header">
                 <div className="monitor-brand">
@@ -443,11 +462,6 @@ export default function HostMonitorPage(): React.JSX.Element {
                     setIsEndConfirmOpen(false);
                     handleEndGame();
                 }}
-            />
-
-            <CountdownOverlay
-                isActive={!!session?.countdown_started_at && session?.status === 'waiting'}
-                targetDate={session?.countdown_started_at ? new Date(new Date(session.countdown_started_at).getTime() + 10000).toISOString() : undefined}
             />
 
             {/* Player Progress Grid */}
