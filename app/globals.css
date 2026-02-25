@@ -1458,7 +1458,8 @@ input[type="text"]:focus {
   width: 100%;
 }
 
-.result-mobile-actions {
+.result-mobile-actions,
+.leaderboard-mobile-actions {
   display: none;
 }
 
@@ -1747,18 +1748,10 @@ input[type="text"]:focus {
   .result-stat-label {
     font-size: 0.6rem;
   }
+}
 
-  .floating-btn {
-    display: none !important;
-  }
-
-  .result-mobile-actions {
-    display: flex !important;
-    width: 100%;
-    gap: 1rem;
-    margin-top: 1.5rem;
-  }
-
+/* Shared Result/Leaderboard Mobile Buttons (Tablet & Mobile) */
+@media (max-width: 1024px) {
   .btn-result-mobile {
     flex: 1;
     display: flex;
@@ -1782,6 +1775,12 @@ input[type="text"]:focus {
     box-shadow: 0 4px 15px rgba(0, 119, 182, 0.4);
   }
 
+  .btn-result-mobile.restart {
+    background: linear-gradient(135deg, #74f50b, #06d957);
+    color: white;
+    box-shadow: 0 4px 15px rgba(6, 217, 87, 0.4);
+  }
+
   .btn-result-mobile.stats {
     background: linear-gradient(135deg, #f59e0b, #d97706);
     color: white;
@@ -1792,6 +1791,19 @@ input[type="text"]:focus {
     opacity: 0.5;
     cursor: not-allowed;
     filter: grayscale(100%);
+  }
+}
+
+@media (max-width: 768px) {
+  .floating-btn {
+    display: none !important;
+  }
+
+  .result-mobile-actions {
+    display: flex !important;
+    width: 100%;
+    gap: 1rem;
+    margin-top: 1.5rem;
   }
 
   .score-breakdown {
@@ -6344,7 +6356,7 @@ input[type="text"]:focus {
 }
 
 /* Responsive adjustments for multi-user pages */
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
   .host-lobby-content {
     grid-template-columns: 1fr;
   }
@@ -6375,7 +6387,144 @@ input[type="text"]:focus {
   }
 
   .podium-container {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: 0.8rem;
+  }
+
+  .podium-card {
+    width: 150px;
+    padding: 0.8rem;
+  }
+
+  .podium-card.gold.center {
+    width: 170px;
+  }
+
+  .leaderboard-screen {
+    padding: 1rem 1.5rem;
+  }
+
+  /* Tablet: Use mobile-style buttons below table instead of floating */
+  .left-floating-group,
+  .statistics-btn {
+    display: none !important;
+  }
+
+  .leaderboard-mobile-actions {
+    display: flex !important;
+    width: 100%;
+    margin-top: 1.5rem;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+
+  /* Leaderboard Responsive */
+  .leaderboard-header {
+    justify-content: center !important;
+    padding: 1rem !important;
+  }
+
+  .leaderboard-header .header-logo {
+    display: none !important;
+  }
+
+  .leaderboard-header .brand-logo-image {
+    height: 45px !important;
+  }
+
+  .leaderboard-screen {
+    padding: 1rem 0.75rem;
+  }
+
+  .vanguard-title {
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+  }
+
+  .podium-container {
+    flex-direction: row !important;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 0.4rem;
+    width: 100%;
+  }
+
+  .podium-card {
+    width: 29% !important;
+    padding: 0.5rem !important;
+    border-radius: 12px;
+  }
+
+  .podium-card.gold.center {
+    width: 35% !important;
+    padding: 0.75rem 0.5rem !important;
+    padding-top: 1.5rem !important;
+  }
+
+  .podium-image {
+    height: 50px;
+    margin-bottom: 0.5rem;
+  }
+
+  .podium-card.center .podium-image {
+    height: 65px;
+  }
+
+  .podium-name {
+    font-size: 0.75rem !important;
+  }
+
+  .podium-score {
+    font-size: 0.9rem !important;
+  }
+
+  .rank-badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    top: -12px;
+  }
+
+  /* Compact Table for 4 Columns */
+  .rankings-table th,
+  .rankings-table td {
+    font-size: 0.75rem !important;
+    padding: 0.4rem 0.2rem !important;
+  }
+
+  .rankings-table th:nth-child(1),
+  .rankings-table td:nth-child(1) {
+    width: 12%;
+  }
+
+  .rankings-table th:nth-child(2),
+  .rankings-table td:nth-child(2) {
+    width: 48%;
+  }
+
+  .rankings-table th:nth-child(3),
+  .rankings-table td:nth-child(3) {
+    width: 20%;
+  }
+
+  .rankings-table th:nth-child(4),
+  .rankings-table td:nth-child(4) {
+    width: 20%;
+  }
+
+  .leaderboard-mobile-actions {
+    display: flex !important;
+    width: 100%;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .leaderboard-mobile-actions .btn-result-mobile {
+    flex: 1;
+    font-size: 0.7rem;
+    padding: 0.7rem 0.4rem;
   }
 }
 

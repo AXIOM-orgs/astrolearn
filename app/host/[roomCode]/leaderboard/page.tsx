@@ -445,6 +445,31 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Actions - Below Table */}
+            <div className="leaderboard-mobile-actions">
+              <button className="btn-result-mobile home" onClick={handleHome}>
+                <Home size={20} />
+                <span>Home</span>
+              </button>
+
+              <button className="btn-result-mobile restart" onClick={handleRestart} disabled={isRestarting}>
+                <RotateCw size={20} className={isRestarting ? 'animate-spin' : ''} />
+                <span>Restart</span>
+              </button>
+
+              {sessionId && (
+                <a
+                  href={`https://gameforsmart2026.vercel.app/results/${sessionId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-result-mobile stats"
+                >
+                  <BarChart3 size={20} />
+                  <span>Statistics</span>
+                </a>
+              )}
+            </div>
           </div>
         )}
       </section>
