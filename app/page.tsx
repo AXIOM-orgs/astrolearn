@@ -181,6 +181,9 @@ export default function LandingPage(): React.JSX.Element {
 
     return (
         <section className="landing-page">
+            {/* Brand Logo Top Left */}
+            <img src="/assets/logo.webp" className="brand-logo" alt="AstroLearn" />
+
             {/* Profile Indicator */}
             <button className="profile-indicator" onClick={toggleSidebar}>
                 <div className="profile-info">
@@ -221,7 +224,7 @@ export default function LandingPage(): React.JSX.Element {
             <div className="landing-content">
                 {/* Header */}
                 <header className="landing-header">
-                    <h1 className="cosmic-title">AXIOM</h1>
+                    <img src="/assets/logo2new.webp" className="cosmic-logo" alt="AXIOM" />
                     <p className="cosmic-subtitle">ENTER THE COSMIC ARENA</p>
                 </header>
 

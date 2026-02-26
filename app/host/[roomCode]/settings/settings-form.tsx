@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, supabaseGame } from '@/lib/supabase';
 import { useGame } from '@/context/GameContext';
@@ -47,6 +47,12 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [soundEnabled, setSoundEnabled] = useState(false);
+    const [isDurationOpen, setIsDurationOpen] = useState(false);
+    const [isQuestionsOpen, setIsQuestionsOpen] = useState(false);
+    const [isDifficultyOpen, setIsDifficultyOpen] = useState(false);
+    const durationRef = useRef<HTMLDivElement>(null);
+    const questionsRef = useRef<HTMLDivElement>(null);
+    const difficultyRef = useRef<HTMLDivElement>(null);
 
     // Redirect if error
     useEffect(() => {
@@ -133,12 +139,29 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
         }
     };
 
+    // Close dropdowns on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (durationRef.current && !durationRef.current.contains(event.target as Node)) {
+                setIsDurationOpen(false);
+            }
+            if (questionsRef.current && !questionsRef.current.contains(event.target as Node)) {
+                setIsQuestionsOpen(false);
+            }
+            if (difficultyRef.current && !difficultyRef.current.contains(event.target as Node)) {
+                setIsDifficultyOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     if (!quizDetail || !sessData) {
         return (
             <section id="screen-setup" className="screen active">
                 <div className="container">
                     <div className="glass-panel" style={{ textAlign: 'center', padding: '3rem' }}>
-                        <p style={{ color: '#06ffa5' }}>Loading...</p>
+                        <p style={{ color: 'var(--primary-color)' }}>Loading...</p>
                     </div>
                 </div>
             </section>
@@ -157,9 +180,13 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                     {/* Quiz Info */}
                     <div style={{ marginBottom: '1.5rem' }}>
                         <p
-                            className={isArabic(quizDetail.title) ? 'font-arabic' : ''}
+                            className={`${isArabic(quizDetail.title) ? 'font-arabic' : ''} premium-quiz-title`}
                             dir={isArabic(quizDetail.title) ? 'rtl' : 'ltr'}
-                            style={{ color: '#06ffa5', fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '0.3rem' }}
+                            style={{
+                                fontSize: '1.3rem',
+                                fontWeight: 'bold',
+                                marginBottom: '0.3rem',
+                            }}
                         >
                             {quizDetail.title}
                         </p>
@@ -168,100 +195,96 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                     {/* Divider */}
                     <div style={{
                         height: '1px',
-                        background: 'linear-gradient(90deg, transparent, rgba(6, 255, 165, 0.3), transparent)',
+                        background: 'linear-gradient(90deg, transparent, rgba(70, 167, 187, 0.3), transparent)',
                         marginBottom: '2rem'
                     }} />
 
-                    {/* Settings Row 1: Duration, Questions, Sound */}
-                    <div style={{
+                    {/* Settings Row 1 & 2: Duration, Questions, Sound, Difficulty (Main Grid) */}
+                    <div className="settings-main-grid" style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
                         gap: '1rem',
                         marginBottom: '1.5rem'
                     }}>
-                        {/* Duration */}
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label style={{
-                                display: 'block',
-                                marginBottom: '0.5rem',
-                                fontSize: '0.9rem',
-                                color: '#06ffa5',
-                                textTransform: 'uppercase',
-                                letterSpacing: '1px'
-                            }}>Duration</label>
-                            <select
-                                value={duration}
-                                onChange={(e) => setDuration(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    background: 'rgba(10, 10, 15, 0.6)',
-                                    border: '1px solid rgba(6, 255, 165, 0.3)',
-                                    borderRadius: '8px',
-                                    color: '#fff',
-                                    fontSize: '1rem',
-                                    cursor: 'pointer',
-                                    outline: 'none',
-                                    transition: 'all 0.2s ease'
-                                }}
-                                onFocus={(e) => e.currentTarget.style.borderColor = '#06ffa5'}
-                                onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(6, 255, 165, 0.3)'}
-                            >
-                                {[5, 10, 15, 20, 25, 30].map((min) => (
-                                    <option key={min} value={(min * 60).toString()}>
-                                        {min} Minutes
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
                         {/* Questions */}
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label style={{
-                                display: 'block',
-                                marginBottom: '0.5rem',
-                                fontSize: '0.9rem',
-                                color: '#06ffa5',
-                                textTransform: 'uppercase',
-                                letterSpacing: '1px'
-                            }}>Questions</label>
-                            <select
-                                value={questionCount}
-                                onChange={(e) => setQuestionCount(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    background: 'rgba(10, 10, 15, 0.6)',
-                                    border: '1px solid rgba(6, 255, 165, 0.3)',
-                                    borderRadius: '8px',
-                                    color: '#fff',
-                                    fontSize: '1rem',
-                                    cursor: 'pointer',
-                                    outline: 'none',
-                                    transition: 'all 0.2s ease'
-                                }}
-                                onFocus={(e) => e.currentTarget.style.borderColor = '#06ffa5'}
-                                onBlur={(e) => e.currentTarget.style.borderColor = 'rgba(6, 255, 165, 0.3)'}
-                            >
-                                {questionCountOptions.map((count) => (
-                                    <option key={count} value={count.toString()}>
-                                        {count} Questions
-                                    </option>
-                                ))}
-                            </select>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>Questions</label>
+                            <div className={`custom-dropdown ${isQuestionsOpen ? 'open' : ''}`} ref={questionsRef} style={{ width: '100%' }}>
+                                <div className="dropdown-trigger" onClick={() => setIsQuestionsOpen(!isQuestionsOpen)}>
+                                    <span>{questionCount} QUESTIONS</span>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ transform: isQuestionsOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </div>
+                                {isQuestionsOpen && (
+                                    <div className="dropdown-options">
+                                        {questionCountOptions.map((count) => (
+                                            <div key={count} className={`dropdown-option ${questionCount === count.toString() ? 'selected' : ''}`} onClick={() => { setQuestionCount(count.toString()); setIsQuestionsOpen(false); }}>
+                                                {count} QUESTIONS
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Sound Toggle Switch */}
+                        {/* Duration */}
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label style={{
-                                display: 'block',
-                                marginBottom: '0.5rem',
-                                fontSize: '0.9rem',
-                                color: '#06ffa5',
-                                textTransform: 'uppercase',
-                                letterSpacing: '1px',
-                                textAlign: 'center'
-                            }}>Sound</label>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>Duration</label>
+                            <div className={`custom-dropdown ${isDurationOpen ? 'open' : ''}`} ref={durationRef} style={{ width: '100%' }}>
+                                <div className="dropdown-trigger" onClick={() => setIsDurationOpen(!isDurationOpen)}>
+                                    <span>{Math.floor(parseInt(duration) / 60)} MINUTES</span>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ transform: isDurationOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </div>
+                                {isDurationOpen && (
+                                    <div className="dropdown-options">
+                                        {[5, 10, 15, 20, 25, 30].map((min) => (
+                                            <div key={min} className={`dropdown-option ${duration === (min * 60).toString() ? 'selected' : ''}`} onClick={() => { setDuration((min * 60).toString()); setIsDurationOpen(false); }}>
+                                                {min} MINUTES
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Difficulty (Dropdown for Mobile) */}
+                        <div className="form-group mobile-only" style={{ marginBottom: 0 }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>Difficulty</label>
+                            <div className={`custom-dropdown ${isDifficultyOpen ? 'open' : ''}`} ref={difficultyRef} style={{ width: '100%' }}>
+                                <div className="dropdown-trigger" onClick={() => setIsDifficultyOpen(!isDifficultyOpen)}>
+                                    <span style={{ color: selectedDifficulty === 'easy' ? '#22c55e' : selectedDifficulty === 'medium' ? '#f59e0b' : '#ef4444', fontWeight: '900' }}>
+                                        {selectedDifficulty.toUpperCase()}
+                                    </span>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ transform: isDifficultyOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </div>
+                                {isDifficultyOpen && (
+                                    <div className="dropdown-options">
+                                        {[
+                                            { value: 'easy', label: 'EASY', color: '#22c55e' },
+                                            { value: 'medium', label: 'MEDIUM', color: '#f59e0b' },
+                                            { value: 'hard', label: 'HARD', color: '#ef4444' }
+                                        ].map((diff) => (
+                                            <div
+                                                key={diff.value}
+                                                className={`dropdown-option ${selectedDifficulty === diff.value ? 'selected' : ''}`}
+                                                onClick={() => { setSelectedDifficulty(diff.value); setIsDifficultyOpen(false); }}
+                                                style={{ color: diff.color }}
+                                            >
+                                                {diff.label}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Sound */}
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center' }}>Sound</label>
                             <div
                                 onClick={() => setSoundEnabled(!soundEnabled)}
                                 style={{
@@ -269,66 +292,24 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     gap: '0.75rem',
-                                    padding: '0.75rem',
-                                    background: 'rgba(10, 10, 15, 0.6)',
-                                    border: '1px solid rgba(6, 255, 165, 0.3)',
-                                    borderRadius: '8px',
+                                    padding: '0.6rem 0.75rem',
+                                    background: 'rgba(13, 27, 42, 0.9)',
+                                    border: '2px solid var(--primary-color)',
+                                    backdropFilter: 'blur(12px)',
+                                    borderRadius: '12px',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s ease'
                                 }}
                             >
-                                {/* Mute Icon (Left) */}
-                                <svg
-                                    width="20"
-                                    height="20"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke={!soundEnabled ? '#ef4444' : 'rgba(255,255,255,0.4)'}
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    style={{ transition: 'all 0.3s ease' }}
-                                >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={!soundEnabled ? '#ef4444' : 'rgba(255,255,255,0.4)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'all 0.3s ease' }}>
                                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                                     <line x1="23" y1="9" x2="17" y2="15" />
                                     <line x1="17" y1="9" x2="23" y2="15" />
                                 </svg>
-
-                                {/* Toggle Switch */}
-                                <div style={{
-                                    position: 'relative',
-                                    width: '50px',
-                                    height: '26px',
-                                    background: soundEnabled ? '#06ffa5' : '#333',
-                                    borderRadius: '13px',
-                                    transition: 'all 0.3s ease',
-                                    flexShrink: 0
-                                }}>
-                                    <div style={{
-                                        position: 'absolute',
-                                        top: '3px',
-                                        left: soundEnabled ? '27px' : '3px',
-                                        width: '20px',
-                                        height: '20px',
-                                        background: '#fff',
-                                        borderRadius: '50%',
-                                        transition: 'all 0.3s ease',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                                    }} />
+                                <div style={{ position: 'relative', width: '50px', height: '26px', background: soundEnabled ? 'var(--primary-color)' : '#333', borderRadius: '13px', transition: 'all 0.3s ease', flexShrink: 0 }}>
+                                    <div style={{ position: 'absolute', top: '3px', left: soundEnabled ? '27px' : '3px', width: '20px', height: '20px', background: '#fff', borderRadius: '50%', transition: 'all 0.3s ease', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }} />
                                 </div>
-
-                                {/* Unmute Icon (Right) */}
-                                <svg
-                                    width="20"
-                                    height="20"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke={soundEnabled ? '#06ffa5' : 'rgba(255,255,255,0.4)'}
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    style={{ transition: 'all 0.3s ease' }}
-                                >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={soundEnabled ? 'var(--primary-color)' : 'rgba(255,255,255,0.4)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'all 0.3s ease' }}>
                                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                                     <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                                     <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
@@ -337,21 +318,10 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                         </div>
                     </div>
 
-                    {/* Settings Row 2: Difficulty Buttons */}
-                    <div style={{ marginBottom: '2rem' }}>
-                        <label style={{
-                            display: 'block',
-                            marginBottom: '0.5rem',
-                            fontSize: '0.9rem',
-                            color: '#06ffa5',
-                            textTransform: 'uppercase',
-                            letterSpacing: '1px'
-                        }}>Difficulty</label>
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(3, 1fr)',
-                            gap: '0.75rem'
-                        }}>
+                    {/* Difficulty Buttons (Desktop/Tablet Only) */}
+                    <div className="desktop-tablet-only" style={{ marginBottom: '2rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>Difficulty</label>
+                        <div className="difficulty-grid" style={{ display: 'grid', gap: '0.75rem' }}>
                             {[
                                 { value: 'easy', label: 'Easy', color: '#22c55e' },
                                 { value: 'medium', label: 'Medium', color: '#f59e0b' },
@@ -363,12 +333,8 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                                     onClick={() => setSelectedDifficulty(diff.value)}
                                     style={{
                                         padding: '0.75rem 1rem',
-                                        background: selectedDifficulty === diff.value
-                                            ? `${diff.color}20`
-                                            : 'rgba(10, 10, 15, 0.6)',
-                                        border: selectedDifficulty === diff.value
-                                            ? `2px solid ${diff.color}`
-                                            : '1px solid rgba(255, 255, 255, 0.2)',
+                                        background: selectedDifficulty === diff.value ? `${diff.color}20` : 'rgba(10, 10, 15, 0.6)',
+                                        border: selectedDifficulty === diff.value ? `2px solid ${diff.color}` : '1px solid rgba(255, 255, 255, 0.2)',
                                         borderRadius: '8px',
                                         color: selectedDifficulty === diff.value ? diff.color : '#fff',
                                         fontSize: '1rem',
@@ -388,7 +354,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                         className="btn-cyan-style"
                         onClick={handleCreateRoom}
                         disabled={!isSetupComplete || saving}
-                        // style={{ maxWidth: '300px', marginInline: 'auto' }}
+                    // style={{ maxWidth: '300px', marginInline: 'auto' }}
                     >
                         {saving ? 'Loading...' : 'Continue'}
                     </button>
@@ -418,9 +384,9 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                                 style={{
                                     padding: '0.75rem 1.5rem',
                                     background: 'transparent',
-                                    border: '1px solid #06ffa5',
+                                    border: '1px solid var(--primary-color)',
                                     borderRadius: '8px',
-                                    color: '#06ffa5',
+                                    color: 'var(--primary-color)',
                                     cursor: 'pointer'
                                 }}
                             >

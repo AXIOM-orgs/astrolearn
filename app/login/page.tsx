@@ -151,18 +151,18 @@ export default function LoginPage() {
     return (
         <section className="screen active login-page-bg" style={{ alignItems: 'center', justifyContent: 'center' }}>
             {/* Brand Logos - Outside Card */}
-            <img
-                className="desktop-view"
-                src="/assets/logoal.webp"
-                alt="Astro Learning"
-                style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', height: '75px', objectFit: 'contain' }}
-            />
-            <img
-                className="desktop-view"
-                src="/assets/logo.webp"
-                alt="Gameforsmart Logo"
-                style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', height: '70px', objectFit: 'contain' }}
-            />
+            <header className="login-header">
+                <img
+                    src="/assets/logoal.webp"
+                    alt="Astro Learning"
+                    className="login-logo-left"
+                />
+                <img
+                    src="/assets/logo.webp"
+                    alt="Gameforsmart Logo"
+                    className="login-logo-right"
+                />
+            </header>
 
             <div
                 className="glass-panel"

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, supabaseGame } from '@/lib/supabase';
@@ -57,6 +57,8 @@ export default function SelectQuizPage(): React.JSX.Element {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
     const [showMyQuizOnly, setShowMyQuizOnly] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [cardsPerPage, setCardsPerPage] = useState(DESKTOP_CARDS_PER_PAGE);
 
@@ -88,7 +90,7 @@ export default function SelectQuizPage(): React.JSX.Element {
     // Responsive cards per page
     useEffect(() => {
         const handleResize = () => {
-            setCardsPerPage(window.innerWidth <= 768 ? MOBILE_CARDS_PER_PAGE : DESKTOP_CARDS_PER_PAGE);
+            setCardsPerPage(window.innerWidth <= 1024 ? MOBILE_CARDS_PER_PAGE : DESKTOP_CARDS_PER_PAGE);
         };
         handleResize();
         window.addEventListener('resize', handleResize);
@@ -138,6 +140,17 @@ export default function SelectQuizPage(): React.JSX.Element {
         };
         fetchCategories();
     }, [profile?.id]);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Fetch quizzes via RPC (server-side pagination)
     useEffect(() => {
@@ -374,20 +387,37 @@ export default function SelectQuizPage(): React.JSX.Element {
                         </button>
                     </div>
 
-                    <div className="filter-dropdown">
-                        <select
-                            value={selectedCategory}
-                            onChange={(e) => setSelectedCategory(e.target.value)}
-                        >
-                            {categories.map(cat => (
-                                <option key={cat} value={cat}>
-                                    {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                                </option>
-                            ))}
-                        </select>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="m6 9 6 6 6-6" />
-                        </svg>
+                    <div className={`custom-dropdown ${isDropdownOpen ? 'open' : ''}`} ref={dropdownRef}>
+                        <div className="dropdown-trigger" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                            <span>{selectedCategory.toUpperCase()}</span>
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="3"
+                                style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}
+                            >
+                                <path d="m6 9 6 6 6-6" />
+                            </svg>
+                        </div>
+                        {isDropdownOpen && (
+                            <div className="dropdown-options">
+                                {categories.map(cat => (
+                                    <div
+                                        key={cat}
+                                        className={`dropdown-option ${selectedCategory === cat ? 'selected' : ''}`}
+                                        onClick={() => {
+                                            setSelectedCategory(cat);
+                                            setIsDropdownOpen(false);
+                                        }}
+                                    >
+                                        {cat.toUpperCase()}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 
