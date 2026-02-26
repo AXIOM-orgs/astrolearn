@@ -48,7 +48,7 @@ export function GameCodeDialog({ isOpen, onClose, gameCode, joinUrl }: GameCodeD
     };
 
     return (
-        <div className="dialog-overlay" onClick={handleBackdropClick}>
+        <div className="dialog-overlay qr-overlay-dark" onClick={handleBackdropClick}>
             <div className="dialog-content qr-dialog">
                 <button className="dialog-close" onClick={onClose}>
                     <span>✕</span>
