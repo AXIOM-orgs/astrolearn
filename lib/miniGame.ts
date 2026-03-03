@@ -33,6 +33,7 @@ interface Bullet {
     dirX?: number;
     dirY?: number;
     isStationBullet?: boolean;
+    isSniperBullet?: boolean;
 }
 
 
@@ -383,6 +384,7 @@ let weaponPowerUpImage: HTMLImageElement | null = null;
 let stationBulletImage: HTMLImageElement | null = null; // bullet_1_1_4.png
 let loveImage: HTMLImageElement | null = null;
 let barHpImage: HTMLImageElement | null = null;
+let enemySniperBulletImage: HTMLImageElement | null = null;
 
 // Additional scrolling decorations
 let spaceStation1Image: HTMLImageElement | null = null;
@@ -432,8 +434,8 @@ let bossWarningStartTime: number = 0;
 const WEAPON_DURATION = 5000;
 
 // Lives system
-const PLAYER_MAX_LIVES = 3;
-const LIFE_MAX_HP = 10;
+const PLAYER_MAX_LIVES = 10;
+const LIFE_MAX_HP = 100;
 const IMMUNITY_DURATION = 3000; // 3 seconds immunity after losing a life
 let playerLives: number = 3;
 let playerLifeHP: number = 10;
@@ -739,6 +741,9 @@ export function startMiniGame(
     difficulty: DifficultyLevel,
     callback: MiniGameCallback
 ): void {
+    // CRITICAL: Ensure any existing game is fully stopped before starting a new one
+    cleanupMiniGame();
+
     onComplete = callback;
     callbackCalled = false;
     currentDifficulty = difficulty;
@@ -830,6 +835,12 @@ export function startMiniGame(
     gameStartTime = Date.now();
     isGameRunning = true;
     isFiring = true; // Auto-fire enabled with base weapon
+
+    // Reset visual effect timers and shaking
+    muzzleFlashUntil = 0;
+    screenShakeUntil = 0;
+    shakeX = 0;
+    shakeY = 0;
 
     // Initialize lives system
     playerLives = PLAYER_MAX_LIVES;
@@ -954,6 +965,8 @@ export function startMiniGame(
     barHpImage.src = '/assets/bar_hp.png';
     stationBulletImage = new Image();
     stationBulletImage.src = '/assets/bullet_1_1_4.png';
+    enemySniperBulletImage = new Image();
+    enemySniperBulletImage.src = '/assets/bullet_2_3_2.png';
 
     // musuh hiasan
     spaceStation1Image = new Image();
@@ -989,6 +1002,9 @@ export function startMiniGame(
     targetX = player.x;
     targetY = player.y;
     lastPlayerX = player.x;
+    player.tilt = 0;
+    player.dx = 0;
+    player.dy = 0;
 
     // Update UI
     updateUI();
@@ -1179,6 +1195,14 @@ function update(): void {
     if (!isGameRunning || !ctx || !canvas || !player || !difficultyConfig) {
         return;
     }
+
+    // CRITICAL: Full Canvas Clear at the start of the frame.
+    // We reset the transform to identity to ensure we clear the ENTIRE canvas area
+    // regardless of any translations or rotations set in previous frames or during shake.
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#000'; // Base black fill
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const now = Date.now();
     const elapsed = now - gameStartTime;
@@ -2101,12 +2125,6 @@ function updateBossRocket(now: number): void {
             const jitterY = (Math.random() - 0.5) * 15; // 2x vertical jitter
             bossRocket.x += jitterX;
             bossRocket.y += jitterY;
-            // Keep boss in bounds (Safe margins to keep minions on screen)
-            // Mobile: Offset 120 + Size 20 = 140
-            // Desktop: Offset 180 + Size 30 = 210
-            const isMobile = canvas.width < 768;
-            const safeBound = isMobile ? 140 : 210;
-            bossRocket.x = Math.max(safeBound, Math.min(canvas.width - safeBound, bossRocket.x));
             bossRocket.y = Math.max(targetY - 50, Math.min(targetY + 50, bossRocket.y));
         }
 
@@ -2116,6 +2134,20 @@ function updateBossRocket(now: number): void {
             } else {
                 bossRocket.x -= bossFollowSpeed;
             }
+        }
+
+        // Keep boss in bounds (Safe margins to keep minions on screen)
+        // Applies to Phase 2 (for minions) and Phase 3 (jitter/follow)
+        if (bossRocket.phase === 2 || bossRocket.phase === 3) {
+            const isMobile = canvas.width < 768;
+            let safeBound = isMobile ? 140 : 210; // Phase 2 default (wide for minions)
+
+            if (bossRocket.phase === 3) {
+                // In Phase 3, minions are gone, so let boss reach edges
+                safeBound = bossRocket.width / 2;
+            }
+
+            bossRocket.x = Math.max(safeBound, Math.min(canvas.width - safeBound, bossRocket.x));
         }
     }
 
@@ -2953,7 +2985,6 @@ function updateEnemyRockets(now: number): void {
             // Clean up - remove only if REALLY far off screen (allow U-turns to go up)
             if (enemy.y > canvas.height + 200 || enemy.y < -300 || enemy.x < -300 || enemy.x > canvas.width + 300) {
                 enemyRockets.splice(i, 1);
-                i--;
                 continue;
             }
 
@@ -3015,14 +3046,17 @@ function drawEnemyRocketAtPosition(enemy: any, angle: number): void {
 
     // Draw enemy rocket image if loaded
     if (img && img.complete) {
-        ctx.shadowBlur = 15;
-        // Different shadow color for difference types
-        ctx.shadowColor = enemy.type === 'spinner' ? '#00ff00' : (enemy.type === 'sniper' ? '#ff8800' : '#ff0000');
+        if (enableShadows) {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = enemy.type === 'spinner' ? '#00ff00' : (enemy.type === 'sniper' ? '#ff8800' : '#ff0000');
+        }
         ctx.drawImage(img, -w / 2, -h / 2, w, h);
     } else {
         // Fallback to canvas drawing
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#ff0000';
+        if (enableShadows) {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ff0000';
+        }
         ctx.fillStyle = '#cc2222';
         ctx.beginPath();
         ctx.moveTo(0, -h / 2);
@@ -3071,13 +3105,14 @@ function spawnEnemyBulletStraight(enemy: EnemyRocket, dx: number, dy: number, di
         x: enemy.x,
         y: enemy.y,
         z: enemy.z,
-        width: 6,
-        height: 12,
+        width: enemy.type === 'sniper' ? 20 : 6,
+        height: enemy.type === 'sniper' ? 40 : 12,
         speed: 8,
         damage: 25,
         color: '#ff4444',
         type: 'spread',
         isEnemy: true,
+        isSniperBullet: enemy.type === 'sniper',
         // @ts-ignore - adding direction for straight movement
         dirX: dirX,
         dirY: dirY
@@ -3115,12 +3150,13 @@ function updateEnemyBullets(): void {
         }
 
         // Check hit player
+        const hitRadius = (player.width / 2) + (bullet.isSniperBullet ? 15 : 0);
         const hitDist = Math.sqrt(
             Math.pow(player.x - bullet.x, 2) +
             Math.pow(player.y - bullet.y, 2)
         );
 
-        if (hitDist < player.width / 2) {
+        if (hitDist < hitRadius) {
             // Apply damage using lives system
             applyDamage(1); // 1 HP damage per bullet
             enemyBullets.splice(i, 1);
@@ -3129,8 +3165,10 @@ function updateEnemyBullets(): void {
 
         // Draw enemy bullet
         ctx.save();
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = bullet.color || '#ff0000';
+        if (enableShadows) {
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = bullet.color || '#ff0000';
+        }
 
         // Use boss bullet image for boss bullets (yellow color)
         if (bullet.color === '#ffcc00' && bossBulletImage && bossBulletImage.complete) {
@@ -3155,6 +3193,18 @@ function updateEnemyBullets(): void {
                 ctx.rotate(angle + Math.PI / 2);
             }
             ctx.drawImage(stationBulletImage, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+            ctx.restore();
+        } else if (bullet.isSniperBullet && enemySniperBulletImage && enemySniperBulletImage.complete) {
+            const imgWidth = 50;
+            const imgHeight = 100;
+            ctx.save();
+            ctx.translate(bullet.x, bullet.y);
+            // Rotate towards movement direction
+            if (bullet.dirX !== undefined && bullet.dirY !== undefined) {
+                const angle = Math.atan2(bullet.dirY, bullet.dirX);
+                ctx.rotate(angle + Math.PI / 2);
+            }
+            ctx.drawImage(enemySniperBulletImage, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
             ctx.restore();
         } else {
             // Normal enemy bullet (red circle)
