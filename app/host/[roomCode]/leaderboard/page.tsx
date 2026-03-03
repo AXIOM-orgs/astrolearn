@@ -296,11 +296,23 @@ export default function HostLeaderboardPage(): React.JSX.Element {
   };
 
   const truncateName = (name: string): { display: string; full: string; isTruncated: boolean } => {
-    const words = name.trim().split(' ');
-    if (words.length > 1) {
-      return { display: `${words[0]}...`, full: name, isTruncated: true };
+    const trimmed = name.trim();
+    if (trimmed.length > 8) {
+      const words = trimmed.split(' ');
+      if (words.length > 1) {
+        // If multiple words, take first word but cap it if it's too long
+        const first = words[0];
+        return {
+          display: first.length > 8 ? `${first.substring(0, 8)}...` : `${first}...`,
+          full: name,
+          isTruncated: true
+        };
+      } else {
+        // If single long word, truncate by length
+        return { display: `${trimmed.substring(0, 8)}...`, full: name, isTruncated: true };
+      }
     }
-    return { display: name, full: name, isTruncated: false };
+    return { display: trimmed, full: name, isTruncated: false };
   };
 
   const sortedPlayers = [...players].sort((a, b) => {
@@ -446,30 +458,33 @@ export default function HostLeaderboardPage(): React.JSX.Element {
               </table>
             </div>
 
-            {/* Mobile Actions - Below Table */}
-            <div className="leaderboard-mobile-actions">
-              <button className="btn-result-mobile home" onClick={handleHome}>
-                <Home size={20} />
-                <span>Home</span>
-              </button>
+          </div>
+        )}
 
-              <button className="btn-result-mobile restart" onClick={handleRestart} disabled={isRestarting}>
-                <RotateCw size={20} className={isRestarting ? 'animate-spin' : ''} />
-                <span>Restart</span>
-              </button>
+        {/* Mobile Actions - Outside Table Container */}
+        {sortedPlayers.length > 0 && (
+          <div className="leaderboard-mobile-actions">
+            <button className="btn-result-mobile home" onClick={handleHome}>
+              <Home size={20} />
+              <span>Home</span>
+            </button>
 
-              {sessionId && (
-                <a
-                  href={`https://gameforsmart2026.vercel.app/results/${sessionId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-result-mobile stats"
-                >
-                  <BarChart3 size={20} />
-                  <span>Statistics</span>
-                </a>
-              )}
-            </div>
+            <button className="btn-result-mobile restart" onClick={handleRestart} disabled={isRestarting}>
+              <RotateCw size={20} className={isRestarting ? 'animate-spin' : ''} />
+              <span>Restart</span>
+            </button>
+
+            {sessionId && (
+              <a
+                href={`https://gameforsmart2026.vercel.app/results/${sessionId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-result-mobile stats"
+              >
+                <BarChart3 size={20} />
+                <span>Statistics</span>
+              </a>
+            )}
           </div>
         )}
       </section>
