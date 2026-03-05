@@ -222,7 +222,7 @@ export default function JoinResultsPage(): React.JSX.Element {
             <header className="results-header w-full">
                 <div className="results-brand">
                     <img
-                        src="/assets/logoal.webp"
+                        src="/assets/logo2new.webp"
                         alt="Axiom"
                         className="brand-logo-image"
                     />
@@ -242,7 +242,7 @@ export default function JoinResultsPage(): React.JSX.Element {
             {/* Tombol Statistik */}
             {isSessionFinished && sessionId && myStats?.id ? (
                 <a
-                    href={`https://gameforsmart2026.vercel.app/results/${sessionId}/answer-details?participant=${myStats.id}`}
+                    href={`https://gameforsmartnewui.vercel.app/result/${sessionId}/answer-details?participant=${myStats.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="floating-btn statistics-btn"

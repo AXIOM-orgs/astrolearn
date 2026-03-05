@@ -284,8 +284,6 @@ export default function HostLeaderboardPage(): React.JSX.Element {
     }
   }, [players]);
 
-
-
   const formatScore = (score: number): string => score.toLocaleString();
 
   const formatDuration = (seconds: number | null): string => {
@@ -332,7 +330,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         {/* Header - tetap sama */}
         <header className="leaderboard-header">
           <div className="leaderboard-brand">
-            <img src="/assets/logoal.webp" alt="Astro Learning" className="brand-logo-image" />
+            <img src="/assets/logo2new.webp" alt="Astro Learning" className="brand-logo-image" />
           </div>
           <img src="/assets/logo.webp" alt="Gameforsmart Logo" className="header-logo" />
         </header>
@@ -350,7 +348,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         {/* Statistics Button (Right Side) */}
         {sessionId && (
           <a
-            href={`https://gameforsmart2026.vercel.app/results/${sessionId}`}
+            href={`https://gameforsmartnewui.vercel.app/result/${sessionId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="floating-btn statistics-btn"
@@ -492,30 +490,6 @@ export default function HostLeaderboardPage(): React.JSX.Element {
     .rankings-table {
   table-layout: fixed;
   width: 100%; 
-}
-
-.rankings-table th:nth-child(1),
-.rankings-table td:nth-child(1) {
-  width: 15%;
-  text-align: left;
-}
-
-.rankings-table th:nth-child(2),
-.rankings-table td:nth-child(2) {
-  width: 50%;   
-  text-align: left;
-}
-
-.rankings-table th:nth-child(3),
-.rankings-table td:nth-child(3) {
-  width: 20%;
-  text-align: center;
-}
-
-.rankings-table th:nth-child(4),
-.rankings-table td:nth-child(4) {
-  width: 15%;
-  text-align: center;
 }
 
 .left-floating-group {

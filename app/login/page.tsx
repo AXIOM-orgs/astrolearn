@@ -153,7 +153,7 @@ export default function LoginPage() {
             {/* Brand Logos - Outside Card */}
             <header className="login-header">
                 <img
-                    src="/assets/logoal.webp"
+                    src="/assets/logo2new.webp"
                     alt="Astro Learning"
                     className="login-logo-left"
                 />
@@ -369,7 +369,7 @@ export default function LoginPage() {
                                 e.currentTarget.style.textDecoration = 'none';
                             }}
                         >
-                            Register here
+                            Register
                         </a>
                     </span>
                 </div>

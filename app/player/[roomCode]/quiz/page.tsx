@@ -485,7 +485,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                     <header className="quiz-header">
                         <div className="waiting-brand">
                             <Image
-                                src="/assets/logoal.webp"
+                                src="/assets/logo2new.webp"
                                 alt="Logo Left"
                                 width={150}
                                 height={50}
@@ -498,7 +498,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                             alt="Logo Right"
                             width={150}
                             height={50}
-                            className="header-logo"
+                            className="header-logo hidden-mobile"
                             unoptimized
                         />
                     </header>
