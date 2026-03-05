@@ -2536,6 +2536,14 @@ input[type="text"]:focus {
   transition: all 0.3s ease;
 }
 
+@media (min-width: 768px) {
+  .profile-indicator {
+    padding: 0.6rem 1.2rem;
+    min-width: 140px;
+    /* Lebar card profil yang ditambah (seperti diminta) */
+  }
+}
+
 .profile-indicator:hover {
   border-color: var(--cyan-glow);
   box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
@@ -2570,11 +2578,14 @@ input[type="text"]:focus {
   font-size: 0.875rem;
   /* Default to smaller size (mobile) */
   color: var(--text-primary);
-  text-align: center;
+  text-align: right;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%;
+  max-width: 120px;
+  /* Reduced to ensure truncation triggers */
+  min-width: 0;
+  /* Necessary for ellipsis in flex containers */
 }
 
 @media (min-width: 768px) {
@@ -2591,6 +2602,15 @@ input[type="text"]:focus {
   align-items: center;
   justify-content: center;
   color: white;
+  border: 1.5px solid rgba(0, 212, 255, 0.4);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.profile-indicator:hover .profile-avatar {
+  border-color: var(--cyan-glow);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+  transform: scale(1.05);
 }
 
 .profile-chevron {
@@ -2942,8 +2962,10 @@ input[type="text"]:focus {
   border: none;
   outline: none;
   color: #d9d9d9;
-  font-family: var(--font-space-mono), 'Space Mono', monospace;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
   font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 2px;
   width: 100%;
   padding: 0.5rem 0;
 }
@@ -3736,8 +3758,9 @@ input[type="text"]:focus {
 }
 
 .pagination-info {
-  font-family: var(--font-space-mono), 'Space Mono', monospace;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
   font-size: 0.9rem;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
@@ -3752,6 +3775,7 @@ input[type="text"]:focus {
   .quiz-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
 
   .header-center {
     order: 3;
@@ -4082,7 +4106,7 @@ input[type="text"]:focus {
 }
 
 .brand-logo-image {
-  height: 72px;
+  height: 60px;
   width: auto;
   object-fit: contain;
 }
@@ -4471,6 +4495,7 @@ input[type="text"]:focus {
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  box-shadow: 0 2px 0 #0077b6, 0 5px 8px rgba(0, 0, 0, 0.4);
   transition: left 0.5s ease;
 }
 
@@ -4490,22 +4515,21 @@ input[type="text"]:focus {
 }
 
 .lobby-action-bar .btn-launch:disabled {
-  opacity: 0.5;
+  opacity: 1;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
 }
 
-/* Disabled button style */
+/* Disabled button style - Match enabled state gradient and shadow */
 .btn-launch.disabled {
-  opacity: 0.5;
+  opacity: 1;
   cursor: not-allowed;
   background: linear-gradient(135deg, rgba(70, 167, 187, 0.3) 0%, rgba(45, 127, 143, 0.3) 100%);
+  box-shadow: 0 2px 0 #0077b6, 0 5px 8px rgba(0, 0, 0, 0.4);
 }
 
 .btn-launch.disabled:hover {
   transform: none;
-  box-shadow: none;
 }
 
 
@@ -5130,6 +5154,7 @@ input[type="text"]:focus {
   flex-direction: column;
   transition: all 0.3s ease;
   position: relative;
+  overflow: visible;
 }
 
 .progress-card:hover {
@@ -5197,11 +5222,24 @@ input[type="text"]:focus {
   font-size: 2.5rem;
 }
 
+.progress-name-wrapper {
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+}
+
 .progress-player-name {
+  position: relative;
   font-size: 1rem;
   color: var(--text-primary);
   font-weight: 600;
   text-align: center;
+  width: 100%;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 0.5rem;
 }
 
 .progress-bar-container {
@@ -5221,6 +5259,34 @@ input[type="text"]:focus {
 
 .progress-bar-fill.complete {
   background: linear-gradient(90deg, var(--success-color), #00d4aa);
+}
+
+/* Specialized positioning for progress-card tooltips to appear strictly ABOVE name */
+.progress-card .has-tooltip::after {
+  top: auto !important;
+  bottom: calc(100% + 15px) !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(10px) scale(0.8) !important;
+}
+
+.progress-card .has-tooltip:hover::after {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+/* Remove heartbeat/pulse animation on hover and simplify effect */
+.progress-card:hover {
+  animation: none !important;
+  transform: scale(1) !important;
+  border: 2px solid var(--primary-color) !important;
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4) !important;
+  z-index: 50;
+  overflow: visible !important;
+  /* Ensure this card and its tooltip are above others */
+}
+
+.progress-card:hover * {
+  animation: none !important;
 }
 
 /* ----------------------
@@ -5566,9 +5632,10 @@ input[type="text"]:focus {
 .has-tooltip::after {
   content: attr(data-tooltip);
   position: absolute;
-  bottom: 100%;
+  top: 100%;
+  /* Changed to appear below */
   left: 50%;
-  transform: translateX(-50%) translateY(10px) scale(0.8);
+  transform: translateX(-50%) translateY(-10px) scale(0.8);
   background: rgba(5, 8, 20, 0.95);
   border: 1px solid var(--primary-color);
   color: white;
@@ -5588,7 +5655,8 @@ input[type="text"]:focus {
 
 .has-tooltip:hover::after {
   opacity: 1;
-  transform: translateX(-50%) translateY(-10px) scale(1);
+  transform: translateX(-50%) translateY(10px) scale(1);
+  /* Slide down on hover */
 }
 
 .podium-score {
@@ -5641,10 +5709,18 @@ input[type="text"]:focus {
   /* Header part doesn't scroll */
 }
 
+.table-header-wrapper {
+  width: 100%;
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
 .table-body-scroll {
   max-height: 20.4rem;
   /* Limit height to exactly 10 rows (10 * 2.38rem) */
   overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 /* Custom Scrollbar - Thin & Styled */
@@ -6053,15 +6129,18 @@ input[type="text"]:focus {
 .waiting-player-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 0.5rem;
+  gap: 1.5rem 1rem;
+  /* More vertical gap for tooltips */
   width: 100%;
 }
 
 .waiting-grid-container {
-  max-height: 400px;
+  max-height: 480px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--cyan-glow) rgba(255, 255, 255, 0.05);
+  padding: 2.5rem 1.5rem !important;
+  /* Safety zone for tooltips & badges + spacing */
 }
 
 .waiting-grid-container::-webkit-scrollbar {
@@ -6082,18 +6161,59 @@ input[type="text"]:focus {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 1.5rem 1rem;
-  margin: 15px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
   position: relative;
   transition: all 0.3s ease;
+  overflow: visible;
+  /* Show YOU badge */
+  min-width: 0;
+  /* Prevent flex/grid expansion */
+  max-width: 100%;
 }
 
 .waiting-player-card:hover:not(.empty) {
+  overflow: visible;
+  z-index: 100;
   background: rgba(255, 255, 255, 0.1);
   border-color: var(--primary-color);
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Waiting Room Tooltip Control */
+.waiting-player-card .has-tooltip::after {
+  display: block;
+  visibility: hidden;
+  opacity: 0;
+  content: attr(data-tooltip);
+  position: absolute;
+  top: auto !important;
+  /* Reset global top */
+  bottom: calc(100% + 10px) !important;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  background: rgba(5, 8, 20, 0.98);
+  border: 1px solid var(--primary-color);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+}
+
+.waiting-player-card:hover .has-tooltip::after,
+.waiting-player-card:active .has-tooltip::after {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-5px) scale(1);
 }
 
 .waiting-player-card.current-user {
@@ -6106,10 +6226,20 @@ input[type="text"]:focus {
   opacity: 0.3;
 }
 
+.waiting-name-wrapper {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: visible;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
 .you-badge {
   position: absolute;
-  top: -10px;
-  right: -10px;
+  top: -8px;
+  right: -8px;
   background: var(--primary-color);
   color: white;
   font-size: 0.55rem;
@@ -6370,36 +6500,27 @@ input[type="text"]:focus {
   width: 44px;
   height: 44px;
   padding: 0;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1.5px solid rgba(70, 167, 187, 0.4);
   border-radius: 10px;
-  color: var(--primary-color);
+  color: rgba(70, 167, 187, 0.6);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
   flex-shrink: 0;
 }
 
 .url-copy-btn:hover {
-  background: rgba(70, 167, 187, 0.25);
-  border-color: var(--primary-color);
-  transform: scale(1.08);
-  box-shadow: 0 0 15px rgba(70, 167, 187, 0.3);
+  transform: scale(1.1);
+  color: #46a7bb;
+  filter: drop-shadow(0 0 5px rgba(70, 167, 187, 0.5));
 }
 
 .url-copy-btn.success {
-  background: rgba(6, 255, 165, 0.25);
-  border-color: var(--success-color);
-  color: var(--success-color);
-  box-shadow: 0 0 15px rgba(6, 255, 165, 0.3);
+  color: #2ed573;
+  filter: drop-shadow(0 0 5px rgba(46, 213, 115, 0.5));
 }
-
-
 
 /* URL Card Compact Override */
 .url-card.compact {
   padding: 0.45rem 0.8rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -6426,20 +6547,20 @@ input[type="text"]:focus {
   height: 36px;
   padding: 0;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  color: var(--primary-color);
+  color: rgba(70, 167, 187, 0.6);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .url-card.compact .url-copy-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: var(--primary-color);
-  color: white;
+  background: transparent;
+  color: #46a7bb;
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 5px rgba(70, 167, 187, 0.5));
 }
 
 .url-card-panel {
@@ -6646,7 +6767,7 @@ input[type="text"]:focus {
   }
 
   .leaderboard-header .brand-logo-image {
-    height: 45px !important;
+    height: 30px !important;
   }
 
   .leaderboard-screen {
@@ -6713,21 +6834,25 @@ input[type="text"]:focus {
   .rankings-table th:nth-child(1),
   .rankings-table td:nth-child(1) {
     width: 12%;
+    text-align: left !important;
   }
 
   .rankings-table th:nth-child(2),
   .rankings-table td:nth-child(2) {
     width: 48%;
+    text-align: left !important;
   }
 
   .rankings-table th:nth-child(3),
   .rankings-table td:nth-child(3) {
     width: 20%;
+    text-align: center !important;
   }
 
   .rankings-table th:nth-child(4),
   .rankings-table td:nth-child(4) {
     width: 20%;
+    text-align: center !important;
   }
 
   .leaderboard-mobile-actions {
@@ -6742,6 +6867,18 @@ input[type="text"]:focus {
     flex: 1;
     font-size: 0.7rem;
     padding: 0.7rem 0.4rem;
+  }
+
+  /* Make scrollbar thinner on mobile */
+  .table-body-scroll::-webkit-scrollbar {
+    width: 3px !important;
+  }
+
+  /* Add distance between table and scrollbar */
+  .rankings-table {
+    padding: 1px !important;
+    display: block;
+    /* Ensure padding applies correctly across all engines */
   }
 }
 
@@ -6817,14 +6954,16 @@ input[type="text"]:focus {
 @media (max-width: 768px) {
   .login-header {
     padding: 1rem;
+    justify-content: center !important;
   }
 
   .login-logo-left {
-    height: 45px;
+    height: 80px !important;
+    margin: 0 auto !important;
   }
 
   .login-logo-right {
-    height: 40px;
+    display: none !important;
   }
 }
 
@@ -7665,11 +7804,17 @@ input[type="text"]:focus {
 
   .waiting-player-card {
     padding: 1rem 0.5rem !important;
-    margin: 5px !important;
+    margin: 0 !important;
+  }
+
+  .player-panel>div {
+    overflow: visible !important;
+    /* Allow badges to show outside the panel */
   }
 
   .waiting-content {
-    padding: 1rem !important;
+    padding: 2rem 1.5rem !important;
+    /* More space around the whole content */
     justify-content: flex-start !important;
     padding-top: 0 !important;
   }
@@ -7679,6 +7824,8 @@ input[type="text"]:focus {
     width: 95% !important;
     margin-left: auto !important;
     margin-right: auto !important;
+    padding-bottom: 2rem !important;
+    /* Space at the bottom */
   }
 
   .waiting-panel-header {
@@ -7737,29 +7884,22 @@ input[type="text"]:focus {
   }
 
   .waiting-header {
-    justify-content: space-between !important;
+    justify-content: center !important;
   }
 
   .waiting-brand {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 
-  .waiting-header .brand-logo-image {
-    height: 50px !important;
-  }
-
-  .waiting-header .header-logo {
-    display: block !important;
-    visibility: visible !important;
+  header.waiting-header .brand-logo-image {
+    height: 80px !important;
     width: auto !important;
-    height: 40px !important;
-    opacity: 1 !important;
+    object-fit: contain !important;
   }
 
   .quiz-header {
     position: relative !important;
-    /* Back to normal flow for 'meppet' look */
     top: auto !important;
     left: auto !important;
     right: auto !important;
@@ -7928,13 +8068,13 @@ input[type="text"]:focus {
     border: 2px solid var(--primary-color);
     border-radius: 20px;
     padding: 0;
-    overflow: hidden;
-    width: 95%;
+    overflow: hidden !important;
+    width: 92% !important;
     margin: 0.5rem auto 2rem;
   }
 
   .monitor-grid-container {
-    padding: 1rem;
+    padding: 1rem 8% !important;
     max-height: 450px;
     overflow-y: auto;
   }
@@ -7962,12 +8102,205 @@ input[type="text"]:focus {
   }
 
   .progress-grid {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
-    gap: 0.75rem !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.8rem !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  /* Style mobile tooltips to appear above name without breaking layout */
+  .progress-card .has-tooltip::after {
+    display: block !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    content: attr(data-tooltip) !important;
+    position: absolute !important;
+    bottom: 100% !important;
+    /* Above the name */
+    left: 50% !important;
+    transform: translateX(-50%) translateY(0) scale(0.8) !important;
+    background: rgba(5, 8, 20, 0.98) !important;
+    border: 1px solid var(--primary-color) !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+    font-size: 0.7rem !important;
+    /* Readable size, not extra tiny */
+    white-space: nowrap !important;
+    z-index: 1000 !important;
+    pointer-events: none !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .progress-card:hover .has-tooltip::after,
+  .progress-card:active .has-tooltip::after {
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translateX(-50%) translateY(-5px) scale(1) !important;
   }
 
   .progress-card {
+    padding: 0.5rem !important;
+    background: rgba(74, 76, 77, 0.911) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 16px !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    /* Strict width constraint */
+    min-width: 0 !important;
+    /* Critical for flex items to prevent expansion */
+    height: 155px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .progress-card:hover {
+    overflow: visible !important;
+    /* Allow tooltip to show */
+    z-index: 100 !important;
+    /* Bring to front */
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Keep name truncation stable */
+  .progress-card:hover .progress-player-name,
+  .progress-card .progress-player-name {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .progress-card.animate-pulse-glow {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.4) !important;
+  }
+
+  /* Status Colors for Mobile */
+  .progress-card.completed {
+    background: rgba(5, 111, 138, 0.473) !important;
+    border-color: var(--success-color) !important;
+    box-shadow: 0 0 15px rgba(6, 255, 165, 0.2) !important;
+  }
+
+  .progress-card.completed .progress-player-name {
+    color: var(--success-color) !important;
+    text-shadow: 0 0 5px rgba(6, 255, 165, 0.5) !important;
+  }
+
+  .progress-card.eliminated {
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.4) !important;
+    background: rgba(138, 5, 5, 0.473) !important;
+  }
+
+  .progress-card.eliminated .progress-player-name {
+    color: var(--accent-color) !important;
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.5) !important;
+  }
+
+  .progress-card-header {
+    background: transparent !important;
+    padding: 0.5rem 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    border-bottom: none !important;
+    height: auto !important;
+  }
+
+  .progress-bar-container {
+    flex: 1 !important;
+    height: 8px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+  }
+
+  .progress-indicator {
+    font-size: 0.8rem !important;
+    background: rgba(70, 167, 187, 0.2) !important;
+    color: var(--primary-color) !important;
+    padding: 0.2rem 0.5rem !important;
+    border-radius: 5px !important;
+    border: none !important;
+    white-space: nowrap !important;
+    font-weight: bold !important;
+  }
+
+  .progress-card-body {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.25rem 0 !important;
+  }
+
+  .progress-spacecraft {
+    width: 55px !important;
+    height: 45px !important;
+    object-fit: contain !important;
+    margin: auto !important;
+  }
+
+  .progress-name-wrapper {
+    width: 100% !important;
+    background: transparent !important;
+    padding: 0 0.5rem !important;
+    margin-top: auto !important;
+    /* Restore auto-margin for spacing */
+    overflow: hidden !important;
+    transition: overflow 0.2s ease;
+  }
+
+  .progress-card:hover .progress-name-wrapper,
+  .progress-card:active .progress-name-wrapper {
+    overflow: visible !important;
+  }
+
+  /* Waiting Room Tooltip Control for Mobile (Overrides if needed, otherwise base is fine) */
+  .waiting-player-card:hover {
+    overflow: visible !important;
+    z-index: 120 !important;
+  }
+
+  /* Ensure card itself doesn't expand on mobile */
+  .waiting-player-card {
+    overflow: visible !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .progress-player-name {
+    font-size: 0.8rem !important;
+    color: var(--text-primary) !important;
+    text-align: center !important;
+    display: block !important;
+    width: 100% !important;
+    font-family: inherit !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding: 0 !important;
+  }
+
+  .status-overlay {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 5 !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+    border-radius: 50% !important;
     padding: 0.4rem !important;
+    backdrop-filter: blur(2px) !important;
   }
 }
 
@@ -8007,4 +8340,47 @@ input[type="text"]:focus {
 .statistics-btn:hover {
   background: linear-gradient(135deg, #fbbf24, #f59e0b);
   box-shadow: 0 6px 25px rgba(245, 158, 11, 0.5);
+}
+
+/* ============================================
+   FIX: Waiting Page Logo centering for mobile
+   ============================================ */
+@media (max-width: 768px) {
+
+  header.waiting-header,
+  header.quiz-header {
+    justify-content: center !important;
+    display: flex !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+  }
+
+  header.waiting-header .waiting-brand,
+  header.quiz-header .waiting-brand {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin: 0 auto !important;
+  }
+
+  header.waiting-header .brand-logo-image,
+  header.quiz-header .brand-logo-image {
+    height: 80px !important;
+    width: auto !important;
+    object-fit: contain !important;
+  }
+
+  header.waiting-header .header-logo.hidden-mobile,
+  header.quiz-header .header-logo.hidden-mobile {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
 }

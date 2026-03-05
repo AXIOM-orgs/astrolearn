@@ -20,8 +20,8 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-    title: 'Astro Learning',
-    description: 'Space quiz and mission game',
+    title: 'Axiom',
+    description: 'Answer the quiz and complete the mission',
 };
 
 interface RootLayoutProps {

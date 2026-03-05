@@ -429,7 +429,7 @@ export default function HostMonitorPage(): React.JSX.Element {
             <header className="monitor-header">
                 <div className="monitor-brand">
                     <img
-                        src="/assets/logoal.webp"
+                        src="/assets/logo2new.webp"
                         alt="Astro Learning"
                         className="brand-logo-image"
                         style={{ height: '75px', width: 'auto', objectFit: 'contain' }}
@@ -507,19 +507,10 @@ export default function HostMonitorPage(): React.JSX.Element {
                                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                                 exit={{ opacity: 0, scale: 0.9 }}
                                                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                                whileHover={{ scale: 1.05 }}
+                                                whileHover={{ scale: 1 }}
                                                 className={`progress-card ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'completed' : '')} ${isActive ? 'animate-pulse-glow' : ''}`}
                                             >
                                                 <div className="progress-card-header">
-                                                    <div className="status-icon-container">
-                                                        {player.isEliminated ? (
-                                                            <X className="w-5 h-5 text-red-500" />
-                                                        ) : player.isCompleted ? (
-                                                            <Check className="w-5 h-5 text-green-400" />
-                                                        ) : (
-                                                            null
-                                                        )}
-                                                    </div>
                                                     <div className="progress-bar-container">
                                                         <div
                                                             className={`progress-bar-fill ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'complete' : '')}`}
@@ -529,6 +520,16 @@ export default function HostMonitorPage(): React.JSX.Element {
                                                     <span className="progress-indicator">
                                                         {player.questionsAnswered}/{totalQuestions}
                                                     </span>
+                                                    {player.isEliminated && (
+                                                        <div className="status-overlay">
+                                                            <X className="w-8 h-8 text-red-500" />
+                                                        </div>
+                                                    )}
+                                                    {player.isCompleted && (
+                                                        <div className="status-overlay">
+                                                            <Check className="w-8 h-8 text-green-400" />
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="progress-card-body">
                                                     {player.spacecraft ? (
@@ -540,7 +541,9 @@ export default function HostMonitorPage(): React.JSX.Element {
                                                     ) : (
                                                         <div className="progress-icon">🚀</div>
                                                     )}
-                                                    <span className="progress-player-name">{player.nickname}</span>
+                                                    <div className="progress-name-wrapper has-tooltip" data-tooltip={player.nickname}>
+                                                        <span className="progress-player-name">{player.nickname}</span>
+                                                    </div>
                                                 </div>
                                             </motion.div>
                                         );

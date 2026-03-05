@@ -284,7 +284,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
 
                         {/* Sound */}
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center' }}>Sound</label>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'left' }}>Sound</label>
                             <div
                                 onClick={() => setSoundEnabled(!soundEnabled)}
                                 style={{
