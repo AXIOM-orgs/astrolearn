@@ -14,7 +14,7 @@ import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
 interface Participant {
     id: string;
     nickname: string;
-    spacecraft: string; // contoh: "galaksi2.webp"
+    spacecraft: string; // contoh: "characters/players/galaksi2.webp"
     answers: any; // JSON string array
     current_question?: number;
     finished_at: string | null;
@@ -533,7 +533,7 @@ export default function HostMonitorPage(): React.JSX.Element {
                                                 <div className="progress-card-body">
                                                     {player.spacecraft ? (
                                                         <img
-                                                            src={`/assets/${player.spacecraft}`}
+                                                            src={`/assets/images/characters/players/${player.spacecraft}`}
                                                             alt="spacecraft"
                                                             className={`progress-spacecraft ${!player.isCompleted && !player.isEliminated ? 'animate-float' : ''}`}
                                                         />

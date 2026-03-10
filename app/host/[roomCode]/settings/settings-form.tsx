@@ -178,7 +178,10 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                     <h2 className="section-title" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Settings</h2>
 
                     {/* Quiz Info */}
-                    <div style={{ marginBottom: '1.5rem' }}>
+                    <div style={{
+                        marginBottom: '1.5rem',
+                        textAlign: isArabic(quizDetail.title) ? 'right' : 'center',
+                    }}>
                         <p
                             className={`${isArabic(quizDetail.title) ? 'font-arabic' : ''} premium-quiz-title`}
                             dir={isArabic(quizDetail.title) ? 'rtl' : 'ltr'}

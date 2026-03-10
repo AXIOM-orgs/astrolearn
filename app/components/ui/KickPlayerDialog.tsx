@@ -41,7 +41,7 @@ export function KickPlayerDialog({
                 <div className="kick-icon-wrapper">
                     {playerSpacecraft ? (
                         <img
-                            src={`/assets/${playerSpacecraft}`}
+                            src={`/assets/images/characters/players/${playerSpacecraft}`}
                             alt="spacecraft"
                             className="kick-spaceship-img"
                         />

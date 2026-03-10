@@ -128,7 +128,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             setCurrentPlayer({
                 id: me.id,
                 nickname: me.nickname,
-                spacecraft: me.spacecraft || 'galaksi2.webp'
+                spacecraft: me.spacecraft || '/assets/images/characters/players/galaksi2.webp'
             });
 
             // Set current spaceship object
@@ -364,7 +364,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                                                 <div className="player-icon">
                                                     {player.spacecraft ? (
                                                         <img
-                                                            src={`/assets/${player.spacecraft}`}
+                                                            src={`/assets/images/characters/players/${player.spacecraft}`}
                                                             alt="spacecraft"
                                                             className="player-spacecraft-icon"
                                                         />

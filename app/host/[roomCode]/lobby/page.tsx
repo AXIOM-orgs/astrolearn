@@ -559,7 +559,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                         <div className="player-icon">
                                             {player.spacecraft ? (
                                                 <img
-                                                    src={`/assets/${player.spacecraft}`}
+                                                    src={`/assets/images/characters/players/${player.spacecraft}`}
                                                     alt="spacecraft"
                                                     style={{ width: '40px', height: '30px', objectFit: 'contain' }}
                                                 />

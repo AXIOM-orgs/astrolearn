@@ -537,13 +537,13 @@ class AudioManager {
         if (!this.audioContext || this.isLoaded) return;
 
         const soundFiles: { [key: string]: string } = {
-            'spread': '/assets/spread.mp3',
-            'laserBiru': '/assets/laserbiru (2).mp3',
-            'laserMagnet': '/assets/lasermagnet.mp3',
-            'bossLaser': '/assets/big-laser-beam-94884.mp3',
-            'destroy': '/assets/hancur.mp3',
-            'bgm': '/assets/bs_game.mp3',
-            'bossDead': '/assets/bos-dead.mp3'
+            'spread': '/assets/audio/game/spread.mp3',
+            'laserBiru': '/assets/audio/game/blue_laser.mp3',
+            'laserMagnet': '/assets/audio/game/magnetic_laser.mp3',
+            'bossLaser': '/assets/audio/game/big_laser_beam.mp3',
+            'destroy': '/assets/audio/game/explosion.mp3',
+            'bgm': '/assets/audio/game/game_bgm.mp3',
+            'bossDead': '/assets/audio/game/boss_dead.mp3'
         };
 
         const loadPromises = Object.entries(soundFiles).map(async ([key, url]) => {
@@ -870,7 +870,7 @@ export function startMiniGame(
 
     if (bgRand === 0) {
         currentBgMode = 'starfield';
-        const src = '/assets/bgnewnih.jpg';
+        const src = '/assets/images/backgrounds/background_5.jpg';
         for (let i = 0; i < 4; i++) {
             const img = new Image();
             img.src = src;
@@ -879,7 +879,7 @@ export function startMiniGame(
         bgPanelY = [0, -canvas.height, -canvas.height * 2, -canvas.height * 3];
     } else if (bgRand === 1) {
         currentBgMode = 'rocket_seq';
-        const sources = ['/assets/bgbarucuy.jpg', '/assets/bgbarucuy3.jpg', '/assets/bgbarucuy2.jpg'];
+        const sources = ['/assets/images/backgrounds/background_1.jpg', '/assets/images/backgrounds/background_4.jpg', '/assets/images/backgrounds/background_2.jpg'];
         for (const src of sources) {
             const img = new Image();
             img.src = src;
@@ -888,7 +888,7 @@ export function startMiniGame(
         bgPanelY = [0, -canvas.height, -canvas.height * 2];
     } else {
         currentBgMode = 'portrait_scene';
-        const src = '/assets/bg3new.png';
+        const src = '/assets/images/backgrounds/background_3.png';
         for (let i = 0; i < 4; i++) {
             const img = new Image();
             img.src = src;
@@ -961,8 +961,7 @@ export function startMiniGame(
     weaponPowerUpImage.src = '/assets/upweapnew.png';
     loveImage = new Image();
     loveImage.src = '/assets/love.png';
-    barHpImage = new Image();
-    barHpImage.src = '/assets/bar_hp.png';
+    // barHpImage removed - file doesn't exist and is not used in any drawImage call
     stationBulletImage = new Image();
     stationBulletImage.src = '/assets/bullet_1_1_4.png';
     enemySniperBulletImage = new Image();
@@ -3888,7 +3887,7 @@ function drawPlayer(): void {
     }
 
     // Draw rocket first
-    if (player.image.complete) {
+    if (player.image.complete && player.image.naturalWidth > 0) {
         ctx.translate(player.x, player.y);
         ctx.rotate(player.tilt * Math.PI / 180);
 

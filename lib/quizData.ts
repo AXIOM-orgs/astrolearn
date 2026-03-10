@@ -265,7 +265,7 @@ export const quizTopics: TopicWithQuestions[] = [
     {
         id: 'math-002',
         categoryId: 'math',
-        title: 'Logika Galaksi',
+        title: 'Logika characters/players/galaksi',
         description: 'Pecahkan teka-teki angka yang menantang!',
         questionCount: 20, // Diperbarui menjadi 20
 
@@ -315,7 +315,7 @@ export const quizTopics: TopicWithQuestions[] = [
             { id: 11, question: 'Berapa jumlah tulang dalam tubuh orang dewasa?', options: ['186', '196', '206', '216'], correctAnswer: 2 },
             { id: 12, question: 'Apa pusat tata surya kita?', options: ['Bumi', 'Bulan', 'Matahari', 'Mars'], correctAnswer: 2 },
             { id: 13, question: 'Asam lambung mengandung?', options: ['H2SO4', 'HCl', 'HNO3', 'CH3COOH'], correctAnswer: 1 },
-            { id: 14, question: 'Apa nama galaksi kita?', options: ['Andromeda', 'Bima Sakti', 'Triangulum', 'Sombrero'], correctAnswer: 1 },
+            { id: 14, question: 'Apa nama characters/players/galaksi kita?', options: ['Andromeda', 'Bima Sakti', 'Triangulum', 'Sombrero'], correctAnswer: 1 },
             { id: 15, question: 'Berapa suhu titik didih air?', options: ['90°C', '100°C', '110°C', '120°C'], correctAnswer: 1 },
             { id: 16, question: 'Zat yang dapat mempercepat reaksi kimia tanpa ikut bereaksi disebut?', options: ['Inhibitor', 'Reaktan', 'Katalis', 'Produk'], correctAnswer: 2 },
             { id: 17, question: 'Apa nama alat untuk mengukur arus listrik?', options: ['Voltmeter', 'Ohmmeter', 'Amperemeter', 'Barometer'], correctAnswer: 2 },
@@ -342,7 +342,7 @@ export const quizTopics: TopicWithQuestions[] = [
             { id: 9, question: 'Apa zona Goldilocks?', options: ['Zona berbahaya', 'Zona layak huni', 'Zona dingin', 'Zona panas'], correctAnswer: 1 },
             { id: 10, question: 'SETI mencari apa?', options: ['Planet', 'Sinyal alien', 'Asteroid', 'Komet'], correctAnswer: 1 },
             { id: 11, question: 'Enceladus mengeluarkan apa?', options: ['Lava', 'Air', 'Gas', 'Debu'], correctAnswer: 1 },
-            { id: 12, question: 'Apa panspermia?', options: ['Teori planet', 'Penyebaran kehidupan via asteroid', 'Jenis alien', 'Galaksi jauh'], correctAnswer: 1 },
+            { id: 12, question: 'Apa panspermia?', options: ['Teori planet', 'Penyebaran kehidupan via asteroid', 'Jenis alien', 'characters/players/galaksi jauh'], correctAnswer: 1 },
             { id: 13, question: 'Apa biosignature?', options: ['Tanda tangan', 'Bukti kehidupan', 'Jejak asteroid', 'Radiasi bintang'], correctAnswer: 1 },
             { id: 14, question: 'Kepler-452b dijuluki?', options: ['Earth 2.0', 'Mars 2.0', 'Venus 2.0', 'Mercury 2.0'], correctAnswer: 0 },
             { id: 15, question: 'James Webb mencari apa?', options: ['Bintang terdekat', 'Atmosfer exoplanet', 'Asteroid', 'Komet'], correctAnswer: 1 },

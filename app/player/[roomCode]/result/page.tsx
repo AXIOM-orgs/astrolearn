@@ -273,7 +273,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                     {/* Display Spacecraft Image */}
                     {myStats?.spacecraft ? (
                         <img
-                            src={getSpacecraftImage(myStats.spacecraft) || ''}
+                            src={`/assets/images/characters/players/${myStats.spacecraft}`}
                             alt="Spacecraft"
                             id="result-character-img"
                             className="result-spaceship-img"
