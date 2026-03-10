@@ -173,9 +173,9 @@ interface ObjectPool<T> {
     maxSize: number;
 }
 
-// Bullet Pool
-const bulletPool: ObjectPool<Bullet> = { pool: [], maxSize: 100 };
-const enemyBulletPool: ObjectPool<Bullet> = { pool: [], maxSize: 50 };
+// Bullet Pool - Increased maxSize for overlapping bullet streams (Level 3 spread overlap)
+const bulletPool: ObjectPool<Bullet> = { pool: [], maxSize: 500 };
+const enemyBulletPool: ObjectPool<Bullet> = { pool: [], maxSize: 100 };
 const explosionPool: ObjectPool<ExplosionParticle> = { pool: [], maxSize: 50 };
 const smokePool: ObjectPool<SmokeParticle> = { pool: [], maxSize: 100 };
 
@@ -325,7 +325,9 @@ let currentDifficulty: DifficultyLevel = 'easy';
 // Dual weapon system: spread is always base weapon, secondary is from power-up
 let secondaryWeapon: WeaponType | null = null;
 let secondaryWeaponConfig: WeaponConfig | null = null;
-let secondaryWeaponEndTime: number = 0;
+let activeUpgradeWeapons: { type: WeaponType, config: WeaponConfig }[] = [];
+let playerWeaponLevel: number = 1; // 1, 2, or 3
+let lastPowerUpDropTime: number = 0;
 
 // Background scrolling (3-image loop)
 let backgroundImages: HTMLImageElement[] = [];
@@ -430,12 +432,11 @@ let showBossWarning: boolean = false;
 let bossWarningStartTime: number = 0;
 
 
-// Weapon settings
-const WEAPON_DURATION = 5000;
+// Weapon settings (obsolete duration)
 
 // Lives system
-const PLAYER_MAX_LIVES = 10;
-const LIFE_MAX_HP = 100;
+const PLAYER_MAX_LIVES = 3;
+const LIFE_MAX_HP = 10;
 const IMMUNITY_DURATION = 3000; // 3 seconds immunity after losing a life
 let playerLives: number = 3;
 let playerLifeHP: number = 10;
@@ -809,7 +810,9 @@ export function startMiniGame(
     // Reset secondary weapon (from power-up)
     secondaryWeapon = null;
     secondaryWeaponConfig = null;
-    secondaryWeaponEndTime = 0;
+    playerWeaponLevel = 1;
+    activeUpgradeWeapons = [];
+    lastPowerUpDropTime = 0;
 
     // Reset power-up system
     powerUpsSpawned = false;
@@ -1247,10 +1250,12 @@ function update(): void {
     player.tilt += (targetTilt - player.tilt) * 0.15;
     lastPlayerX = player.x;
 
-    // Spawn power-ups after dodge phase (only if player hasn't caught secondary weapon yet)
-    if (!isInDodgePhase && !powerUpsSpawned && !secondaryWeapon) {
-        spawnScatteredPowerUps();
-        powerUpsSpawned = true;
+    // Spawn power-ups after dodge phase (Periodic every 6 seconds)
+    if (!isInDodgePhase) {
+        if (now - lastPowerUpDropTime > 6000) {
+            spawnWeaponUpgrade();
+            lastPowerUpDropTime = now;
+        }
     }
     updatePowerUps();
 
@@ -1342,12 +1347,7 @@ function update(): void {
         isImmune = false;
     }
 
-    // Weapon timer check (secondary weapon expires after duration)
-    if (secondaryWeapon && Date.now() > secondaryWeaponEndTime) {
-        secondaryWeapon = null;
-        secondaryWeaponConfig = null;
-        audioManager.playSoundEffect('powerup');
-    }
+    // Weapon timer removal (secondary weapon now permanent until hit)
 
     // Collision damage checks (only if not immune)
     if (!isImmune) {
@@ -1375,6 +1375,8 @@ function applyDamage(amount: number): void {
     playerLifeHP -= amount;
     audioManager.playSoundEffect('hit');
 
+    // Weapon levels no longer decrement on regular hits
+
     // Check if life is lost
     if (playerLifeHP <= 0) {
         playerLives--;
@@ -1384,7 +1386,12 @@ function applyDamage(amount: number): void {
             playerLifeHP = LIFE_MAX_HP;
             isImmune = true;
             immuneEndTime = Date.now() + IMMUNITY_DURATION;
-            audioManager.playSoundEffect('explosion');
+
+            // Upgrade weapon rule: reset level to 1 ONLY on life loss
+            playerWeaponLevel = 1;
+            activeUpgradeWeapons = [];
+            secondaryWeapon = null;
+            secondaryWeaponConfig = null;
         } else {
             // No lives left - game over handled in update loop
             playerLifeHP = 0;
@@ -2117,12 +2124,14 @@ function updateBossRocket(now: number): void {
         // After stopping, follow player's horizontal position
         const playerCenterX = player.x + player.width / 2;
         // Phase 2: Slower movement (tanky), Phase 3: 2X SPEED + CRAZY ERRATIC
-        const bossFollowSpeed = bossRocket.phase === 3 ? 16 : (bossRocket.phase === 2 ? 1 : 3);
+        const isHard = currentDifficulty === 'hard';
+        const bossFollowSpeed = bossRocket.phase === 3 ? (isHard ? 10 : 16) : (bossRocket.phase === 2 ? 1 : 3);
 
         // Phase 3: INTENSE erratic jitter movement (very hard to hit!)
         if (bossRocket.phase === 3) {
-            const jitterX = (Math.random() - 0.5) * 30; // 2x wider jitter
-            const jitterY = (Math.random() - 0.5) * 15; // 2x vertical jitter
+            const isHard = currentDifficulty === 'hard';
+            const jitterX = (Math.random() - 0.5) * (isHard ? 15 : 30); // 2x wider jitter
+            const jitterY = (Math.random() - 0.5) * (isHard ? 8 : 15); // 2x vertical jitter
             bossRocket.x += jitterX;
             bossRocket.y += jitterY;
             bossRocket.y = Math.max(targetY - 50, Math.min(targetY + 50, bossRocket.y));
@@ -2721,36 +2730,39 @@ function spawnEnemyRocket(): void {
     let speedX: number;
     let speedY: number;
 
+    const isHard = currentDifficulty === 'hard';
+    const speedMult = isHard ? 0.5 : 1.0; // Reduce speed to 70% on hard level
+
     switch (direction) {
         case 'top':
             startX = canvas.width * 0.2 + Math.random() * canvas.width * 0.6;
             startY = -50;
-            speedX = (Math.random() - 0.5) * 2;
-            speedY = 3 + Math.random() * 2;
+            speedX = (Math.random() - 0.5) * 2 * speedMult;
+            speedY = (3 + Math.random() * 2) * speedMult;
             break;
         case 'top-left':
             startX = -50;
             startY = Math.random() * canvas.height * 0.3;
-            speedX = 3 + Math.random() * 2;
-            speedY = 2 + Math.random() * 1.5;
+            speedX = (3 + Math.random() * 2) * speedMult;
+            speedY = (2 + Math.random() * 1.5) * speedMult;
             break;
         case 'top-right':
             startX = canvas.width + 50;
             startY = Math.random() * canvas.height * 0.3;
-            speedX = -(3 + Math.random() * 2);
-            speedY = 2 + Math.random() * 1.5;
+            speedX = -(3 + Math.random() * 2) * speedMult;
+            speedY = (2 + Math.random() * 1.5) * speedMult;
             break;
         case 'left':
             startX = -50;
             startY = canvas.height * 0.2 + Math.random() * canvas.height * 0.4;
-            speedX = 3 + Math.random() * 2;
-            speedY = (Math.random() - 0.5) * 2;
+            speedX = (3 + Math.random() * 2) * speedMult;
+            speedY = (Math.random() - 0.5) * 2 * speedMult;
             break;
         case 'right':
             startX = canvas.width + 50;
             startY = canvas.height * 0.2 + Math.random() * canvas.height * 0.4;
-            speedX = -(3 + Math.random() * 2);
-            speedY = (Math.random() - 0.5) * 2;
+            speedX = -(3 + Math.random() * 2) * speedMult;
+            speedY = (Math.random() - 0.5) * 2 * speedMult;
             break;
     }
 
@@ -2782,15 +2794,13 @@ function spawnEnemyRocket(): void {
         enemy.type = 'sniper';
         enemy.hp = 80;
         enemy.maxHp = 80;
-        enemy.speed = 3;
-        // Sniper override position logic to ensure it enters screen then stops
-        // Force Top entry for sniper to look good
+        enemy.speed = isHard ? 2 : 3;
         enemy.x = Math.random() * (canvas.width - 100) + 50;
         enemy.y = -60;
         enemy.targetY = canvas.height * 0.15 + Math.random() * canvas.height * 0.2; // Stop point
         // Reset speed for movement logic
         enemy.speedX = 0;
-        enemy.speedY = 3;
+        enemy.speedY = isHard ? 2 : 3; // Reduce entry speed
     }
 
     enemyRockets.push(enemy);
@@ -2798,6 +2808,8 @@ function spawnEnemyRocket(): void {
 
 function spawnSquadron(): void {
     if (!canvas) return;
+
+    const isHard = currentDifficulty === 'hard';
 
     // Pattern Selection with Anti-Repeat
     const patterns = ['sine', 'cross', 'u_turn'];
@@ -2851,7 +2863,7 @@ function spawnSquadron(): void {
             z: 0.8,
             width: 50,
             height: 50,
-            speed: 3 * (canvas.width < 768 ? 0.7 : 1),
+            speed: (isHard ? 2 : 3) * (canvas.width < 768 ? 0.7 : 1),
             hp: 40,
             maxHp: 40,
             laneX: 0,
@@ -2920,7 +2932,8 @@ function updateEnemyRockets(now: number): void {
             const prevX = enemy.x;
             const prevY = enemy.y;
             const speedScale = canvas.width < 768 ? 0.7 : 1;
-            const baseSpeed = 3 * speedScale;
+            const isHard = currentDifficulty === 'hard';
+            const baseSpeed = (isHard ? 2 : 3) * speedScale;
 
             // --- PATTERN MOVEMENT LOGIC ---
 
@@ -2990,7 +3003,8 @@ function updateEnemyRockets(now: number): void {
 
         } else {
             // Basic: Chase player (existing logic)
-            const chaseSpeed = 2.5;
+            const isHard = currentDifficulty === 'hard';
+            const chaseSpeed = isHard ? 1.8 : 2.5;
             if (dist > 0) {
                 enemy.x += (dx / dist) * chaseSpeed;
                 enemy.y += (dy / dist) * chaseSpeed;
@@ -3306,7 +3320,6 @@ function spawnScatteredPowerUps(): void {
         canvas.width * 0.5,    // Center lane  
         canvas.width * 0.75    // Right lane
     ];
-    const startZ = [0.1, 0.2, 0.3]; // Staggered start - NOT all at once
     const weaponTypes: WeaponType[] = ['magnetic', 'spread', 'laser'];
     const colors: Record<WeaponType, string> = {
         'spread': '#ff6b6b',
@@ -3323,7 +3336,7 @@ function spawnScatteredPowerUps(): void {
             id: powerUpIdCounter++,
             x: lanePositions[index],
             y: -50 - (index * 150), // Start above screen, staggered
-            z: startZ[index],
+            z: 0.1 + (index * 0.1),
             width: pSize,
             height: pSize,
             weaponType,
@@ -3331,6 +3344,41 @@ function spawnScatteredPowerUps(): void {
             rotation: 0,
             laneX: 0
         });
+    });
+}
+
+function spawnWeaponUpgrade(): void {
+    if (!canvas) return;
+
+    // Fixed sequence based on current level: 1->spread, 2->laser, 3->magnetic
+    let weaponType: WeaponType | null = null;
+    if (playerWeaponLevel === 1) weaponType = 'spread';
+    else if (playerWeaponLevel === 2) weaponType = 'laser';
+    else if (playerWeaponLevel === 3) weaponType = 'magnetic';
+
+    // If already at max level (4), do not spawn anymore
+    if (!weaponType) return;
+
+    const colors: Record<WeaponType, string> = {
+        'spread': '#ff6b6b',
+        'laser': '#00d4ff',
+        'magnetic': '#9d4edd'
+    };
+
+    const isMobile = canvas.width < 768;
+    const pSize = isMobile ? 35 : 45;
+
+    powerUps.push({
+        id: powerUpIdCounter++,
+        x: Math.random() * (canvas.width - 100) + 50,
+        y: -50,
+        z: 0.5,
+        width: pSize,
+        height: pSize,
+        weaponType, // Use deterministic type instead of random
+        color: colors[weaponType],
+        rotation: 0,
+        laneX: 0
     });
 }
 
@@ -3353,8 +3401,8 @@ function updatePowerUps(): void {
         if (dist < 55) {
             equipWeapon(powerUp.weaponType);
             audioManager.playSoundEffect('powerup');
-            powerUps.length = 0;
-            return;
+            powerUps.splice(i, 1); // Only remove THIS power-up
+            continue;
         }
 
         // Remove if fell off screen
@@ -3370,48 +3418,32 @@ function updatePowerUps(): void {
 }
 
 function equipWeapon(weaponType: WeaponType): void {
-    // Set as secondary weapon (player keeps spread as base weapon)
-    secondaryWeapon = weaponType;
-    isFiring = true;
-
-    // Initialize Timer when getting secondary weapon
-    secondaryWeaponEndTime = Date.now() + WEAPON_DURATION;
-
     const weaponConfigs: Record<WeaponType, WeaponConfig> = {
         'magnetic': {
-            type: 'magnetic',
-            fireRate: 150,
-            bulletSpeed: 12,
-            bulletWidth: 10,
-            bulletHeight: 20,
-            damage: 50,
-            color: '#9d4edd',
-            isAutoFire: true
+            type: 'magnetic', fireRate: 150, bulletSpeed: 12, bulletWidth: 10, bulletHeight: 20,
+            damage: 50, color: '#9d4edd', isAutoFire: true
         },
         'spread': {
-            type: 'spread',
-            fireRate: 180,
-            bulletSpeed: 14,
-            bulletWidth: 6,
-            bulletHeight: 15,
-            damage: 80,
-            color: '#ff6b6b',
-            spreadCount: 3,
-            isAutoFire: true
+            type: 'spread', fireRate: 180, bulletSpeed: 14, bulletWidth: 6, bulletHeight: 15,
+            damage: 80, color: '#ff6b6b', spreadCount: 3, isAutoFire: true
         },
         'laser': {
-            type: 'laser',
-            fireRate: 50,
-            bulletSpeed: 18,
-            bulletWidth: 8,
-            bulletHeight: 35,
-            damage: 100,
-            color: '#00d4ff',
-            isAutoFire: true
+            type: 'laser', fireRate: 50, bulletSpeed: 18, bulletWidth: 8, bulletHeight: 35,
+            damage: 100, color: '#00d4ff', isAutoFire: true
         }
     };
 
-    secondaryWeaponConfig = weaponConfigs[weaponType];
+    const newConfig = weaponConfigs[weaponType];
+
+    if (playerWeaponLevel < 4) { // Max level is now 4 (Basic + 3 Upgrades)
+        playerWeaponLevel++;
+        activeUpgradeWeapons.push({ type: weaponType, config: newConfig });
+    }
+
+    // Legacy support for single secondary weapon refs
+    secondaryWeapon = weaponType;
+    secondaryWeaponConfig = newConfig;
+    isFiring = true;
 }
 
 function drawPowerUp(powerUp: PowerUp, pos: { x: number; y: number; scale: number }): void {
@@ -3469,90 +3501,112 @@ function fireBullets(): void {
     const baseX = player.x;
     const baseY = player.y - player.height / 2;
 
-    // Always fire base weapon (spread)
-    const spreadCount = weaponConfig.spreadCount || 3;
-    const angleSpread = 0.15;
-
-    for (let i = 0; i < spreadCount; i++) {
-        const angleOffset = (i - (spreadCount - 1) / 2) * angleSpread;
-        // Use object pool instead of creating new object
-        const bullet = getBulletFromPool();
-        bullet.id = bulletIdCounter++;
-        bullet.x = baseX;
-        bullet.y = baseY;
-        bullet.z = 1;
-        bullet.width = weaponConfig.bulletWidth;
-        bullet.height = weaponConfig.bulletHeight;
-        bullet.speed = weaponConfig.bulletSpeed;
-        bullet.damage = weaponConfig.damage;
-        bullet.color = weaponConfig.color;
-        bullet.type = 'spread';
-        bullet.angle = angleOffset;
-        bullet.targetAsteroid = undefined;
-        bullets.push(bullet);
-    }
-    audioManager.playSoundEffect('spread');
-    muzzleFlashUntil = Date.now() + 50; // Trigger muzzle flash
-
-    // If player has caught a secondary weapon, fire it too
-    if (secondaryWeapon && secondaryWeaponConfig) {
-        if (secondaryWeaponConfig.type === 'laser') {
-            const bullet = getBulletFromPool();
-            bullet.id = bulletIdCounter++;
-            bullet.x = baseX;
-            bullet.y = baseY;
-            bullet.z = 1;
-            bullet.width = secondaryWeaponConfig.bulletWidth;
-            bullet.height = secondaryWeaponConfig.bulletHeight;
-            bullet.speed = secondaryWeaponConfig.bulletSpeed;
-            bullet.damage = secondaryWeaponConfig.damage;
-            bullet.color = secondaryWeaponConfig.color;
-            bullet.type = 'laser';
-            bullet.angle = undefined;
-            bullet.targetAsteroid = undefined;
-            bullets.push(bullet);
-            audioManager.playSoundEffect('laser');
-        } else if (secondaryWeaponConfig.type === 'magnetic') {
-            const targetResult = findNearestTarget(baseX, baseY);
-            const bullet = getBulletFromPool();
-            bullet.id = bulletIdCounter++;
-            bullet.x = baseX;
-            bullet.y = baseY;
-            bullet.z = 1;
-            bullet.width = secondaryWeaponConfig.bulletWidth;
-            bullet.height = secondaryWeaponConfig.bulletHeight;
-            bullet.speed = secondaryWeaponConfig.bulletSpeed;
-            bullet.damage = secondaryWeaponConfig.damage;
-            bullet.color = secondaryWeaponConfig.color;
-            bullet.type = 'magnetic';
-            bullet.targetAsteroid = targetResult.target as MovingAsteroid || undefined;
-            bullet.angle = -Math.PI / 2; // Start facing straight up
-            bullets.push(bullet);
-            audioManager.playSoundEffect('magnetic');
-        } else if (secondaryWeaponConfig.type === 'spread') {
-            // If secondary is also spread, fire additional spread shots at different angles
-            const secondarySpreadCount = secondaryWeaponConfig.spreadCount || 3;
-            const secondaryAngleSpread = 0.25; // Wider angle for secondary spread
-
-            for (let i = 0; i < secondarySpreadCount; i++) {
-                const angleOffset = (i - (secondarySpreadCount - 1) / 2) * secondaryAngleSpread;
+    const spawnBulletStream = (type: WeaponType, config: WeaponConfig, offsetX: number, colorOverride?: string) => {
+        if (type === 'spread') {
+            const spreadCount = config.spreadCount || 3;
+            const angleSpread = 0.15;
+            for (let i = 0; i < spreadCount; i++) {
+                const angleOffset = (i - (spreadCount - 1) / 2) * angleSpread;
                 const bullet = getBulletFromPool();
                 bullet.id = bulletIdCounter++;
-                bullet.x = baseX;
+                bullet.x = baseX + offsetX;
                 bullet.y = baseY;
                 bullet.z = 1;
-                bullet.width = secondaryWeaponConfig.bulletWidth;
-                bullet.height = secondaryWeaponConfig.bulletHeight;
-                bullet.speed = secondaryWeaponConfig.bulletSpeed;
-                bullet.damage = secondaryWeaponConfig.damage;
-                bullet.color = '#ffaa00'; // Different color for secondary spread
+                bullet.width = config.bulletWidth;
+                bullet.height = config.bulletHeight;
+                bullet.speed = config.bulletSpeed;
+                bullet.damage = config.damage;
+                bullet.color = colorOverride || config.color;
                 bullet.type = 'spread';
                 bullet.angle = angleOffset;
-                bullet.targetAsteroid = undefined;
                 bullets.push(bullet);
             }
+        } else if (type === 'laser') {
+            const bullet = getBulletFromPool();
+            bullet.id = bulletIdCounter++;
+            bullet.x = baseX + offsetX;
+            bullet.y = baseY;
+            bullet.z = 1;
+            bullet.width = config.bulletWidth;
+            bullet.height = config.bulletHeight;
+            bullet.speed = config.bulletSpeed;
+            bullet.damage = config.damage;
+            bullet.color = config.color;
+            bullet.type = 'laser';
+            bullets.push(bullet);
+        } else if (type === 'magnetic') {
+            const targetResult = findNearestTarget(baseX + offsetX, baseY);
+            const bullet = getBulletFromPool();
+            bullet.id = bulletIdCounter++;
+            bullet.x = baseX + offsetX;
+            bullet.y = baseY;
+            bullet.z = 1;
+            bullet.width = config.bulletWidth;
+            bullet.height = config.bulletHeight;
+            bullet.speed = config.bulletSpeed;
+            bullet.damage = config.damage;
+            bullet.color = config.color;
+            bullet.type = 'magnetic';
+            bullet.targetAsteroid = targetResult.target as MovingAsteroid || undefined;
+            bullet.angle = -Math.PI / 2;
+            bullets.push(bullet);
         }
+    };
+
+    // --- FIRE PATTERN LOGIC ---
+    if (playerWeaponLevel === 1) {
+        // Level 1: Only Basic at Center
+        spawnBulletStream('spread', weaponConfig, 0);
+        audioManager.playSoundEffect('spread');
     }
+    else if (playerWeaponLevel === 2) {
+        // Level 2: Basic (Left & Right), Spread Upgrade (Center)
+        const spreadUpgrade = activeUpgradeWeapons[0];
+        spawnBulletStream('spread', weaponConfig, -25);
+        spawnBulletStream('spread', weaponConfig, 25);
+        if (spreadUpgrade) spawnBulletStream(spreadUpgrade.type, spreadUpgrade.config, 0, '#ffaa00'); // Orange color for upgrade
+
+        audioManager.playSoundEffect('spread');
+    }
+    else if (playerWeaponLevel === 3) {
+        // Level 3: Overlap (Basic + Spread) at Left & Right, Laser (Center)
+        const spreadUpgrade = activeUpgradeWeapons[0];
+        const laserUpgrade = activeUpgradeWeapons[1];
+
+        // Left Overlap
+        spawnBulletStream('spread', weaponConfig, -35);
+        if (spreadUpgrade) spawnBulletStream(spreadUpgrade.type, spreadUpgrade.config, -35, '#ffaa00');
+
+        // Right Overlap
+        spawnBulletStream('spread', weaponConfig, 35);
+        if (spreadUpgrade) spawnBulletStream(spreadUpgrade.type, spreadUpgrade.config, 35, '#ffaa00');
+
+        // Center Laser
+        if (laserUpgrade) spawnBulletStream(laserUpgrade.type, laserUpgrade.config, 0);
+
+        audioManager.playSoundEffect('spread');
+        audioManager.playSoundEffect('laser');
+    }
+    else if (playerWeaponLevel === 4) {
+        // Level 4: Basic (Left & Right), Magnetic Multiple streams
+        const magneticUpgrade = activeUpgradeWeapons[2];
+
+        // Basic Weapon preserved
+        spawnBulletStream('spread', weaponConfig, -40);
+        spawnBulletStream('spread', weaponConfig, 40);
+
+        // Magnetic Streams (Multiplied for power)
+        if (magneticUpgrade) {
+            spawnBulletStream(magneticUpgrade.type, magneticUpgrade.config, -20);
+            spawnBulletStream(magneticUpgrade.type, magneticUpgrade.config, 0);
+            spawnBulletStream(magneticUpgrade.type, magneticUpgrade.config, 20);
+        }
+
+        audioManager.playSoundEffect('spread');
+        audioManager.playSoundEffect('magnetic');
+    }
+
+    muzzleFlashUntil = Date.now() + 50;
 }
 
 function findNearestTarget(x: number, y: number): { target: MovingAsteroid | EnemyRocket | null, isRocket: boolean } {
@@ -3605,7 +3659,12 @@ function updateBullets(): void {
             bullet.y += Math.sin(bullet.angle) * bullet.speed;
 
             // Homing Logic
-            let target = bullet.targetAsteroid;
+            let target: { x: number, y: number, hp: number } | null = bullet.targetAsteroid || null;
+
+            // Include Boss target if in boss phase (and no normal target)
+            if (!target && bossRocket && !bossRocket.isDying && !bossRocket.invulnerable) {
+                target = bossRocket;
+            }
 
             // If no target or target destroyed, find new one
             if (!target || target.hp <= 0 || (target as any).x === undefined) {
@@ -3617,8 +3676,22 @@ function updateBullets(): void {
             }
 
             if (target) {
-                const dx = target.x - bullet.x;
-                const dy = target.y - bullet.y;
+                let targetX = target.x;
+                let targetY = target.y;
+
+                // Spread magnetic attacks if the target is the boss
+                if (target === bossRocket) {
+                    // Seed target offset based on bullet ID to make them hit different parts
+                    const offsetSide = (bullet.id % 2 === 0) ? -1 : 1;
+                    const spreadDistance = bossRocket.width * 0.4;
+
+                    targetX += offsetSide * spreadDistance;
+                    // Slightly aim higher or lower 
+                    targetY += (bullet.id % 3 === 0) ? -50 : 20;
+                }
+
+                const dx = targetX - bullet.x;
+                const dy = targetY - bullet.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist < 600) {
                     const targetAngle = Math.atan2(dy, dx);
@@ -3779,9 +3852,25 @@ function updateBullets(): void {
     }
 }
 
+const bulletGradientCache: Record<string, CanvasGradient> = {};
+
+function getCachedGradient(ctx: CanvasRenderingContext2D, color: string, length: number): CanvasGradient {
+    const key = `${color}-${length}`;
+    if (!bulletGradientCache[key]) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, length);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        bulletGradientCache[key] = gradient;
+    }
+    return bulletGradientCache[key];
+}
+
 function drawBullet(bullet: Bullet): void {
     if (!ctx) return;
     ctx.save();
+
+    // High performance mode: Drop shadow is disabled when there are too many bullets on screen
+    const isHeavyLoad = bullets.length > 80;
 
     if (bullet.type === 'magnetic') {
         const drawWidth = bullet.width * 3;
@@ -3795,11 +3884,7 @@ function drawBullet(bullet: Bullet): void {
 
         // Draw Trail (Relative to rotated context)
         const trailLength = 40;
-        const gradient = ctx.createLinearGradient(0, 0, 0, trailLength);
-        gradient.addColorStop(0, bullet.color);
-        gradient.addColorStop(1, 'rgba(0,0,0,0)');
-
-        ctx.strokeStyle = gradient;
+        ctx.strokeStyle = getCachedGradient(ctx, bullet.color, trailLength);
         ctx.lineWidth = bullet.width;
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -3823,22 +3908,25 @@ function drawBullet(bullet: Bullet): void {
     }
 
     // Standard drawing for non-magnetic bullets
+    ctx.translate(bullet.x, bullet.y);
+
+    if (bullet.type === 'spread' && bullet.angle !== undefined) {
+        // Rotate spread bullets based on their angle. Note: angle is horizontal offset, need to point inwards slightly.
+        ctx.rotate(bullet.angle);
+    }
+
     // Bullet Trail (Gradient)
     const trailLength = 30;
-    const gradient = ctx.createLinearGradient(bullet.x, bullet.y, bullet.x, bullet.y + trailLength);
-    gradient.addColorStop(0, bullet.color);
-    gradient.addColorStop(1, 'rgba(0,0,0,0)');
-
-    ctx.strokeStyle = gradient;
+    ctx.strokeStyle = getCachedGradient(ctx, bullet.color, trailLength);
     ctx.lineWidth = bullet.width;
     ctx.beginPath();
-    ctx.moveTo(bullet.x, bullet.y);
-    ctx.lineTo(bullet.x, bullet.y + trailLength);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, trailLength);
     ctx.stroke();
 
-    // Only apply shadow effects on desktop (expensive on mobile)
-    if (enableShadows) {
-        ctx.shadowBlur = 20;
+    // Only apply shadow effects on desktop and if load is not completely overwhelming
+    if (enableShadows && !isHeavyLoad) {
+        ctx.shadowBlur = 15;
         ctx.shadowColor = bullet.color;
     }
 
@@ -3849,18 +3937,18 @@ function drawBullet(bullet: Bullet): void {
     if (bullet.type === 'laser') {
         // Blue laser bullet image
         if (bulletLaserImage && bulletLaserImage.complete) {
-            ctx.drawImage(bulletLaserImage, bullet.x - drawWidth / 2, bullet.y - drawHeight / 2, drawWidth, drawHeight);
+            ctx.drawImage(bulletLaserImage, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
         } else {
             ctx.fillStyle = bullet.color;
-            ctx.fillRect(bullet.x - bullet.width / 2, bullet.y - bullet.height / 2, bullet.width, bullet.height);
+            ctx.fillRect(-bullet.width / 2, -bullet.height / 2, bullet.width, bullet.height);
         }
     } else {
         // Orange spread bullet image
         if (bulletSpreadImage && bulletSpreadImage.complete) {
-            ctx.drawImage(bulletSpreadImage, bullet.x - drawWidth / 2, bullet.y - drawHeight / 2, drawWidth, drawHeight);
+            ctx.drawImage(bulletSpreadImage, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
         } else {
             ctx.fillStyle = bullet.color;
-            ctx.fillRect(bullet.x - bullet.width / 2, bullet.y - bullet.height / 2, bullet.width, bullet.height);
+            ctx.fillRect(-bullet.width / 2, -bullet.height / 2, bullet.width, bullet.height);
         }
     }
 

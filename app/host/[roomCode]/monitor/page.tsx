@@ -520,16 +520,15 @@ export default function HostMonitorPage(): React.JSX.Element {
                                                     <span className="progress-indicator">
                                                         {player.questionsAnswered}/{totalQuestions}
                                                     </span>
-                                                    {player.isEliminated && (
+                                                    {player.isEliminated ? (
                                                         <div className="status-overlay">
                                                             <X className="w-8 h-8 text-red-500" />
                                                         </div>
-                                                    )}
-                                                    {player.isCompleted && (
+                                                    ) : player.isCompleted ? (
                                                         <div className="status-overlay">
                                                             <Check className="w-8 h-8 text-green-400" />
                                                         </div>
-                                                    )}
+                                                    ) : null}
                                                 </div>
                                                 <div className="progress-card-body">
                                                     {player.spacecraft ? (
