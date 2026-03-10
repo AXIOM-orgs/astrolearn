@@ -5,9 +5,9 @@ import { useRouter, useParams } from 'next/navigation';
 import { Users, LogOut } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { supabaseGame } from '@/lib/supabase';
-import { DialogRocketSelect } from '@/app/components/ui/DialogRocketSelect';
-import { ExitConfirmationDialog } from '@/app/components/ui/ExitConfirmationDialog';
-import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
+import { DialogRocketSelect } from '@/components/ui/DialogRocketSelect';
+import { ExitConfirmationDialog } from '@/components/ui/ExitConfirmationDialog';
+import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import { Spaceship, spaceships } from '@/lib/data';
 
 interface Participant {
@@ -128,7 +128,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             setCurrentPlayer({
                 id: me.id,
                 nickname: me.nickname,
-                spacecraft: me.spacecraft || 'galaksi2.webp'
+                spacecraft: me.spacecraft || '/assets/images/characters/players/galaksi2.webp'
             });
 
             // Set current spaceship object
@@ -364,7 +364,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                                                 <div className="player-icon">
                                                     {player.spacecraft ? (
                                                         <img
-                                                            src={`/assets/${player.spacecraft}`}
+                                                            src={`/assets/images/characters/players/${player.spacecraft}`}
                                                             alt="spacecraft"
                                                             className="player-spacecraft-icon"
                                                         />

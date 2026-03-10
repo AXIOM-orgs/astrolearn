@@ -5,11 +5,13 @@ import { useRouter, useParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { useGame } from '@/context/GameContext';
 import { supabaseGame } from '@/lib/supabase';
-import { GameCodeDialog } from '@/app/components/ui/GameCodeDialog';
-import { ExitConfirmationDialog } from '@/app/components/ui/ExitConfirmationDialog';
-import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
-import { KickPlayerDialog } from '@/app/components/ui/KickPlayerDialog';
-import { X } from 'lucide-react';
+import { GameCodeDialog } from '@/components/ui/GameCodeDialog';
+import { ExitConfirmationDialog } from '@/components/ui/ExitConfirmationDialog';
+import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
+import { KickPlayerDialog } from '@/components/ui/KickPlayerDialog';
+import { InviteGroupsDialog } from '@/components/ui/InviteGroupsDialog';
+import { InviteFriendsDialog } from '@/components/ui/InviteFriendsDialog';
+import { X, Menu, Maximize, Minimize, Volume2, VolumeX, Users, UserPlus } from 'lucide-react';
 
 interface Participant {
     id: string;
@@ -45,6 +47,12 @@ export default function HostLobbyPage(): React.JSX.Element {
     const [joinUrl, setJoinUrl] = useState<string>('');
     const [selectedPlayerToKick, setSelectedPlayerToKick] = useState<Participant | null>(null);
     const [isAddingBots, setIsAddingBots] = useState<boolean>(false);
+    const [showSettings, setShowSettings] = useState<boolean>(false);
+    const [showInviteGroupsDialog, setShowInviteGroupsDialog] = useState<boolean>(false);
+    const [showInviteFriendsDialog, setShowInviteFriendsDialog] = useState<boolean>(false);
+    const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+    const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+    const settingsRef = useRef<HTMLDivElement>(null);
 
     const prevPlayerCount = useRef<number>(0);
     const channelRef = useRef<ReturnType<typeof supabaseGame.channel> | null>(null);
@@ -53,9 +61,34 @@ export default function HostLobbyPage(): React.JSX.Element {
     const [startY, setStartY] = useState(0);
     const [scrollTop, setScrollTop] = useState(0);
 
-    // Set joinUrl on client side only
+    // Set joinUrl and load sound preference on client side
     useEffect(() => {
         setJoinUrl(`${window.location.origin}/join/${roomCode}`);
+
+        // Load sound preference
+        const savedSound = localStorage.getItem('lobbySoundEnabled');
+        if (savedSound !== null) {
+            setSoundEnabled(savedSound === 'true');
+        }
+
+        // Handle fullscreen changes
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+        // Click outside listener for settings dropdown
+        const handleClickOutside = (event: MouseEvent) => {
+            if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+                setShowSettings(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, [roomCode]);
 
     // Fetch session and participants
@@ -173,10 +206,12 @@ export default function HostLobbyPage(): React.JSX.Element {
                         });
                         setTotalCount(prev => prev + 1);
 
-                        // Play join sound
-                        const audio = new Audio('/sounds/join.mp3');
-                        audio.volume = 0.5;
-                        audio.play().catch(() => { });
+                        // Play join sound if enabled
+                        if (soundEnabled) {
+                            const audio = new Audio('/sounds/join.mp3');
+                            audio.volume = 0.5;
+                            audio.play().catch(() => { });
+                        }
                     }
 
                     if (payload.eventType === 'UPDATE') {
@@ -321,7 +356,8 @@ export default function HostLobbyPage(): React.JSX.Element {
                 'galaksi5.gif',
                 'galaksi6.png'
             ];
-            const startIdx = participants.length;
+            const existingBotsCount = participants.filter(p => p.nickname.startsWith('Bot-')).length;
+            const startIdx = existingBotsCount;
             const bots = Array.from({ length: 15 }, (_, i) => ({
                 session_id: session.id,
                 nickname: `Bot-${i + 1 + startIdx}`,
@@ -339,6 +375,24 @@ export default function HostLobbyPage(): React.JSX.Element {
         } finally {
             setIsAddingBots(false);
         }
+    };
+
+    const toggleFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+            } else {
+                await document.exitFullscreen();
+            }
+        } catch (err) {
+            console.error('Fullscreen error:', err);
+        }
+    };
+
+    const toggleSound = () => {
+        const newValue = !soundEnabled;
+        setSoundEnabled(newValue);
+        localStorage.setItem('lobbySoundEnabled', String(newValue));
     };
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -500,22 +554,96 @@ export default function HostLobbyPage(): React.JSX.Element {
                 <div className="host-left-panel">
                     {/* Player Count Badge */}
                     <div className="player-count-header !mb-1">
-                        <div className="player-count-badge">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            <span>{totalCount} {totalCount === 1 ? 'Player' : 'Players'}</span>
+                        <div className="flex items-center gap-2">
+                            <div className="player-count-badge">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                <span className="font-orbitron">{totalCount} {totalCount <= 1 ? 'Player' : 'Players'}</span>
+                            </div>
+                            <button
+                                className="btn-invite-lobby"
+                                title="Invite Group"
+                                onClick={() => setShowInviteGroupsDialog(true)}
+                            >
+                                <Users size={20} />
+                            </button>
+                            <button
+                                className="btn-invite-lobby"
+                                title="Invite Friends"
+                                onClick={() => setShowInviteFriendsDialog(true)}
+                            >
+                                <UserPlus size={20} />
+                            </button>
                         </div>
-                        <button
-                            className={`btn-add-bots ${isAddingBots ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            onClick={handleAddBots}
-                            disabled={isAddingBots}
-                        >
-                            {isAddingBots ? 'ADDING...' : '+ ADD BOTS'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                className={`btn-add-bots ${isAddingBots ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={handleAddBots}
+                                disabled={isAddingBots}
+                            >
+                                {isAddingBots ? '...' : '+'}
+                            </button>
+
+                            {/* Settings Menu */}
+                            <div className="relative" ref={settingsRef}>
+                                <button
+                                    className={`w-[38px] h-[38px] flex items-center justify-center bg-white/10 border border-white/20 rounded-lg text-white transition-all backdrop-blur-[10px] hover:bg-white/20 hover:border-[#00d4ff] hover:shadow-[0_0_15px_rgba(0,212,255,0.3)] ${showSettings ? 'bg-[#00d4ff] text-white border-[#00d4ff] shadow-[0_0_20px_rgba(0,212,255,0.5)]' : ''}`}
+                                    onClick={() => setShowSettings(!showSettings)}
+                                    title="Settings"
+                                >
+                                    <Menu size={20} />
+                                </button>
+
+                                {showSettings && (
+                                    <div className="absolute top-[calc(100%+20px)] right-0 w-[290px] bg-[#0a0e27]/95 backdrop-blur-[24px] border border-[#00d4ff]/30 rounded-xl p-0 z-[1000] shadow-[0_25px_60px_rgba(0,0,0,0.9)] animate-in fade-in slide-in-from-top-4 duration-300 ring-1 ring-white/10 overflow-hidden">
+                                        <div className="font-orbitron text-[0.9rem] font-bold text-[#00d4ff] bg-white/5 py-4 px-5 tracking-[3px] border-b border-white/10 flex items-center justify-center uppercase">
+                                            SETTINGS
+                                        </div>
+
+                                        <div className="p-4 !mx-3 !my-2 flex flex-col gap-2">
+                                            {/* Fullscreen Toggle */}
+                                            <button
+                                                className="flex items-center justify-between w-full p-4 pr-6 rounded-lg hover:bg-[#00d4ff]/10 hover:shadow-[inset_0_0_15px_rgba(0,212,255,0.1)] transition-all group"
+                                                onClick={toggleFullscreen}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center justify-center w-8 h-8 rounded-md bg-white/5 text-[#00d4ff] group-hover:scale-110 transition-transform">
+                                                        {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                                                    </div>
+                                                    <span className="font-space-mono text-sm text-[#b8c1ec] group-hover:text-white transition-colors">Fullscreen</span>
+                                                </div>
+                                                <div className="text-[10px] text-[#00d4ff] font-orbitron font-bold drop-shadow-[0_0_5px_rgba(0,212,255,0.5)]">{isFullscreen ? 'ON' : 'OFF'}</div>
+                                            </button>
+
+                                            {/* Sound Toggle */}
+                                            <div
+                                                className="flex items-center justify-between w-full p-4 pr-6 rounded-lg hover:bg-[#00d4ff]/10 hover:shadow-[inset_0_0_15px_rgba(0,212,255,0.1)] transition-all group cursor-pointer"
+                                                onClick={toggleSound}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center justify-center w-8 h-8 rounded-md bg-white/5 text-[#00d4ff] group-hover:scale-110 transition-transform">
+                                                        {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                                                    </div>
+                                                    <span className="font-space-mono text-sm text-[#b8c1ec] group-hover:text-white transition-colors">Sound</span>
+                                                </div>
+
+                                                {/* Premium Toggle Switch */}
+                                                <div className={`relative w-12 h-6 rounded-full transition-all duration-300 flex items-center px-1 ${soundEnabled ? 'bg-[#00d4ff]' : 'bg-black/40 border border-white/10'}`}>
+                                                    <div className={`w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(255,255,255,0.5)] ${soundEnabled ? 'translate-x-[24px]' : 'translate-x-0'}`}></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Footer decoration */}
+                                        <div className="h-1 bg-gradient-to-r from-transparent via-[#00d4ff]/40 to-transparent"></div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Player Grid Container - Scrollable */}
@@ -559,7 +687,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                         <div className="player-icon">
                                             {player.spacecraft ? (
                                                 <img
-                                                    src={`/assets/${player.spacecraft}`}
+                                                    src={`/assets/images/characters/players/${player.spacecraft}`}
                                                     alt="spacecraft"
                                                     style={{ width: '40px', height: '30px', objectFit: 'contain' }}
                                                 />
@@ -600,6 +728,18 @@ export default function HostLobbyPage(): React.JSX.Element {
                 onConfirm={handleConfirmKick}
                 playerNickname={selectedPlayerToKick?.nickname || ''}
                 playerSpacecraft={selectedPlayerToKick?.spacecraft || null}
+            />
+
+            <InviteGroupsDialog
+                isOpen={showInviteGroupsDialog}
+                onClose={() => setShowInviteGroupsDialog(false)}
+                roomCode={roomCode}
+            />
+
+            <InviteFriendsDialog
+                isOpen={showInviteFriendsDialog}
+                onClose={() => setShowInviteFriendsDialog(false)}
+                roomCode={roomCode}
             />
         </section>
     );

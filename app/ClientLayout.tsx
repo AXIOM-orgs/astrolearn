@@ -4,7 +4,7 @@ import { useEffect, useRef, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
 import { DialogProvider } from '@/context/AlertContext';
-import AuthGate from '@/app/components/AuthGate';
+import AuthGate from '@/components/AuthGate';
 
 interface ClientLayoutProps {
     children: ReactNode;

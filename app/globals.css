@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 :root {
   --primary-color: #46a7bb;
@@ -31,9 +31,9 @@ body {
   background-color: #0c1229 !important;
   background-image:
     linear-gradient(to bottom, rgba(5, 8, 20, 0.3), rgba(5, 8, 20, 0.6)),
-    url('/assets/bgbarucuy.jpg?v=3'),
-    url('/assets/bgbarucuy2.jpg?v=3'),
-    url('/assets/bgbarucuy3.jpg?v=3') !important;
+    url('/assets//images/backgrounds/background_1.jpg?v=3'),
+    url('/assets//images/backgrounds/background_2.jpg?v=3'),
+    url('/assets//images/backgrounds/background_4.jpg?v=3') !important;
   background-size: cover !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
@@ -46,7 +46,7 @@ body {
 
 @font-face {
   font-family: 'LPMQ Isep Misbah';
-  src: url('/fonts/LPMQ_IsepMisbah.ttf') format('truetype');
+  src: url('/assets/fonts/LPMQ_IsepMisbah.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -2380,6 +2380,7 @@ input[type="text"]:focus {
   box-shadow: 0 1px 0 #cc7e00, 0 4px 6px rgba(0, 0, 0, 0.4);
   transition: all 0.05s ease;
 }
+
 
 .btn-cyan-style {
   width: 100%;
@@ -4938,9 +4939,9 @@ input[type="text"]:focus {
   background-color: #0c1229 !important;
   background-image:
     linear-gradient(to bottom, rgba(5, 8, 20, 0.164), rgba(5, 8, 20, 0.9)),
-    url('/assets/bgbarucuy.jpg?v=3'),
-    url('/assets/bgbarucuy2.jpg?v=3'),
-    url('/assets/bgbarucuy3.jpg?v=3') !important;
+    url('/assets//images/backgrounds/background_1.jpg?v=3'),
+    url('/assets//images/backgrounds/background_2.jpg?v=3'),
+    url('/assets//images/backgrounds/background_4.jpg?v=3') !important;
   background-size: cover !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
@@ -5933,9 +5934,9 @@ input[type="text"]:focus {
   background-color: #0c1229 !important;
   background-image:
     linear-gradient(to bottom, rgba(5, 8, 20, 0.3), rgba(5, 8, 20, 0.6)),
-    url('/assets/bgbarucuy.jpg?v=3'),
-    url('/assets/bgbarucuy2.jpg?v=3'),
-    url('/assets/bgbarucuy3.jpg?v=3') !important;
+    url('/assets//images/backgrounds/background_1.jpg?v=3'),
+    url('/assets//images/backgrounds/background_2.jpg?v=3'),
+    url('/assets//images/backgrounds/background_4.jpg?v=3') !important;
   background-size: cover !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
@@ -5947,9 +5948,9 @@ input[type="text"]:focus {
   background-color: #0c1229 !important;
   background-image:
     linear-gradient(to bottom, rgba(5, 8, 20, 0.3), rgba(5, 8, 20, 0.6)),
-    url('/assets/bgbarucuy.jpg?v=3'),
-    url('/assets/bgbarucuy2.jpg?v=3'),
-    url('/assets/bgbarucuy3.jpg?v=3') !important;
+    url('/assets//images/backgrounds/background_1.jpg?v=3'),
+    url('/assets//images/backgrounds/background_2.jpg?v=3'),
+    url('/assets//images/backgrounds/background_4.jpg?v=3') !important;
   background-size: cover !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
@@ -6121,9 +6122,55 @@ input[type="text"]:focus {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-family: 'Space Mono', monospace;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
   color: var(--text-secondary);
   font-size: 0.9rem;
+  border-radius: 8px;
+}
+
+.btn-invite-lobby {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-color);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  transition: all 0.1s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #0077b6, 0 8px 12px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  transform: translateY(0);
+}
+
+.btn-invite-lobby::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-invite-lobby:hover::before {
+  left: 100%;
+}
+
+.btn-invite-lobby:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #0077b6, 0 12px 18px rgba(0, 212, 255, 0.3);
+  background: var(--primary-color);
+}
+
+.btn-invite-lobby:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #0077b6, 0 4px 6px rgba(0, 0, 0, 0.4);
+  transition: all 0.05s ease;
 }
 
 .waiting-player-grid {
@@ -7255,10 +7302,184 @@ input[type="text"]:focus {
   margin-bottom: 2rem;
 }
 
-.exit-dialog-actions {
+/* Cyan Dialog Styles (Mirroring Exit style but in Cyan) */
+.cyan-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 100;
   display: flex;
-  gap: 1rem;
+  align-items: center;
   justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.cyan-dialog-content {
+  background: rgba(3, 6, 19, 0.9);
+  /*bg-[#030613] with opacity*/
+  border: 4px solid rgba(0, 212, 255, 0.4);
+  box-shadow: 0 0 50px rgba(0, 212, 255, 0.2);
+  border-radius: 24px;
+  padding: 2.5rem;
+  /* Increased padding to avoid 'mepet' */
+  width: 100%;
+  max-width: 540px;
+  position: relative;
+  overflow: hidden;
+  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cyan-dialog-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #00d4ff, transparent);
+  z-index: 20;
+}
+
+.cyan-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+  z-index: 10;
+  position: relative;
+}
+
+.cyan-dialog-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #00d4ff;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cyan-dialog-close-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+
+.cyan-dialog-close-button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(90deg);
+}
+
+/* Re-applying missing refined styles */
+.cyan-dialog-content .cyan-dialog-search-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  background: rgba(30, 30, 50, 0.6) !important;
+  border: 2px solid var(--primary-color) !important;
+  border-radius: 12px !important;
+  padding: 0 0 0 1.2rem !important;
+  transition: all 0.3s ease !important;
+}
+
+.cyan-dialog-content .cyan-dialog-search-wrapper:focus-within {
+  border-color: rgba(0, 212, 255, 0.5) !important;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.1) !important;
+}
+
+.cyan-dialog-content .cyan-dialog-search-wrapper input {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: #ffffff !important;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif !important;
+  font-size: 0.9rem !important;
+  flex: 1 !important;
+  width: auto !important;
+  padding: 0.3rem 0 !important;
+  box-shadow: none !important;
+  letter-spacing: 2px !important;
+}
+
+.cyan-dialog-content .cyan-dialog-search-wrapper .search-icon-btn {
+  background: transparent !important;
+  border: none !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 0.5rem 1rem !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  margin-bottom: 2px !important;
+}
+
+.cyan-dialog-content .group-card {
+  padding: 0.3rem 0.5rem !important;
+  margin: 0.25rem 0 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease-out !important;
+}
+
+.cyan-dialog-content .group-card:hover {
+  transform: scale(1.01) !important;
+  background: rgba(0, 212, 255, 0.1) !important;
+  border-color: rgba(0, 212, 255, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.15) !important;
+}
+
+.cyan-dialog-list-container {
+  padding: 10px 10px !important;
+  margin: 1.5rem -10px !important;
+  overflow: visible !important;
+}
+
+/* Custom Cyan Scrollbar */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.3);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 212, 255, 0.1);
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 212, 255, 0.5);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+/* Firefox scrollbar */
+.scrollbar-custom {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 212, 255, 0.3) rgba(255, 255, 255, 0.02);
 }
 
 .btn-dialog-cancel {
@@ -7380,9 +7601,9 @@ input[type="text"]:focus {
   background-color: #0c1229 !important;
   background-image:
     linear-gradient(to bottom, rgba(5, 8, 20, 0.3), rgba(5, 8, 20, 0.6)),
-    url('/assets/bgbarucuy.jpg?v=3'),
-    url('/assets/bgbarucuy2.jpg?v=3'),
-    url('/assets/bgbarucuy3.jpg?v=3') !important;
+    url('/assets//images/backgrounds/background_1.jpg?v=3'),
+    url('/assets//images/backgrounds/background_2.jpg?v=3'),
+    url('/assets//images/backgrounds/background_4.jpg?v=3') !important;
   background-size: cover !important;
   background-position: center !important;
   background-repeat: no-repeat !important;

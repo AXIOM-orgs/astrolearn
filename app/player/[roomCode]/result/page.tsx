@@ -242,7 +242,7 @@ export default function JoinResultsPage(): React.JSX.Element {
             {/* Tombol Statistik */}
             {isSessionFinished && sessionId && myStats?.id ? (
                 <a
-                    href={`https://gameforsmartnewui.vercel.app/result/${sessionId}/answer-details?participant=${myStats.id}`}
+                    href={`https://gameforsmartnewui.vercel.app/stat/${sessionId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="floating-btn statistics-btn"
@@ -273,7 +273,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                     {/* Display Spacecraft Image */}
                     {myStats?.spacecraft ? (
                         <img
-                            src={getSpacecraftImage(myStats.spacecraft) || ''}
+                            src={`/assets/images/characters/players/${myStats.spacecraft}`}
                             alt="Spacecraft"
                             id="result-character-img"
                             className="result-spaceship-img"
@@ -287,7 +287,6 @@ export default function JoinResultsPage(): React.JSX.Element {
                         <p className="result-pilot-name" id="result-name-display">
                             {myStats?.nickname || profile?.nickname || profile?.username || 'Pilot'}
                         </p>
-
                     </div>
                 </div>
 
@@ -341,7 +340,7 @@ export default function JoinResultsPage(): React.JSX.Element {
 
                     {isSessionFinished && sessionId && myStats?.id ? (
                         <a
-                            href={`https://gameforsmart2026.vercel.app/results/${sessionId}/answer-details?participant=${myStats.id}`}
+                            href={`https://gameforsmartnewui.vercel.app/stat/${sessionId}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn-result-mobile stats"

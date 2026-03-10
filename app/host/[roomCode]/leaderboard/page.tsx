@@ -348,7 +348,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         {/* Statistics Button (Right Side) */}
         {sessionId && (
           <a
-            href={`https://gameforsmartnewui.vercel.app/result/${sessionId}`}
+            href={`https://gameforsmartnewui.vercel.app/stat/${sessionId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="floating-btn statistics-btn"
@@ -372,7 +372,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                   <div className="rank-badge">#2</div>
                   <div className="podium-image">
                     {top3[1].spacecraft ? (
-                      <img src={`/assets/${top3[1].spacecraft}`} alt="spacecraft" />
+                      <img src={`/assets/images/characters/players/${top3[1].spacecraft}`} alt="spacecraft" />
                     ) : (
                       <span style={{ fontSize: '3rem' }}></span>
                     )}
@@ -390,7 +390,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                   <div className="rank-badge">#1</div>
                   <div className="podium-image">
                     {top3[0].spacecraft ? (
-                      <img src={`/assets/${top3[0].spacecraft}`} alt="spacecraft" />
+                      <img src={`/assets/images/characters/players/${top3[0].spacecraft}`} alt="spacecraft" />
                     ) : (
                       <span style={{ fontSize: '3.5rem' }}></span>
                     )}
@@ -408,7 +408,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                   <div className="rank-badge">#3</div>
                   <div className="podium-image">
                     {top3[2].spacecraft ? (
-                      <img src={`/assets/${top3[2].spacecraft}`} alt="spacecraft" />
+                      <img src={`/assets/images/characters/players/${top3[2].spacecraft}`} alt="spacecraft" />
                     ) : (
                       <span style={{ fontSize: '2.5rem' }}>🚀</span>
                     )}
@@ -474,7 +474,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
 
             {sessionId && (
               <a
-                href={`https://gameforsmart2026.vercel.app/results/${sessionId}`}
+                href={`https://gameforsmartnewui.vercel.app/stat/${sessionId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-result-mobile stats"

@@ -462,7 +462,7 @@ export const spaceships: Spaceship[] = [
         speed: 9,
         color: "#0026ffff",
         emoji: "🚀",
-        image: "/assets/main_4_2_2.png"
+        image: "/assets/images/characters/players/main_4_2_2.png"
     },
     {
         id: 2,
@@ -471,7 +471,7 @@ export const spaceships: Spaceship[] = [
         speed: 7,
         color: "#9d4edd",
         emoji: "🛸",
-        image: "/assets/galaksi2.webp"
+        image: "/assets/images/characters/players/galaksi2.webp"
     },
     {
         id: 3,
@@ -480,7 +480,7 @@ export const spaceships: Spaceship[] = [
         speed: 6,
         color: "#ff006e",
         emoji: "🛰️",
-        image: "/assets/galaksi3.webp"
+        image: "/assets/images/characters/players/galaksi3.webp"
     },
     {
         id: 4,
@@ -489,7 +489,7 @@ export const spaceships: Spaceship[] = [
         speed: 8,
         color: "#1A5D1A",
         emoji: "✨",
-        image: "/assets/galaksi4.webp"
+        image: "/assets/images/characters/players/galaksi4.webp"
     },
     {
         id: 5,
@@ -498,7 +498,7 @@ export const spaceships: Spaceship[] = [
         speed: 10,
         color: "#ff9e00",
         emoji: "🌟",
-        image: "/assets/galaksi5.gif"
+        image: "/assets/images/characters/players/galaksi5.gif"
     },
     {
         id: 6,
@@ -507,6 +507,6 @@ export const spaceships: Spaceship[] = [
         speed: 5,
         color: "#FF4646",
         emoji: "🌠",
-        image: "/assets/galaksi6.png"
+        image: "/assets/images/characters/players/galaksi6.png"
     }
 ];

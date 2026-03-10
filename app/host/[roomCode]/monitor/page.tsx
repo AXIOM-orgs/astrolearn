@@ -8,13 +8,13 @@ import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai
 import { generateXID } from '@/lib/id-generator';
 import { Users, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EndGameConfirmationDialog } from '@/app/components/ui/EndGameConfirmationDialog';
-import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
+import { EndGameConfirmationDialog } from '@/components/ui/EndGameConfirmationDialog';
+import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 
 interface Participant {
     id: string;
     nickname: string;
-    spacecraft: string; // contoh: "galaksi2.webp"
+    spacecraft: string; // contoh: "characters/players/galaksi2.webp"
     answers: any; // JSON string array
     current_question?: number;
     finished_at: string | null;
@@ -520,21 +520,20 @@ export default function HostMonitorPage(): React.JSX.Element {
                                                     <span className="progress-indicator">
                                                         {player.questionsAnswered}/{totalQuestions}
                                                     </span>
-                                                    {player.isEliminated && (
+                                                    {player.isEliminated ? (
                                                         <div className="status-overlay">
                                                             <X className="w-8 h-8 text-red-500" />
                                                         </div>
-                                                    )}
-                                                    {player.isCompleted && (
+                                                    ) : player.isCompleted ? (
                                                         <div className="status-overlay">
                                                             <Check className="w-8 h-8 text-green-400" />
                                                         </div>
-                                                    )}
+                                                    ) : null}
                                                 </div>
                                                 <div className="progress-card-body">
                                                     {player.spacecraft ? (
                                                         <img
-                                                            src={`/assets/${player.spacecraft}`}
+                                                            src={`/assets/images/characters/players/${player.spacecraft}`}
                                                             alt="spacecraft"
                                                             className={`progress-spacecraft ${!player.isCompleted && !player.isEliminated ? 'animate-float' : ''}`}
                                                         />
