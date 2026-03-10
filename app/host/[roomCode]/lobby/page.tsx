@@ -5,12 +5,12 @@ import { useRouter, useParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { useGame } from '@/context/GameContext';
 import { supabaseGame } from '@/lib/supabase';
-import { GameCodeDialog } from '@/app/components/ui/GameCodeDialog';
-import { ExitConfirmationDialog } from '@/app/components/ui/ExitConfirmationDialog';
-import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
-import { KickPlayerDialog } from '@/app/components/ui/KickPlayerDialog';
-import { InviteGroupsDialog } from '@/app/components/ui/InviteGroupsDialog';
-import { InviteFriendsDialog } from '@/app/components/ui/InviteFriendsDialog';
+import { GameCodeDialog } from '@/components/ui/GameCodeDialog';
+import { ExitConfirmationDialog } from '@/components/ui/ExitConfirmationDialog';
+import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
+import { KickPlayerDialog } from '@/components/ui/KickPlayerDialog';
+import { InviteGroupsDialog } from '@/components/ui/InviteGroupsDialog';
+import { InviteFriendsDialog } from '@/components/ui/InviteFriendsDialog';
 import { X, Menu, Maximize, Minimize, Volume2, VolumeX, Users, UserPlus } from 'lucide-react';
 
 interface Participant {

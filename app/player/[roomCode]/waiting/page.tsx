@@ -5,9 +5,9 @@ import { useRouter, useParams } from 'next/navigation';
 import { Users, LogOut } from 'lucide-react';
 import { useGame } from '@/context/GameContext';
 import { supabaseGame } from '@/lib/supabase';
-import { DialogRocketSelect } from '@/app/components/ui/DialogRocketSelect';
-import { ExitConfirmationDialog } from '@/app/components/ui/ExitConfirmationDialog';
-import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
+import { DialogRocketSelect } from '@/components/ui/DialogRocketSelect';
+import { ExitConfirmationDialog } from '@/components/ui/ExitConfirmationDialog';
+import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import { Spaceship, spaceships } from '@/lib/data';
 
 interface Participant {

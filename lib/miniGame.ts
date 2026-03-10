@@ -3975,7 +3975,7 @@ function drawPlayer(): void {
     }
 
     // Draw rocket first
-    if (player.image.complete && player.image.naturalWidth > 0) {
+    if (player.image.complete) {
         ctx.translate(player.x, player.y);
         ctx.rotate(player.tilt * Math.PI / 180);
 

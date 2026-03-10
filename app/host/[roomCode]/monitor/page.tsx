@@ -8,8 +8,8 @@ import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai
 import { generateXID } from '@/lib/id-generator';
 import { Users, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EndGameConfirmationDialog } from '@/app/components/ui/EndGameConfirmationDialog';
-import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
+import { EndGameConfirmationDialog } from '@/components/ui/EndGameConfirmationDialog';
+import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 
 interface Participant {
     id: string;

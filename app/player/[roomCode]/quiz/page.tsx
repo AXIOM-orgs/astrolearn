@@ -8,7 +8,7 @@ import { isArabic } from '@/lib/utils';
 import Image from 'next/image';
 import { generateXID } from '@/lib/id-generator';
 import { QuizQuestion } from '@/lib/data';
-import { CountdownOverlay } from '@/app/components/ui/CountdownOverlay';
+import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 
 interface AnswerEntry {
     id: string;
