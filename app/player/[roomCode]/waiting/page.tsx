@@ -308,7 +308,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             <header className="waiting-header">
                 <div className="waiting-brand">
                     <img
-                        src="/assets/logoal.webp"
+                        src="/assets/logo2new.webp"
                         alt="Astro Learning"
                         className="brand-logo-image"
                     />
@@ -316,7 +316,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                 <img
                     src="/assets/logo.webp"
                     alt="Gameforsmart Logo"
-                    className="header-logo"
+                    className="header-logo hidden-mobile"
                 />
             </header>
 
@@ -340,7 +340,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
 
                     {/* Player Panel*/}
                     <div className="player-panel">
-                        <div className="w-full bg-white/5 backdrop-blur-md border border-[#00d4ff] rounded-[20px] flex flex-col overflow-hidden">
+                        <div className="w-full bg-white/5 backdrop-blur-md border border-[#00d4ff] rounded-[20px] flex flex-col">
                             <div className="waiting-panel-header flex items-center justify-start px-8 py-6 border-b border-white/10 w-full bg-white/5">
                                 <div className="waiting-player-badge flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/20 rounded-lg text-sm text-gray-300">
                                     <Users size={16} color='var(--primary-color)' />
@@ -370,7 +370,9 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                                                         />
                                                     ) : '🚀'}
                                                 </div>
-                                                <span className="player-name">{player.nickname}</span>
+                                                <div className="waiting-name-wrapper has-tooltip" data-tooltip={player.nickname}>
+                                                    <span className="player-name">{player.nickname}</span>
+                                                </div>
                                             </div>
                                         );
                                     })}

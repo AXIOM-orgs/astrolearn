@@ -14,10 +14,10 @@ function generateGamePin(length = 6): string {
     return Array.from({ length }, () => digits[Math.floor(Math.random() * digits.length)]).join('');
 }
 
-// Helper to detect Arabic text - MOVED TO UTILS
 
 
-const DESKTOP_CARDS_PER_PAGE = 8;
+const DESKTOP_CARDS_PER_PAGE = 12;
+const TABLET_CARDS_PER_PAGE = 8;
 const MOBILE_CARDS_PER_PAGE = 4;
 
 interface Quiz {
@@ -90,7 +90,14 @@ export default function SelectQuizPage(): React.JSX.Element {
     // Responsive cards per page
     useEffect(() => {
         const handleResize = () => {
-            setCardsPerPage(window.innerWidth <= 1024 ? MOBILE_CARDS_PER_PAGE : DESKTOP_CARDS_PER_PAGE);
+            const width = window.innerWidth;
+            if (width > 1024) {
+                setCardsPerPage(DESKTOP_CARDS_PER_PAGE);
+            } else if (width > 600) {
+                setCardsPerPage(TABLET_CARDS_PER_PAGE);
+            } else {
+                setCardsPerPage(MOBILE_CARDS_PER_PAGE);
+            }
         };
         handleResize();
         window.addEventListener('resize', handleResize);

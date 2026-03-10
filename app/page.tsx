@@ -10,6 +10,8 @@ import { FullscreenToggle } from './components/FullscreenToggle';
 import { ProfileMenu } from './components/ProfileSidebar';
 import { LogoutDialog } from './components/LogoutDialog';
 import { supabaseGame } from '@/lib/supabase';
+import { User as UserIcon } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const PLAYER_NAME_KEY = 'cosmicquest_player_name';
 const GAME_CODE_KEY = 'cosmicquest_joined_game_code';
@@ -187,16 +189,20 @@ export default function LandingPage(): React.JSX.Element {
             {/* Profile Indicator */}
             <button className="profile-indicator" onClick={toggleSidebar}>
                 <div className="profile-info">
-                    <span className="profile-name">{profileName}</span>
+                    <div className="hidden md:flex items-center has-tooltip" data-tooltip={profileName} style={{ minWidth: 0, maxWidth: '140px' }}>
+                        <span className="profile-name">{profileName}</span>
+                    </div>
                     <div className="profile-avatar shrink-0 w-8 h-8 md:w-9 md:h-9">
                         {/* Use profile avatar or default */}
                         {profile?.avatar_url ? (
                             <img src={profile.avatar_url} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
                         ) : (
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                                <circle cx="12" cy="12" r="4" />
-                                <path d="M12 14c-6 0-8 3-8 6v1h16v-1c0-3-2-6-8-6z" />
-                            </svg>
+                            <Avatar className="rounded-full">
+                                <AvatarImage src={profile?.avatar_url} alt={profileName} />
+                                <AvatarFallback className="rounded-lg">
+                                    {profileName.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                            </Avatar>
                         )}
                     </div>
                 </div>
@@ -225,7 +231,7 @@ export default function LandingPage(): React.JSX.Element {
                 {/* Header */}
                 <header className="landing-header">
                     <img src="/assets/logo2new.webp" className="cosmic-logo" alt="AXIOM" />
-                    <p className="cosmic-subtitle">ENTER THE COSMIC ARENA</p>
+                    {/* <p className="cosmic-subtitle">ENTER THE COSMIC ARENA</p> */}
                 </header>
 
                 {/* Cards Container */}
@@ -238,12 +244,12 @@ export default function LandingPage(): React.JSX.Element {
                                 <path d="M12 8v8M8 12h8" />
                             </svg>
                         </div>
-                        <h2 className="card-title">HOST GAME</h2>
+                        <h2 className="card-title">HOST</h2>
                         <p className="card-description card-description-host">
-                            Create Your Own Space and Invite Players.
+                            Create Your Game Space and Invite Players.
                         </p>
                         <button className="btn-create-room" onClick={handleCreateRoom}>
-                            CREATE ROOM
+                            CREATE GAME
                         </button>
                     </div>
 

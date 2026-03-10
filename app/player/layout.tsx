@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Player | Astro Learning",
+    title: "Player | Axiom",
 };
 
 export default function PlayerLayout({

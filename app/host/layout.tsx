@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Host | Astro Learning",
+    title: "Host | Axiom",
 };
 
 export default function HostLayout({
