@@ -8,9 +8,10 @@ interface ProfileMenuProps {
     onClose: () => void;
     username: string;
     onLogoutClick?: () => void;
+    onSoundClick?: () => void;
 }
 
-export function ProfileMenu({ isOpen, onClose, username, onLogoutClick }: ProfileMenuProps): React.JSX.Element {
+export function ProfileMenu({ isOpen, onClose, username, onLogoutClick, onSoundClick }: ProfileMenuProps): React.JSX.Element {
     const menuRef = useRef<HTMLDivElement>(null);
     const { showInfo } = useDialog();
 
@@ -57,6 +58,15 @@ export function ProfileMenu({ isOpen, onClose, username, onLogoutClick }: Profil
         onClose();
     };
 
+    const handleSoundClick = (): void => {
+        onClose();
+        if (onSoundClick) {
+            onSoundClick();
+        } else {
+            showInfo('Sound settings coming soon!');
+        }
+    };
+
     const handleLogoutClick = (): void => {
         onClose();
         if (onLogoutClick) {
@@ -74,6 +84,15 @@ export function ProfileMenu({ isOpen, onClose, username, onLogoutClick }: Profil
                     <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
                 </svg>
                 <span>Language</span>
+            </button>
+
+            <button className="profile-menu-item" onClick={handleSoundClick}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+                <span>Sound</span>
             </button>
 
             <button className="profile-menu-item logout" onClick={handleLogoutClick}>
