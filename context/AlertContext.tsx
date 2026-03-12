@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 
 type DialogType = 'success' | 'error' | 'warning' | 'info';
 
@@ -46,16 +47,9 @@ const DialogColors: Record<DialogType, { accent: string; glow: string }> = {
     info: { accent: '#00d4ff', glow: 'rgba(0, 212, 255, 0.3)' },
 };
 
-// Default titles
-const DefaultTitles: Record<DialogType, string> = {
-    success: 'Success',
-    error: 'Error',
-    warning: 'Warning',
-    info: 'Information',
-};
-
 export function DialogProvider({ children }: { children: React.ReactNode }) {
     const [dialog, setDialog] = useState<DialogData | null>(null);
+    const t = useTranslations('Common');
 
     const closeDialog = useCallback(() => {
         if (dialog?.onClose) dialog.onClose();
@@ -64,9 +58,9 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
 
     const showDialog = useCallback(
         (type: DialogType, message: string, title?: string, onClose?: () => void) => {
-            setDialog({ type, message, title: title || DefaultTitles[type], onClose });
+            setDialog({ type, message, title: title || t(type), onClose });
         },
-        []
+        [t]
     );
 
     const showSuccess = useCallback(

@@ -1,0 +1,43 @@
+{
+  "ProfileSidebar": {
+    "language": "اللغة",
+    "sound": "الصوت",
+    "logout": "تسجيل الخروج",
+    "languageSettings": "إعدادات اللغة",
+    "soundSettings": "إعدادات الصوت قريباً!",
+    "selectLanguage": "اختر اللغة",
+    "english": "الإنجليزية",
+    "indonesian": "الإندونيسية",
+    "arabic": "العربية",
+    "hostTitle": "استضافة",
+    "hostDescription": "قم بإنشاء مساحة اللعبة الخاصة بك ودعوة اللاعبين.",
+    "createGame": "إنشاء لعبة",
+    "joinTitle": "انضمام",
+    "joinDescription": "أدخل رمز اللعبة للانضمام.",
+    "gameCodePlaceholder": "رمز اللعبة",
+    "nicknamePlaceholder": "الاسم المستعار",
+    "goMission": "اذهب للمهمة",
+    "enterNicknameWarning": "يرجى إدخال اسم مستعار أولاً!",
+    "enterGameCodeWarning": "يرجى إدخال رمز اللعبة!",
+    "enterNicknameWarningJoin": "يرجى إدخال اسم مستعار!"
+  },
+  "Common": {
+    "success": "نجاح",
+    "error": "خطأ",
+    "warning": "تحذير",
+    "info": "معلومات",
+    "cancel": "إلغاء",
+    "close": "إغلاق"
+  },
+  "Logout": {
+    "title": "تسجيل الخروج؟",
+    "message": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+    "confirm": "تسجيل الخروج",
+    "loggingOut": "جاري تسجيل الخروج..."
+  },
+  "SoundSettings": {
+    "title": "إعدادات الصوت",
+    "bgm": "موسيقى الخلفية",
+    "sfx": "المؤثرات الصوتية"
+  }
+}

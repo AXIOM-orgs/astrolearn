@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
 import { DialogProvider } from '@/context/AlertContext';
 import AuthGate from '@/components/AuthGate';
+import { BackgroundMusic } from '@/components/BackgroundMusic';
 
 interface ClientLayoutProps {
     children: ReactNode;
@@ -70,6 +71,7 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
                 <div className="stars2"></div>
                 <div className="stars3"></div>
 
+                <BackgroundMusic />
                 {children}
             </AuthGate>
         </DialogProvider>
