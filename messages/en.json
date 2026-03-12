@@ -1,0 +1,43 @@
+{
+  "ProfileSidebar": {
+    "language": "Language",
+    "sound": "Sound",
+    "logout": "Logout",
+    "languageSettings": "Language Settings",
+    "soundSettings": "Sound Settings Coming Soon!",
+    "selectLanguage": "Select Language",
+    "english": "English",
+    "indonesian": "Indonesian",
+    "arabic": "Arabic",
+    "hostTitle": "HOST",
+    "hostDescription": "Create Your Game Space and Invite Players.",
+    "createGame": "CREATE GAME",
+    "joinTitle": "JOIN",
+    "joinDescription": "Enter a game code to join.",
+    "gameCodePlaceholder": "Game Code",
+    "nicknamePlaceholder": "Nickname",
+    "goMission": "GO MISSION",
+    "enterNicknameWarning": "Please enter a nickname first!",
+    "enterGameCodeWarning": "Please enter a game code!",
+    "enterNicknameWarningJoin": "Please enter a nickname!"
+  },
+  "Common": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "cancel": "Cancel",
+    "close": "Close"
+  },
+  "Logout": {
+    "title": "LOGOUT?",
+    "message": "Are you sure you want to logout?",
+    "confirm": "LOGOUT",
+    "loggingOut": "LOGGING OUT..."
+  },
+  "SoundSettings": {
+    "title": "Sound Settings",
+    "bgm": "Background Music",
+    "sfx": "Sound Effects"
+  }
+}

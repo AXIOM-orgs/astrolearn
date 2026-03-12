@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 :root {
   --primary-color: #46a7bb;
@@ -2027,7 +2027,7 @@ input[type="text"]:focus {
   .brand-logo {
     top: 0.8rem;
     left: 0.8rem;
-    height: 32px;
+    height: 45px;
     /* Reduced from 48px */
   }
 
@@ -2035,7 +2035,6 @@ input[type="text"]:focus {
     width: 200px;
   }
 }
-
 
 .cosmic-subtitle {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
@@ -2066,6 +2065,7 @@ input[type="text"]:focus {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
   gap: clamp(0.3rem, 1vh, 0.8rem);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -2255,7 +2255,7 @@ input[type="text"]:focus {
   cursor: pointer;
   transition: all 0.1s ease;
   box-shadow: 0 6px 0 #bd0052, 0 15px 20px rgba(0, 0, 0, 0.4);
-  margin-top: 8.5rem;
+  margin-top: 3.5rem;
   position: relative;
   overflow: hidden;
   transform: translateY(0);
@@ -2680,6 +2680,64 @@ input[type="text"]:focus {
   background: rgba(255, 0, 110, 0.1);
 }
 
+/* Arabic Locale Overrides (LTR Layout, RTL Text Alignment) */
+[lang='ar'] input,
+[lang='ar'] input::placeholder,
+[lang='ar'] .landing-input,
+[lang='ar'] .landing-input::placeholder {
+  text-align: right !important;
+}
+
+[lang='ar'] .profile-menu-item {
+  text-align: right;
+  justify-content: flex-start;
+  flex-direction: row; /* Keep icons on the left */
+}
+
+[lang='ar'] .profile-menu-item span {
+  text-align: right;
+  flex: 1;
+}
+
+[lang='ar'] .custom-dropdown-trigger {
+  text-align: right;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+[lang='ar'] .custom-dropdown-trigger span:first-child {
+  flex: 1;
+  text-align: right;
+  order: 1; /* Text first (left) */
+}
+
+[lang='ar'] .custom-dropdown-trigger .flag-icon,
+[lang='ar'] .custom-dropdown-trigger svg {
+  order: 2; /* Icon last (right) */
+  margin-left: 8px;
+  margin-right: 0;
+}
+
+[lang='ar'] .custom-dropdown-option {
+  text-align: right;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+[lang='ar'] .custom-dropdown-option span {
+  flex: 1;
+  text-align: right;
+}
+
+[lang='ar'] .dropdown-option .w-4.h-4 {
+  order: 2;
+  margin-left: 8px;
+}
+
 /* Fullscreen Toggle */
 .fullscreen-toggle {
   position: fixed;
@@ -3037,6 +3095,7 @@ input[type="text"]:focus {
   font-size: 0.85rem;
   letter-spacing: 2px;
   font-family: var(--font-orbitron), 'Orbitron', sans-serif !important;
+  min-height: 52px;
 }
 
 .dropdown-trigger:hover {

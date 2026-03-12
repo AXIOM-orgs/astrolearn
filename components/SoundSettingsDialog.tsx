@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
+import { useTranslations } from 'next-intl';
+
 interface SoundSettingsDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -11,6 +13,8 @@ interface SoundSettingsDialogProps {
 export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogProps): React.JSX.Element | null {
     const [bgmEnabled, setBgmEnabled] = useState(true);
     const [sfxEnabled, setSfxEnabled] = useState(true);
+    const t = useTranslations('SoundSettings');
+    const tc = useTranslations('Common');
 
     // Load initial state from localStorage
     useEffect(() => {
@@ -80,14 +84,14 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
                 {/* Header */}
                 <div className="cyan-dialog-header">
                     <h2 className="cyan-dialog-title" style={{ fontSize: '1.2rem', justifyContent: 'center' }}>
-                        Sound Settings
+                        {t('title')}
                     </h2>
                 </div>
 
                 <button
                     onClick={handleClose}
                     className="cyan-dialog-close-button"
-                    title="Close"
+                    title={tc('close')}
                 >
                     <X size={20} />
                 </button>
@@ -124,7 +128,7 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
                                 transition: 'all 0.3s ease',
                                 fontFamily: 'var(--font-orbitron)'
                             }}>
-                                Background Music
+                                {t('bgm')}
                             </span>
                         </div>
                         
@@ -180,7 +184,7 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
                                 transition: 'all 0.3s ease',
                                 fontFamily: 'var(--font-orbitron)'
                             }}>
-                                Sound Effects
+                                {t('sfx')}
                             </span>
                         </div>
                         
@@ -207,7 +211,6 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
                             }} />
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>

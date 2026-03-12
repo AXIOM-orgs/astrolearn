@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useTranslations } from 'next-intl';
 
 interface LogoutDialogProps {
     open: boolean;
@@ -10,6 +11,8 @@ interface LogoutDialogProps {
 
 export function LogoutDialog({ open, onOpenChange }: LogoutDialogProps): React.JSX.Element | null {
     const [loading, setLoading] = useState(false);
+    const t = useTranslations('Logout');
+    const tc = useTranslations('Common');
 
     const handleLogout = async (): Promise<void> => {
         setLoading(true);
@@ -51,11 +54,11 @@ export function LogoutDialog({ open, onOpenChange }: LogoutDialogProps): React.J
                 </div>
 
                 {/* Title */}
-                <h2 className="dialog-title">LOGOUT?</h2>
+                <h2 className="dialog-title">{t('title')}</h2>
 
                 {/* Message */}
                 <p className="dialog-subtitle">
-                    Are you sure you want to logout?
+                    {t('message')}
                 </p>
 
                 {/* Actions */}
@@ -65,14 +68,14 @@ export function LogoutDialog({ open, onOpenChange }: LogoutDialogProps): React.J
                         onClick={handleClose}
                         disabled={loading}
                     >
-                        CANCEL
+                        {tc('cancel')}
                     </button>
                     <button
                         className="btn-logout-confirm"
                         onClick={handleLogout}
                         disabled={loading}
                     >
-                        {loading ? 'LOGGIN OUT...' : 'LOGOUT'}
+                        {loading ? t('loggingOut') : t('confirm')}
                     </button>
                 </div>
             </div>

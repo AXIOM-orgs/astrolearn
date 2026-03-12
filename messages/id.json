@@ -1,0 +1,43 @@
+{
+  "ProfileSidebar": {
+    "language": "Bahasa",
+    "sound": "Suara",
+    "logout": "Keluar",
+    "languageSettings": "Pengaturan Bahasa",
+    "soundSettings": "Pengaturan Suara Segera Hadir!",
+    "selectLanguage": "Pilih Bahasa",
+    "english": "Inggris",
+    "indonesian": "Indonesia",
+    "arabic": "Arab",
+    "hostTitle": "BUAT RUANG",
+    "hostDescription": "Buat Ruang Game kamu dan Undang Pemain.",
+    "createGame": "BUAT GAME",
+    "joinTitle": "GABUNG",
+    "joinDescription": "Masukkan kode game untuk bergabung.",
+    "gameCodePlaceholder": "Kode Game",
+    "nicknamePlaceholder": "Nama Panggilan",
+    "goMission": "MULAI MISI",
+    "enterNicknameWarning": "Silakan masukkan nama panggilan terlebih dahulu!",
+    "enterGameCodeWarning": "Silakan masukkan kode game!",
+    "enterNicknameWarningJoin": "Silakan masukkan nama panggilan!"
+  },
+  "Common": {
+    "success": "Berhasil",
+    "error": "Kesalahan",
+    "warning": "Peringatan",
+    "info": "Informasi",
+    "cancel": "Batal",
+    "close": "Tutup"
+  },
+  "Logout": {
+    "title": "KELUAR?",
+    "message": "Apakah kamu yakin ingin keluar?",
+    "confirm": "KELUAR",
+    "loggingOut": "MENGELUARKAN..."
+  },
+  "SoundSettings": {
+    "title": "Pengaturan Suara",
+    "bgm": "Musik Latar",
+    "sfx": "Efek Suara"
+  }
+}

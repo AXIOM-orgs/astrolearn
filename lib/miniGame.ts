@@ -1,4 +1,4 @@
-﻿import { Spaceship, DifficultyLevel, DifficultyConfig, WeaponConfig, WeaponType, difficultyConfigs } from './data';
+import { Spaceship, DifficultyLevel, DifficultyConfig, WeaponConfig, WeaponType, difficultyConfigs } from './data';
 
 // ============ TYPE DEFINITIONS ============
 
@@ -148,6 +148,7 @@ export interface GameStats {
 }
 
 type MiniGameCallback = (stats: GameStats) => void;
+type StateChangeCallback = (lives: number, hp: number) => void;
 
 // ============ GAME STATE ============
 
@@ -163,6 +164,7 @@ let powerUps: PowerUp[] = [];
 let gameLoop: ReturnType<typeof requestAnimationFrame> | null = null;
 let isGameRunning: boolean = false;
 let onComplete: MiniGameCallback | null = null;
+let onStateChange: StateChangeCallback | null = null;
 let callbackCalled: boolean = false;
 let currentBgMode: 'starfield' | 'rocket_seq' | 'portrait_scene' = 'starfield';
 
@@ -740,12 +742,16 @@ function getScreenPosition(laneX: number, z: number): { x: number; y: number; sc
 export function startMiniGame(
     spaceship: Spaceship,
     difficulty: DifficultyLevel,
-    callback: MiniGameCallback
+    callback: MiniGameCallback,
+    initialLives?: number,
+    initialHP?: number,
+    stateChangeCallback?: StateChangeCallback
 ): void {
     // CRITICAL: Ensure any existing game is fully stopped before starting a new one
     cleanupMiniGame();
 
     onComplete = callback;
+    onStateChange = stateChangeCallback || null;
     callbackCalled = false;
     currentDifficulty = difficulty;
 
@@ -846,8 +852,8 @@ export function startMiniGame(
     shakeY = 0;
 
     // Initialize lives system
-    playerLives = PLAYER_MAX_LIVES;
-    playerLifeHP = LIFE_MAX_HP;
+    playerLives = (initialLives !== undefined) ? initialLives : PLAYER_MAX_LIVES;
+    playerLifeHP = (initialHP !== undefined) ? initialHP : LIFE_MAX_HP;
     isImmune = false;
     immuneEndTime = 0;
     keys = {};
@@ -1397,7 +1403,10 @@ function applyDamage(amount: number): void {
         }
     }
 
-
+    // Trigger state change callback
+    if (onStateChange) {
+        onStateChange(playerLives, playerLifeHP);
+    }
 }
 
 // ============ BACKGROUND ============
