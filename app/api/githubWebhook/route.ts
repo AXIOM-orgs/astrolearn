@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
   const payload = JSON.parse(rawBody.toString())
 
-  if (payload.ref !== "refs/heads/main") {
+  if (payload.ref !== "refs/heads/master") {
     return NextResponse.json({ message: "Not main branch" })
   }
 
