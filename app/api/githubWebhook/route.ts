@@ -29,13 +29,28 @@ export async function POST(req: Request) {
   const payload = JSON.parse(rawBody.toString())
 
   if (payload.ref !== "refs/heads/master") {
-    return NextResponse.json({ message: "Not main branch" })
+    return NextResponse.json({ message: "Not master branch" })
   }
 
-  spawn("bash", ["/www/wwwroot/Bot-Deploy/deploy-axiom.sh"], {
-    detached: true,
-    stdio: "ignore",
-  }).unref()
+  const commit = payload.head_commit
+
+  const author = commit?.author?.name || "Unknown"
+  const message = commit?.message || "-"
+  const hashShort = commit?.id?.substring(0, 7) || "N/A"
+
+  spawn(
+    "bash",
+    [
+      "/www/wwwroot/Bot-Deploy/deploy-axiom.sh",
+      author,
+      hashShort,
+      message
+    ],
+    {
+      detached: true,
+      stdio: "ignore",
+    }
+  ).unref()
 
   return NextResponse.json({ success: true })
 }
