@@ -77,5 +77,25 @@
     "sports": "Olahraga",
     "science": "Sains",
     "language": "Bahasa"
+  },
+  "HostSettings": {
+    "loading": "Memuat...",
+    "title": "Pengaturan",
+    "questionsLabel": "Pertanyaan",
+    "questionsCount": "{count} PERTANYAAN",
+    "durationLabel": "Durasi",
+    "durationMinutes": "{min} MENIT",
+    "difficultyLabel": "Tingkat Kesulitan",
+    "difficultyEasy": "MUDAH",
+    "difficultyMedium": "SEDANG",
+    "difficultyHard": "SULIT",
+    "soundLabel": "Suara",
+    "buttonLoading": "Memuat...",
+    "buttonContinue": "Lanjutkan",
+    "cancelDialogTitle": "Batalkan Sesi?",
+    "cancelDialogDesc": "Ini akan menghapus sesi permainan dan kembali ke pemilihan kuis.",
+    "cancelDialogKeep": "Tetap Lanjut",
+    "cancelDialogDeleting": "Menghapus...",
+    "cancelDialogDelete": "Hapus Sesi"
   }
 }

@@ -77,5 +77,25 @@
     "sports": "رياضة",
     "science": "علوم",
     "language": "لغة"
+  },
+  "HostSettings": {
+    "loading": "جاري التحميل...",
+    "title": "الإعدادات",
+    "questionsLabel": "الأسئلة",
+    "questionsCount": "{count} أسئلة",
+    "durationLabel": "المدة",
+    "durationMinutes": "{min} دقائق",
+    "difficultyLabel": "الصعوبة",
+    "difficultyEasy": "سهل",
+    "difficultyMedium": "متوسط",
+    "difficultyHard": "صعب",
+    "soundLabel": "الصوت",
+    "buttonLoading": "جاري التحميل...",
+    "buttonContinue": "متابعة",
+    "cancelDialogTitle": "إلغاء الجلسة؟",
+    "cancelDialogDesc": "سيؤدي هذا إلى حذف جلسة اللعبة والعودة إلى اختيار الاختبار.",
+    "cancelDialogKeep": "إبقاء الجلسة",
+    "cancelDialogDeleting": "جاري الحذف...",
+    "cancelDialogDelete": "حذف الجلسة"
   }
 }

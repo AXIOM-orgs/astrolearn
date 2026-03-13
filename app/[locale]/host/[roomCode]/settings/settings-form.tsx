@@ -6,6 +6,7 @@ import { supabase, supabaseGame } from '@/lib/supabase';
 import { useGame } from '@/context/GameContext';
 import { isArabic } from '@/lib/utils';
 import type { SettingsInitialData } from '@/lib/supabase-server';
+import { useTranslations, useLocale } from 'next-intl';
 
 // Utility to shuffle array
 function shuffleArray<T>(array: T[]): T[] {
@@ -25,6 +26,9 @@ type Props = {
 export default function SettingsForm({ roomCode, initialData }: Props) {
     const router = useRouter();
     const { showLoading, hideLoading } = useGame();
+    const t = useTranslations('HostSettings');
+    const locale = useLocale();
+    const isRtl = locale === 'ar';
 
     // Initialize state from server data
     const [duration, setDuration] = useState(() =>
@@ -177,7 +181,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
             <section id="screen-setup" className="screen active">
                 <div className="container">
                     <div className="glass-panel" style={{ textAlign: 'center', padding: '3rem' }}>
-                        <p style={{ color: 'var(--primary-color)' }}>Loading...</p>
+                        <p style={{ color: 'var(--primary-color)' }}>{t('loading')}</p>
                     </div>
                 </div>
             </section>
@@ -187,11 +191,11 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
     const isSetupComplete = duration && questionCount && selectedDifficulty;
 
     return (
-        <section id="screen-setup" className="screen active">
+        <section id="screen-setup" className={`screen active ${isRtl ? 'settings-rtl' : ''}`}>
             <div className="container">
                 <div className="glass-panel">
 
-                    <h2 className="section-title" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Settings</h2>
+                    <h2 className="section-title" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{t('title')}</h2>
 
                     {/* Quiz Info */}
                     <div style={{
@@ -225,20 +229,20 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                         marginBottom: '1.5rem'
                     }}>
                         {/* Questions */}
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>Questions</label>
+                        <div className="form-group" style={{ marginBottom: 0, textAlign: isRtl ? 'right' : 'left' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('questionsLabel')}</label>
                             <div className={`custom-dropdown ${isQuestionsOpen ? 'open' : ''}`} ref={questionsRef} style={{ width: '100%' }}>
                                 <div className="dropdown-trigger" onClick={() => setIsQuestionsOpen(!isQuestionsOpen)}>
-                                    <span>{questionCount} QUESTIONS</span>
+                                    <span>{t('questionsCount', { count: questionCount })}</span>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ transform: isQuestionsOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
                                         <path d="m6 9 6 6 6-6" />
                                     </svg>
                                 </div>
                                 {isQuestionsOpen && (
-                                    <div className="dropdown-options">
+                                    <div className="dropdown-options" style={{ textAlign: isRtl ? 'right' : 'left' }}>
                                         {questionCountOptions.map((count) => (
                                             <div key={count} className={`dropdown-option ${questionCount === count.toString() ? 'selected' : ''}`} onClick={() => { setQuestionCount(count.toString()); setIsQuestionsOpen(false); }}>
-                                                {count} QUESTIONS
+                                                {t('questionsCount', { count })}
                                             </div>
                                         ))}
                                     </div>
@@ -247,20 +251,20 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                         </div>
 
                         {/* Duration */}
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>Duration</label>
+                        <div className="form-group" style={{ marginBottom: 0, textAlign: isRtl ? 'right' : 'left' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('durationLabel')}</label>
                             <div className={`custom-dropdown ${isDurationOpen ? 'open' : ''}`} ref={durationRef} style={{ width: '100%' }}>
                                 <div className="dropdown-trigger" onClick={() => setIsDurationOpen(!isDurationOpen)}>
-                                    <span>{Math.floor(parseInt(duration) / 60)} MINUTES</span>
+                                    <span>{t('durationMinutes', { min: Math.floor(parseInt(duration) / 60) })}</span>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ transform: isDurationOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
                                         <path d="m6 9 6 6 6-6" />
                                     </svg>
                                 </div>
                                 {isDurationOpen && (
-                                    <div className="dropdown-options">
+                                    <div className="dropdown-options" style={{ textAlign: isRtl ? 'right' : 'left' }}>
                                         {[5, 10, 15, 20, 25, 30].map((min) => (
                                             <div key={min} className={`dropdown-option ${duration === (min * 60).toString() ? 'selected' : ''}`} onClick={() => { setDuration((min * 60).toString()); setIsDurationOpen(false); }}>
-                                                {min} MINUTES
+                                                {t('durationMinutes', { min })}
                                             </div>
                                         ))}
                                     </div>
@@ -269,23 +273,23 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                         </div>
 
                         {/* Difficulty (Dropdown for Mobile) */}
-                        <div className="form-group mobile-only" style={{ marginBottom: 0 }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>Difficulty</label>
+                        <div className="form-group mobile-only" style={{ marginBottom: 0, textAlign: isRtl ? 'right' : 'left' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('difficultyLabel')}</label>
                             <div className={`custom-dropdown ${isDifficultyOpen ? 'open' : ''}`} ref={difficultyRef} style={{ width: '100%' }}>
                                 <div className="dropdown-trigger" onClick={() => setIsDifficultyOpen(!isDifficultyOpen)}>
                                     <span style={{ color: selectedDifficulty === 'easy' ? '#22c55e' : selectedDifficulty === 'medium' ? '#f59e0b' : '#ef4444', fontWeight: '900' }}>
-                                        {selectedDifficulty.toUpperCase()}
+                                        {t(`difficulty${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)}` as any)}
                                     </span>
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ transform: isDifficultyOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
                                         <path d="m6 9 6 6 6-6" />
                                     </svg>
                                 </div>
                                 {isDifficultyOpen && (
-                                    <div className="dropdown-options">
+                                    <div className="dropdown-options" style={{ textAlign: isRtl ? 'right' : 'left' }}>
                                         {[
-                                            { value: 'easy', label: 'EASY', color: '#22c55e' },
-                                            { value: 'medium', label: 'MEDIUM', color: '#f59e0b' },
-                                            { value: 'hard', label: 'HARD', color: '#ef4444' }
+                                            { value: 'easy', label: t('difficultyEasy'), color: '#22c55e' },
+                                            { value: 'medium', label: t('difficultyMedium'), color: '#f59e0b' },
+                                            { value: 'hard', label: t('difficultyHard'), color: '#ef4444' }
                                         ].map((diff) => (
                                             <div
                                                 key={diff.value}
@@ -302,8 +306,8 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                         </div>
 
                         {/* Sound */}
-                        <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'left' }}>Sound</label>
+                        <div className="form-group" style={{ marginBottom: 0, textAlign: isRtl ? 'right' : 'left' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('soundLabel')}</label>
                             <div
                                 onClick={toggleSound}
                                 className="sound-card-wrapper"
@@ -339,13 +343,13 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                     </div>
 
                     {/* Difficulty Buttons (Desktop/Tablet Only) */}
-                    <div className="desktop-tablet-only" style={{ marginBottom: '2rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>Difficulty</label>
+                    <div className="desktop-tablet-only" style={{ marginBottom: '2rem', textAlign: isRtl ? 'right' : 'left' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px' }}>{t('difficultyLabel')}</label>
                         <div className="difficulty-grid" style={{ display: 'grid', gap: '0.75rem' }}>
                             {[
-                                { value: 'easy', label: 'Easy', color: '#22c55e' },
-                                { value: 'medium', label: 'Medium', color: '#f59e0b' },
-                                { value: 'hard', label: 'Hard', color: '#ef4444' }
+                                { value: 'easy', label: t('difficultyEasy'), color: '#22c55e' },
+                                { value: 'medium', label: t('difficultyMedium'), color: '#f59e0b' },
+                                { value: 'hard', label: t('difficultyHard'), color: '#ef4444' }
                             ].map((diff) => (
                                 <button
                                     key={diff.value}
@@ -376,7 +380,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                         disabled={!isSetupComplete || saving}
                     // style={{ maxWidth: '300px', marginInline: 'auto' }}
                     >
-                        {saving ? 'Loading...' : 'Continue'}
+                        {saving ? t('buttonLoading') : t('buttonContinue')}
                     </button>
                 </div>
             </div>
@@ -393,9 +397,9 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                     zIndex: 100
                 }}>
                     <div className="glass-panel" style={{ maxWidth: '400px', textAlign: 'center' }}>
-                        <h3 style={{ color: '#ff4757', marginBottom: '1rem' }}>Cancel Session?</h3>
+                        <h3 style={{ color: '#ff4757', marginBottom: '1rem' }}>{t('cancelDialogTitle')}</h3>
                         <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-                            This will delete the game session and return to the quiz selection.
+                            {t('cancelDialogDesc')}
                         </p>
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                             <button
@@ -410,7 +414,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                                     cursor: 'pointer'
                                 }}
                             >
-                                Keep Session
+                                {t('cancelDialogKeep')}
                             </button>
                             <button
                                 onClick={handleCancelSession}
@@ -424,7 +428,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                                     cursor: 'pointer'
                                 }}
                             >
-                                {isDeleting ? 'Deleting...' : 'Delete Session'}
+                                {isDeleting ? t('cancelDialogDeleting') : t('cancelDialogDelete')}
                             </button>
                         </div>
                     </div>

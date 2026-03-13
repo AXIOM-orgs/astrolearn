@@ -49,6 +49,7 @@ export default async function RootLayout({ children, params }: RootLayoutProps):
     // deeply nested in dynamic routes on client-side navigation.
     await getTranslations({ locale, namespace: 'SelectQuiz' });
     await getTranslations({ locale, namespace: 'Categories' });
+    await getTranslations({ locale, namespace: 'HostSettings' });
 
     return (
         <NextIntlClientProvider messages={messages} locale={locale}>

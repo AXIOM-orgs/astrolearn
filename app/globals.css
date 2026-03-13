@@ -3201,6 +3201,24 @@ input[type="text"]:focus {
   gap: 0.75rem;
 }
 
+/* Settings RTL Overrides */
+.settings-rtl .form-group label {
+  text-align: right !important;
+  direction: rtl;
+}
+
+.settings-rtl .dropdown-trigger {
+  flex-direction: row-reverse !important;
+}
+
+.settings-rtl .sound-card-wrapper {
+  flex-direction: row-reverse !important;
+}
+
+.settings-rtl .difficulty-grid {
+  direction: rtl;
+}
+
 .mobile-only {
   display: none !important;
 }
