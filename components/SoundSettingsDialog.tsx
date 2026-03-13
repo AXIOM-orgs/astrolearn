@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-
 import { useTranslations, useLocale } from 'next-intl';
 
 interface SoundSettingsDialogProps {
@@ -15,6 +14,8 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
     const [sfxEnabled, setSfxEnabled] = useState(true);
     const t = useTranslations('SoundSettings');
     const tc = useTranslations('Common');
+    
+    // Fitur terbaru: Mendukung deteksi RTL untuk bahasa tertentu (misal: Arab)
     const locale = useLocale();
     const isRtl = locale === 'ar';
 
@@ -50,7 +51,6 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
         const newValue = !bgmEnabled;
         setBgmEnabled(newValue);
         localStorage.setItem('cosmicquest_bgm_enabled', newValue.toString());
-        // Dispatch event so other components can react
         window.dispatchEvent(new CustomEvent('cosmicquest_sound_settings_changed', { 
             detail: { type: 'bgm', enabled: newValue }
         }));
@@ -60,7 +60,6 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
         const newValue = !sfxEnabled;
         setSfxEnabled(newValue);
         localStorage.setItem('cosmicquest_sfx_enabled', newValue.toString());
-        // Dispatch event so other components can react
         window.dispatchEvent(new CustomEvent('cosmicquest_sound_settings_changed', { 
             detail: { type: 'sfx', enabled: newValue }
         }));
@@ -80,10 +79,9 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
 
     return (
         <div className="cyan-dialog-overlay" onClick={handleBackdropClick}>
-            {/* Main Dialog Container */}
             <div className="cyan-dialog-content" style={{ maxWidth: '400px' }}>
 
-                {/* Header */}
+                {/* Header dengan dukungan RTL */}
                 <div className="cyan-dialog-header" dir={isRtl ? 'rtl' : 'ltr'}>
                     <h2 className="cyan-dialog-title" style={{ fontSize: '1.2rem', justifyContent: 'center' }}>
                         {t('title')}
@@ -98,7 +96,6 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
                     <X size={20} />
                 </button>
 
-                {/* Body */}
                 <div className="flex flex-col z-10 px-6 py-4 gap-4">
                     
                     {/* BGM Toggle */}
@@ -134,7 +131,6 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
                             </span>
                         </div>
                         
-                        {/* Toggle Switch */}
                         <div style={{ 
                             position: 'relative', 
                             width: '46px', 
@@ -190,7 +186,6 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
                             </span>
                         </div>
                         
-                        {/* Toggle Switch */}
                         <div style={{ 
                             position: 'relative', 
                             width: '46px', 
