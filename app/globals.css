@@ -59,6 +59,25 @@ body {
   font-weight: normal !important;
 }
 
+[dir='rtl'] .select-quiz-page .search-box input {
+  padding-right: 1rem;
+  padding-left: 3rem;
+  text-align: right;
+}
+
+[dir='rtl'] .select-quiz-page .search-btn {
+  right: auto;
+  left: 10px;
+}
+
+[dir='rtl'] .select-quiz-page .dropdown-trigger {
+  flex-direction: row-reverse;
+}
+
+[dir='rtl'] .select-quiz-page .dropdown-option {
+  text-align: right;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -453,8 +472,10 @@ body::before {
 
 input[type="text"] {
   width: 100%;
-  padding: 1rem 1.5rem;
-  font-family: var(--font-space-mono), 'Space Mono', monospace;
+  padding: 0.5rem 1.2rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-weight: 900;
+  letter-spacing: 3px;
   font-size: 1.1rem;
   background: var(--glass-bg);
   border: 2px solid var(--glass-border);
@@ -2194,7 +2215,7 @@ input[type="text"]:focus {
 
 .landing-input {
   width: 100%;
-  padding: 1rem 3rem 1rem 1.2rem;
+  padding: 1rem 1.2rem;
   font-family: var(--font-space-mono), 'Space Mono', monospace;
   font-size: 0.95rem;
   background: rgba(10, 20, 40, 0.8);
@@ -2203,6 +2224,7 @@ input[type="text"]:focus {
   color: var(--text-primary);
   outline: none;
   transition: all 0.3s ease;
+  text-align: center;
 }
 
 .landing-input::placeholder {
@@ -2681,25 +2703,34 @@ input[type="text"]:focus {
 }
 
 /* Arabic Locale Overrides (LTR Layout, RTL Text Alignment) */
-[lang='ar'] input,
-[lang='ar'] input::placeholder,
-[lang='ar'] .landing-input,
-[lang='ar'] .landing-input::placeholder {
+[dir='rtl'] input,
+[dir='rtl'] input::placeholder,
+[dir='rtl'] .landing-input,
+[dir='rtl'] .landing-input::placeholder {
   text-align: right !important;
 }
 
-[lang='ar'] .profile-menu-item {
+[dir='rtl'] .profile-menu-item {
+  flex-direction: row-reverse;
   text-align: right;
   justify-content: flex-start;
-  flex-direction: row; /* Keep icons on the left */
 }
 
-[lang='ar'] .profile-menu-item span {
+[dir='rtl'] .profile-menu-item span {
   text-align: right;
   flex: 1;
 }
 
-[lang='ar'] .custom-dropdown-trigger {
+[dir='rtl'] .input-icon {
+  right: auto;
+  left: 12px;
+}
+
+[dir='rtl'] .landing-input {
+  padding: 1rem 1.2rem;
+}
+
+[dir='rtl'] .custom-dropdown-trigger {
   text-align: right;
   display: flex;
   flex-direction: row;
@@ -2707,20 +2738,20 @@ input[type="text"]:focus {
   justify-content: space-between;
 }
 
-[lang='ar'] .custom-dropdown-trigger span:first-child {
+[dir='rtl'] .custom-dropdown-trigger span:first-child {
   flex: 1;
   text-align: right;
   order: 1; /* Text first (left) */
 }
 
-[lang='ar'] .custom-dropdown-trigger .flag-icon,
-[lang='ar'] .custom-dropdown-trigger svg {
+[dir='rtl'] .custom-dropdown-trigger .flag-icon,
+[dir='rtl'] .custom-dropdown-trigger svg {
   order: 2; /* Icon last (right) */
   margin-left: 8px;
   margin-right: 0;
 }
 
-[lang='ar'] .custom-dropdown-option {
+[dir='rtl'] .custom-dropdown-option {
   text-align: right;
   display: flex;
   flex-direction: row;
@@ -2728,12 +2759,12 @@ input[type="text"]:focus {
   justify-content: space-between;
 }
 
-[lang='ar'] .custom-dropdown-option span {
+[dir='rtl'] .custom-dropdown-option span {
   flex: 1;
   text-align: right;
 }
 
-[lang='ar'] .dropdown-option .w-4.h-4 {
+[dir='rtl'] .dropdown-option .w-4.h-4 {
   order: 2;
   margin-left: 8px;
 }
@@ -3026,7 +3057,8 @@ input[type="text"]:focus {
   font-weight: 600;
   letter-spacing: 2px;
   width: 100%;
-  padding: 0.5rem 0;
+  padding: 0;
+  height: 100%;
 }
 
 .select-quiz-page .search-box input::placeholder {
@@ -3061,7 +3093,43 @@ input[type="text"]:focus {
   opacity: 1;
 }
 
-/* Consolidated Premium Search & Custom Dropdown Styling */
+/* Unified Desktop Height for Nav Elements on Select Quiz */
+.select-quiz-page .search-box,
+.select-quiz-page .dropdown-trigger,
+.select-quiz-page .my-quiz-btn,
+.select-quiz-page .favorite-icon-btn {
+  height: 46px !important;
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Unified Height for Settings Page Elements */
+.settings-main-grid .custom-dropdown .dropdown-trigger,
+.settings-main-grid .sound-card-wrapper {
+  height: 52px !important;
+  min-height: 52px !important;
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+/* Homepage Language Dropdown consistently 52px */
+.profile-lang-dropdown .dropdown-trigger {
+  height: 52px !important;
+  min-height: 52px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 10px !important;
+  padding: 0 1rem !important;
+  font-size: 0.8rem !important;
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
 .search-box,
 .dropdown-trigger {
   background: rgba(13, 27, 42, 0.9) !important;
@@ -3089,13 +3157,12 @@ input[type="text"]:focus {
   display: flex !important;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 1.2rem !important;
+  padding: 0 1.2rem !important;
   cursor: pointer;
   font-weight: 600;
   font-size: 0.85rem;
   letter-spacing: 2px;
   font-family: var(--font-orbitron), 'Orbitron', sans-serif !important;
-  min-height: 52px;
 }
 
 .dropdown-trigger:hover {
@@ -3278,7 +3345,7 @@ input[type="text"]:focus {
   background: transparent;
   border: 1px solid var(--cyan-glow);
   border-radius: 10px;
-  padding: 0.5rem 1.2rem;
+  padding: 0 1.2rem !important;
   color: var(--cyan-glow);
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
   font-size: 0.8rem;
@@ -3296,10 +3363,7 @@ input[type="text"]:focus {
 .favorite-icon-btn {
   background: #d9d9d9;
   border: 1px solid rgba(100, 100, 150, 0.3);
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
+  width: 46px !important;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -3897,6 +3961,14 @@ input[type="text"]:focus {
     order: 1;
   }
 
+  .select-quiz-page .search-box,
+  .select-quiz-page .dropdown-trigger,
+  .select-quiz-page .my-quiz-btn,
+  .select-quiz-page .favorite-icon-btn {
+    height: 42px !important;
+    min-height: 42px !important;
+  }
+
   .select-quiz-page .search-box {
     width: 100%;
     border: 2px solid var(--primary-color);
@@ -3905,8 +3977,14 @@ input[type="text"]:focus {
   }
 
   .select-quiz-page .search-box input {
-    padding: 0.6rem 0;
     font-size: 0.9rem;
+    height: 100%;
+    padding: 0;
+  }
+
+  .select-quiz-page .search-btn {
+    height: 100%;
+    padding: 0 0.75rem;
   }
 
   .custom-dropdown {
@@ -3976,17 +4054,6 @@ input[type="text"]:focus {
     display: flex;
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
-  }
-
-  .my-quiz-btn {
-    font-size: 0.7rem;
-    padding: 0.4rem 0.8rem;
-  }
-
-  .favorite-icon-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
   }
 
   .pagination {

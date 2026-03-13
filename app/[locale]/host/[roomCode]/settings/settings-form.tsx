@@ -306,6 +306,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--primary-color)', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'left' }}>Sound</label>
                             <div
                                 onClick={toggleSound}
+                                className="sound-card-wrapper"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -318,7 +319,6 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                                     borderRadius: '12px',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s ease',
-                                    minHeight: '52px'
                                 }}
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={!soundEnabled ? '#ef4444' : 'rgba(255,255,255,0.4)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'all 0.3s ease' }}>

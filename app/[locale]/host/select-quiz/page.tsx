@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
 import { useAuth } from '@/context/AuthContext';
 import { supabase, supabaseGame } from '@/lib/supabase';
 import { generateXID } from '@/lib/id-generator';
 import { useGame } from '@/context/GameContext';
 import { isArabic } from '@/lib/utils';
+import { useTranslations, useLocale } from 'next-intl';
 
 // Generate game PIN
 function generateGamePin(length = 6): string {
@@ -50,6 +51,10 @@ export default function SelectQuizPage(): React.JSX.Element {
     const router = useRouter();
     const { profile } = useAuth();
     const { showLoading, hideLoading } = useGame();
+    const t = useTranslations('SelectQuiz');
+    const tCat = useTranslations('Categories');
+    const locale = useLocale();
+    const isRtl = locale === 'ar';
 
     // UI States
     const [searchInput, setSearchInput] = useState('');
@@ -341,12 +346,12 @@ export default function SelectQuizPage(): React.JSX.Element {
 
     const getEmptyStateMessage = () => {
         if (showFavoritesOnly && favorites.length === 0) {
-            return { title: 'No favorites yet', subtitle: 'Add quizzes to favorites by clicking the heart icon' };
+            return { title: t('noFavorites'), subtitle: t('noFavoritesSub') };
         }
         if (showMyQuizOnly) {
-            return { title: 'No quizzes found', subtitle: 'You haven\'t created any quiz yet' };
+            return { title: t('noQuizzes'), subtitle: t('noMyQuizzesSub') };
         }
-        return { title: 'No quizzes found', subtitle: 'Try adjusting your search or filter' };
+        return { title: t('noQuizzes'), subtitle: t('noQuizzesSub') };
     };
 
     const getCategoryBadgeClass = (category: string) => {
@@ -371,22 +376,23 @@ export default function SelectQuizPage(): React.JSX.Element {
                             <path d="M19 12H5M12 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <h1 className="quiz-page-title desktop-title">SELECT QUIZ</h1>
+                    <h1 className="quiz-page-title desktop-title">{t('title')}</h1>
                 </div>
 
                 {/* Mobile Title - shown only on mobile */}
-                <h1 className="quiz-page-title mobile-title">SELECT QUIZ</h1>
+                <h1 className="quiz-page-title mobile-title">{t('title')}</h1>
 
                 <div className="nav-center">
                     <div className="search-box">
                         <input
                             type="text"
-                            placeholder="Search quizzes..."
+                            placeholder={t('searchPlaceholder')}
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                             onKeyDown={handleSearchKeyDown}
+                            dir={isRtl ? 'rtl' : 'ltr'}
                         />
-                        <button className="search-btn" onClick={handleSearch} title="Search">
+                        <button className="search-btn" onClick={handleSearch} title={t('search')}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <circle cx="11" cy="11" r="8" />
                                 <path d="m21 21-4.35-4.35" />
@@ -394,9 +400,16 @@ export default function SelectQuizPage(): React.JSX.Element {
                         </button>
                     </div>
 
-                    <div className={`custom-dropdown ${isDropdownOpen ? 'open' : ''}`} ref={dropdownRef}>
+                    <div className={`custom-dropdown ${isDropdownOpen ? 'open' : ''}`} ref={dropdownRef} dir={isRtl ? 'rtl' : 'ltr'}>
                         <div className="dropdown-trigger" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                            <span>{selectedCategory.toUpperCase()}</span>
+                            <span>
+                                {selectedCategory === 'All' 
+                                    ? t('all').toUpperCase() 
+                                    : (tCat.has(selectedCategory.toLowerCase()) 
+                                        ? tCat(selectedCategory.toLowerCase()).toUpperCase() 
+                                        : selectedCategory.toUpperCase())
+                                }
+                            </span>
                             <svg
                                 width="14"
                                 height="14"
@@ -420,7 +433,12 @@ export default function SelectQuizPage(): React.JSX.Element {
                                             setIsDropdownOpen(false);
                                         }}
                                     >
-                                        {cat.toUpperCase()}
+                                        {cat === 'All' 
+                                            ? t('all').toUpperCase() 
+                                            : (tCat.has(cat.toLowerCase()) 
+                                                ? tCat(cat.toLowerCase()).toUpperCase() 
+                                                : cat.toUpperCase())
+                                        }
                                     </div>
                                 ))}
                             </div>
@@ -432,7 +450,7 @@ export default function SelectQuizPage(): React.JSX.Element {
                     <button
                         className={`favorite-icon-btn ${showFavoritesOnly ? 'active' : ''}`}
                         onClick={() => { setShowFavoritesOnly(!showFavoritesOnly); setShowMyQuizOnly(false); }}
-                        title={showFavoritesOnly ? 'Show all quizzes' : 'Show favorites only'}
+                        title={showFavoritesOnly ? t('showAll') : t('showFavorites')}
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill={showFavoritesOnly ? '#ff4757' : 'none'} stroke="#ff4757" strokeWidth="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -442,7 +460,7 @@ export default function SelectQuizPage(): React.JSX.Element {
                         className={`my-quiz-btn ${showMyQuizOnly ? 'active' : ''}`}
                         onClick={() => { setShowMyQuizOnly(!showMyQuizOnly); setShowFavoritesOnly(false); }}
                     >
-                        MY QUIZ
+                        {t('myQuiz')}
                     </button>
                 </div>
             </nav>
@@ -482,7 +500,7 @@ export default function SelectQuizPage(): React.JSX.Element {
                                             <button
                                                 className={`card-favorite-btn ${isFavorite ? 'active' : ''}`}
                                                 onClick={(e) => { e.stopPropagation(); toggleFavorite(quiz.id); }}
-                                                title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                                title={isFavorite ? t('removeFromFavorites') : t('addToFavorites')}
                                             >
                                                 <svg width="18" height="18" viewBox="0 0 24 24" fill={isFavorite ? '#ff4757' : 'none'} stroke="#ff4757" strokeWidth="2">
                                                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -493,7 +511,10 @@ export default function SelectQuizPage(): React.JSX.Element {
                                             <div className="footer-left">
                                                 {quiz.category && (
                                                     <span className={`category-badge ${badgeClass}`}>
-                                                        {quiz.category.charAt(0).toUpperCase() + quiz.category.slice(1)}
+                                                        {tCat.has(quiz.category.toLowerCase()) 
+                                                            ? tCat(quiz.category.toLowerCase()) 
+                                                            : quiz.category.charAt(0).toUpperCase() + quiz.category.slice(1)
+                                                        }
                                                     </span>
                                                 )}
                                                 <span className="question-count">
@@ -509,7 +530,7 @@ export default function SelectQuizPage(): React.JSX.Element {
                                                 className="btn-card-start"
                                                 onClick={() => !creating && handleStartQuiz(quiz.id)}
                                             >
-                                                START
+                                                {t('start')}
                                             </button>
                                         </div>
                                     </div>
@@ -529,7 +550,7 @@ export default function SelectQuizPage(): React.JSX.Element {
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M15 18l-6-6 6-6" />
                                 </svg>
-                                Previous
+                                {t('previous')}
                             </button>
                             <span className="pagination-info">
                                 {currentPage} / {totalPages}
@@ -539,7 +560,7 @@ export default function SelectQuizPage(): React.JSX.Element {
                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                 disabled={currentPage === totalPages}
                             >
-                                Next
+                                {t('next')}
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                     <path d="M9 18l6-6-6-6" />
                                 </svg>
