@@ -77,5 +77,25 @@
     "sports": "Sports",
     "science": "Science",
     "language": "Language"
+  },
+  "HostSettings": {
+    "loading": "Loading...",
+    "title": "Settings",
+    "questionsLabel": "Questions",
+    "questionsCount": "{count} QUESTIONS",
+    "durationLabel": "Duration",
+    "durationMinutes": "{min} MINUTES",
+    "difficultyLabel": "Difficulty",
+    "difficultyEasy": "EASY",
+    "difficultyMedium": "MEDIUM",
+    "difficultyHard": "HARD",
+    "soundLabel": "Sound",
+    "buttonLoading": "Loading...",
+    "buttonContinue": "Continue",
+    "cancelDialogTitle": "Cancel Session?",
+    "cancelDialogDesc": "This will delete the game session and return to the quiz selection.",
+    "cancelDialogKeep": "Keep Session",
+    "cancelDialogDeleting": "Deleting...",
+    "cancelDialogDelete": "Delete Session"
   }
 }

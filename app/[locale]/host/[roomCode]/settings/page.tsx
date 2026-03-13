@@ -16,8 +16,4 @@ export default async function HostSettingsPage({ params }: Props) {
     return <SettingsForm roomCode={roomCode} initialData={initialData} />;
 }
 
-
-
-
-//ikan//
-//apel//
+
