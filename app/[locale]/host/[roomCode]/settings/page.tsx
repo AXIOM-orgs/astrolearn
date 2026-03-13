@@ -15,3 +15,8 @@ export default async function HostSettingsPage({ params }: Props) {
     // Pass pre-fetched data to Client Component
     return <SettingsForm roomCode={roomCode} initialData={initialData} />;
 }
+
+
+
+
+//ikan//
