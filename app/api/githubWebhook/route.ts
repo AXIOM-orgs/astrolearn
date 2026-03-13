@@ -32,11 +32,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Not master branch" })
   }
 
-  const commit = payload.head_commit  payload.commits?.[0]
+  const commit = payload.head_commit  payload.commits?.[0];
 
-  const author = commit?.author?.name  "Unknown"
-  const message = commit?.message  "-"
-  const hashShort = commit?.id?.substring(0, 7)  "N/A"
+  const author = commit?.author?.name  "Unknown";
+  const message = commit?.message  "-";
+  const hashShort = commit?.id?.substring(0, 7)  "N/A";
 
   spawn(
     "bash",
