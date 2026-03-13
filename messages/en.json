@@ -27,7 +27,8 @@
     "warning": "Warning",
     "info": "Information",
     "cancel": "Cancel",
-    "close": "Close"
+    "close": "Close",
+    "ok": "OK"
   },
   "Logout": {
     "title": "LOGOUT?",
@@ -39,5 +40,42 @@
     "title": "Sound Settings",
     "bgm": "Background Music",
     "sfx": "Sound Effects"
+  },
+  "Errors": {
+    "failedJoin": "Failed to join game. Please try again.",
+    "invalidCode": "Invalid game code! Please check and try again.",
+    "sessionLocked": "This game has already started or ended.",
+    "roomFull": "This room is full. Cannot join.",
+    "somethingWrong": "Something went wrong. Please try again."
+  },
+  "SelectQuiz": {
+    "title": "SELECT QUIZ",
+    "searchPlaceholder": "Search quizzes...",
+    "search": "Search",
+    "all": "All",
+    "myQuiz": "MY QUIZ",
+    "noFavorites": "No favorites yet",
+    "noFavoritesSub": "Add quizzes to favorites by clicking the heart icon",
+    "noQuizzes": "No quizzes found",
+    "noMyQuizzesSub": "You haven't created any quiz yet",
+    "noQuizzesSub": "Try adjusting your search or filter",
+    "start": "START",
+    "previous": "Previous",
+    "next": "Next",
+    "showAll": "Show all quizzes",
+    "showFavorites": "Show favorites only",
+    "removeFromFavorites": "Remove from favorites",
+    "addToFavorites": "Add to favorites"
+  },
+  "Categories": {
+    "all": "All",
+    "general": "General",
+    "math": "Math",
+    "history": "History",
+    "technology": "Technology",
+    "business": "Business",
+    "sports": "Sports",
+    "science": "Science",
+    "language": "Language"
   }
 }

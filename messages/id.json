@@ -27,7 +27,8 @@
     "warning": "Peringatan",
     "info": "Informasi",
     "cancel": "Batal",
-    "close": "Tutup"
+    "close": "Tutup",
+    "ok": "OK"
   },
   "Logout": {
     "title": "KELUAR?",
@@ -39,5 +40,42 @@
     "title": "Pengaturan Suara",
     "bgm": "Musik Latar",
     "sfx": "Efek Suara"
+  },
+  "Errors": {
+    "failedJoin": "Gagal bergabung ke permainan. Silakan coba lagi.",
+    "invalidCode": "Kode permainan tidak valid! Silakan periksa dan coba lagi.",
+    "sessionLocked": "Permainan ini sudah dimulai atau sudah berakhir.",
+    "roomFull": "Ruangan ini sudah penuh. Tidak bisa bergabung.",
+    "somethingWrong": "Terjadi kesalahan. Silakan coba lagi."
+  },
+  "SelectQuiz": {
+    "title": "PILIH KUIS",
+    "searchPlaceholder": "Cari kuis...",
+    "search": "Cari",
+    "all": "Semua",
+    "myQuiz": "KUIS SAYA",
+    "noFavorites": "Belum ada favorit",
+    "noFavoritesSub": "Tambahkan kuis ke favorit dengan mengklik ikon hati",
+    "noQuizzes": "Kuis tidak ditemukan",
+    "noMyQuizzesSub": "Anda belum membuat kuis apa pun",
+    "noQuizzesSub": "Coba sesuaikan pencarian atau filter Anda",
+    "start": "MULAI",
+    "previous": "Sebelumnya",
+    "next": "Berikutnya",
+    "showAll": "Tampilkan semua kuis",
+    "showFavorites": "Hanya tampilkan favorit",
+    "removeFromFavorites": "Hapus dari favorit",
+    "addToFavorites": "Tambah ke favorit"
+  },
+  "Categories": {
+    "all": "Semua",
+    "general": "Umum",
+    "math": "Matematika",
+    "history": "Sejarah",
+    "technology": "Teknologi",
+    "business": "Bisnis",
+    "sports": "Olahraga",
+    "science": "Sains",
+    "language": "Bahasa"
   }
 }

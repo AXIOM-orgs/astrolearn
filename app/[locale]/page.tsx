@@ -12,7 +12,7 @@ import { LogoutDialog } from '@/components/LogoutDialog';
 import { SoundSettingsDialog } from '@/components/SoundSettingsDialog';
 import { supabaseGame } from '@/lib/supabase';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 const PLAYER_NAME_KEY = 'cosmicquest_player_name';
 const GAME_CODE_KEY = 'cosmicquest_joined_game_code';
@@ -23,6 +23,9 @@ export default function LandingPage(): React.JSX.Element {
     const { user, profile, loading } = useAuth();
     const { showWarning, showError } = useDialog();
     const t = useTranslations('ProfileSidebar');
+    const te = useTranslations('Errors');
+    const locale = useLocale();
+    const isRtl = locale === 'ar';
     const [isJoining, setIsJoining] = useState(false);
 
     const [sectorCode, setSectorCode] = useState('');
@@ -87,7 +90,7 @@ export default function LandingPage(): React.JSX.Element {
 
             if (error) {
                 console.error('Join game error:', error);
-                showError('Failed to join game. Please try again.');
+                showError(te('failedJoin'));
                 hideLoading();
                 setIsJoining(false);
                 return;
@@ -97,16 +100,16 @@ export default function LandingPage(): React.JSX.Element {
             if (data?.error) {
                 switch (data.error) {
                     case 'room_not_found':
-                        showError('Invalid game code! Please check and try again.');
+                        showError(te('invalidCode'));
                         break;
                     case 'session_locked':
-                        showError('This game has already started or ended.');
+                        showError(te('sessionLocked'));
                         break;
                     case 'room_full':
-                        showError('This room is full. Cannot join.');
+                        showError(te('roomFull'));
                         break;
                     default:
-                        showError('Failed to join game.');
+                        showError(te('failedJoin'));
                 }
                 hideLoading();
                 setIsJoining(false);
@@ -132,7 +135,7 @@ export default function LandingPage(): React.JSX.Element {
             router.push(`/player/${code}/waiting`);
         } catch (err) {
             console.error('Join game exception:', err);
-            showError('Something went wrong. Please try again.');
+            showError(te('somethingWrong'));
             hideLoading();
             setIsJoining(false);
         }
@@ -287,7 +290,8 @@ export default function LandingPage(): React.JSX.Element {
                                 placeholder={t('gameCodePlaceholder')}
                                 value={sectorCode}
                                 onChange={(e) => setSectorCode(e.target.value.toUpperCase())}
-                                maxLength={10}
+                                maxLength={6}
+                                dir={isRtl ? 'rtl' : 'ltr'}
                             />
                         </div>
 

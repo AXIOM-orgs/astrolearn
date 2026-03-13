@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 type DialogType = 'success' | 'error' | 'warning' | 'info';
 
@@ -50,6 +50,8 @@ const DialogColors: Record<DialogType, { accent: string; glow: string }> = {
 export function DialogProvider({ children }: { children: React.ReactNode }) {
     const [dialog, setDialog] = useState<DialogData | null>(null);
     const t = useTranslations('Common');
+    const locale = useLocale();
+    const isRtl = locale === 'ar';
 
     const closeDialog = useCallback(() => {
         if (dialog?.onClose) dialog.onClose();
@@ -108,8 +110,9 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                     }}
                 >
                     {/* Dialog Box */}
-                    <div
+                        <div
                         onClick={(e) => e.stopPropagation()}
+                        dir={isRtl ? 'rtl' : 'ltr'}
                         style={{
                             background: 'linear-gradient(145deg, rgba(20, 20, 40, 0.95), rgba(10, 10, 25, 0.98))',
                             border: `1px solid ${colors.accent}40`,
@@ -119,7 +122,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                             maxWidth: '420px',
                             boxShadow: `0 0 40px ${colors.glow}, 0 20px 60px rgba(0, 0, 0, 0.5)`,
                             animation: 'dialogSlideIn 0.3s ease-out',
-                            textAlign: 'center',
+                            textAlign: isRtl ? 'right' : 'center',
                         }}
                     >
                         {/* Icon */}
@@ -181,6 +184,8 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                                 cursor: 'pointer',
                                 transition: 'all 0.2s ease',
                                 boxShadow: `0 4px 15px ${colors.glow}`,
+                                margin: isRtl ? '0 auto 0 0' : '0 auto',
+                                display: 'block'
                             }}
                             onMouseEnter={(e) => {
                                 e.currentTarget.style.transform = 'translateY(-2px)';
@@ -191,7 +196,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                                 e.currentTarget.style.boxShadow = `0 4px 15px ${colors.glow}`;
                             }}
                         >
-                            OK
+                            {t('ok')}
                         </button>
                     </div>
                 </div>

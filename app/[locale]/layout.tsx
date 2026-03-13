@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 
@@ -44,20 +44,15 @@ export default async function RootLayout({ children, params }: RootLayoutProps):
     }
    
     const messages = await getMessages();
+    
+    // Explicitly preload problematic namespaces to ensure they are available for Client Components
+    // deeply nested in dynamic routes on client-side navigation.
+    await getTranslations({ locale, namespace: 'SelectQuiz' });
+    await getTranslations({ locale, namespace: 'Categories' });
 
     return (
-        <html lang={locale} dir="ltr">
-            <body className={`${orbitron.variable} ${spaceMono.variable}`}>
-                <NextIntlClientProvider messages={messages}>
-                    <AuthProvider>
-                        <GameProvider>
-                            <ClientLayout>
-                                {children}
-                            </ClientLayout>
-                        </GameProvider>
-                    </AuthProvider>
-                </NextIntlClientProvider>
-            </body>
-        </html>
+        <NextIntlClientProvider messages={messages} locale={locale}>
+            {children}
+        </NextIntlClientProvider>
     );
 }
