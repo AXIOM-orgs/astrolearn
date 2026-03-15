@@ -161,11 +161,10 @@ let enemyRockets: EnemyRocket[] = [];
 let enemyBullets: Bullet[] = [];
 let bossRocket: BossRocket | null = null;
 let powerUps: PowerUp[] = [];
-let gameLoop: ReturnType<typeof requestAnimationFrame> | null = null;
 let isGameRunning: boolean = false;
-let onComplete: MiniGameCallback | null = null;
-let onStateChange: StateChangeCallback | null = null;
-let callbackCalled: boolean = false;
+let gameLoop: ReturnType<typeof requestAnimationFrame> | null = null;
+let playerSpaceship: Spaceship | null = null;
+let handleStateChange: StateChangeCallback | null = null;
 let currentBgMode: 'starfield' | 'rocket_seq' | 'portrait_scene' = 'starfield';
 
 // ============ OBJECT POOLING SYSTEM ============
@@ -738,34 +737,47 @@ function getScreenPosition(laneX: number, z: number): { x: number; y: number; sc
 }
 
 // ============ MAIN FUNCTIONS ============
+let onComplete: ((stats: GameStats) => void) | null = null;
+let callbackCalled = false;
+let gameTranslations: any = null;
 
 export function startMiniGame(
     spaceship: Spaceship,
     difficulty: DifficultyLevel,
-    callback: MiniGameCallback,
+    completeCallback: (stats: GameStats) => void,
     initialLives?: number,
     initialHP?: number,
-    stateChangeCallback?: StateChangeCallback
+    onStateChange?: (lives: number, hp: number) => void,
+    translations?: any
 ): void {
+    if (isGameRunning) return;
+    
+    playerSpaceship = spaceship;
+    currentDifficulty = difficulty;
+    onComplete = completeCallback;
+    callbackCalled = false;
+    handleStateChange = onStateChange || null;
+    gameTranslations = translations;
     // CRITICAL: Ensure any existing game is fully stopped before starting a new one
     cleanupMiniGame();
 
-    onComplete = callback;
-    onStateChange = stateChangeCallback || null;
-    callbackCalled = false;
     currentDifficulty = difficulty;
 
     canvas = document.getElementById('minigame-canvas') as HTMLCanvasElement;
     if (!canvas) {
         console.error('Canvas not found');
-        callback({ hits: 0, asteroidsDestroyed: 0, bossDestroyed: false, score: 0, success: false, playerHP: 0, isEliminated: false });
+        if (onComplete) {
+            onComplete({ hits: 0, asteroidsDestroyed: 0, bossDestroyed: false, score: 0, success: false, playerHP: 0, isEliminated: false });
+        }
         return;
     }
 
     ctx = canvas.getContext('2d');
     if (!ctx) {
         console.error('Could not get canvas context');
-        callback({ hits: 0, asteroidsDestroyed: 0, bossDestroyed: false, score: 0, success: false, playerHP: 0, isEliminated: false });
+        if (onComplete) {
+            onComplete({ hits: 0, asteroidsDestroyed: 0, bossDestroyed: false, score: 0, success: false, playerHP: 0, isEliminated: false });
+        }
         return;
     }
 
@@ -1404,8 +1416,8 @@ function applyDamage(amount: number): void {
     }
 
     // Trigger state change callback
-    if (onStateChange) {
-        onStateChange(playerLives, playerLifeHP);
+    if (handleStateChange) {
+        handleStateChange(playerLives, playerLifeHP);
     }
 }
 
@@ -1967,6 +1979,7 @@ function drawUI(isInDodgePhase: boolean, elapsed: number): void {
         ctx.fillText(`🛡️ ${immuneTimeLeft.toFixed(1)}s`, barX + heartSize + 55 * scale, livesY + 17 * scale);
     }
 
+    /* // HIDE TOP RIGHT HUD PER REQUEST
     // ===== TOP RIGHT: STATS =====
     const statsX = canvas.width - 15 * scale;
     ctx.textAlign = 'right';
@@ -1991,12 +2004,14 @@ function drawUI(isInDodgePhase: boolean, elapsed: number): void {
 
     ctx.fillStyle = '#ff6666';
     ctx.fillText(`🚀 ${enemyRockets.length}`, statsX, 68 * scale);
+    */
 
-    // ===== BOTTOM: CONTROLS (mobile-friendly) =====
     ctx.textAlign = 'center';
     ctx.font = `${Math.floor(11 * scale)}px Space Mono, monospace`;
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    const controlsText = isMobile ? '👆 TAP & DRAG TO MOVE' : 'MOVE: Mouse/WASD  |  ATTACK: Auto-fire';
+    const desktopControls = gameTranslations?.desktopControls || 'MOVE: Mouse/WASD  |  ATTACK: Auto-fire';
+    const mobileControls = gameTranslations?.mobileControls || '👆 TAP & DRAG TO MOVE';
+    const controlsText = isMobile ? mobileControls : desktopControls;
     ctx.fillText(controlsText, canvas.width / 2, canvas.height - 12 * scale);
 
     // ===== BOSS WARNING OVERLAY =====
@@ -2013,9 +2028,9 @@ function drawUI(isInDodgePhase: boolean, elapsed: number): void {
         ctx.fillStyle = `rgba(255, 0, 0, ${0.7 + Math.sin(Date.now() / 100) * 0.3})`;
         ctx.font = `bold ${Math.floor(48 * scale)}px "Orbitron", sans-serif`;
         ctx.textAlign = 'center';
-        ctx.fillText('⚠ WARNING ⚠', canvas.width / 2, canvas.height / 2 - 20 * scale);
+        ctx.fillText(gameTranslations?.bossWarning || '⚠ WARNING ⚠', canvas.width / 2, canvas.height / 2 - 20 * scale);
         ctx.font = `bold ${Math.floor(24 * scale)}px "Orbitron", sans-serif`;
-        ctx.fillText('BOSS APPROACHING', canvas.width / 2, canvas.height / 2 + 30 * scale);
+        ctx.fillText(gameTranslations?.bossApproaching || 'BOSS APPROACHING', canvas.width / 2, canvas.height / 2 + 30 * scale);
 
         ctx.restore();
     }
@@ -2559,7 +2574,7 @@ function drawBossRocket(): void {
     ctx.fillStyle = '#ff4444';
     ctx.font = 'bold 14px Orbitron, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('BOSS', bossRocket.x, barY + 25);
+    ctx.fillText(gameTranslations?.bossLabel || 'BOSS', bossRocket.x, barY + 25);
 
     ctx.restore();
 }
@@ -4103,20 +4118,23 @@ function endGame(): void {
 
     if (gameStats.success) {
         ctx.fillStyle = '#06ffa5';
-        ctx.fillText('VICTORY!', canvas.width / 2, canvas.height / 2 - 55);
+        ctx.fillText(gameTranslations?.victory || 'VICTORY!', canvas.width / 2, canvas.height / 2 - 55);
     } else {
         ctx.fillStyle = '#ff006e';
-        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 55);
+        ctx.fillText(gameTranslations?.gameOver || 'GAME OVER', canvas.width / 2, canvas.height / 2 - 55);
     }
 
+    /* // HIDE STATS ON END SCREEN PER REQUEST
     ctx.font = '26px Space Mono, monospace';
     ctx.fillStyle = '#b8c1ec';
     ctx.fillText(`Score: ${gameStats.score}`, canvas.width / 2, canvas.height / 2 + 15);
     ctx.fillText(`Destroyed: ${gameStats.asteroidsDestroyed}`, canvas.width / 2, canvas.height / 2 + 50);
+    */
 
-    ctx.font = '18px Space Mono, monospace';
-    ctx.fillStyle = '#00d4ff';
-    ctx.fillText('Continuing...', canvas.width / 2, canvas.height / 2 + 100);
+    ctx.font = '26px Space Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#b8c1ec';
+    ctx.fillText(gameTranslations?.continuing || 'Continuing...', canvas.width / 2, canvas.height / 2 + 50);
 
     setTimeout(() => {
         if (onComplete && !callbackCalled) {

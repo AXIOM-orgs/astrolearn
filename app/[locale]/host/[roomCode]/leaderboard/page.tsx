@@ -7,6 +7,7 @@ import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai
 import { useGame } from '@/context/GameContext'; // pastikan path sesuai
 import { generateXID } from '@/lib/id-generator';
 import { Link } from '@/i18n/routing';
+import { useTranslations, useLocale } from 'next-intl';
 
 // Helper: Generate game PIN
 function generateGamePin(length = 6): string {
@@ -40,6 +41,9 @@ export default function HostLeaderboardPage(): React.JSX.Element {
   const params = useParams();
   const gamePin = params.roomCode as string;
   const { showLoading, hideLoading } = useGame();
+  const t = useTranslations('Leaderboard');
+  const locale = useLocale();
+  const isArabic = locale === 'ar';
 
   const [players, setPlayers] = useState<Participant[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -126,7 +130,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
 
     } catch (err: any) {
       console.error("Restart failed:", err);
-      alert("Gagal merestart game: " + err.message);
+      alert(t('restartFailed') + err.message);
       setIsRestarting(false);
       hideLoading();
     }
@@ -340,10 +344,10 @@ export default function HostLeaderboardPage(): React.JSX.Element {
 
         {/* Floating Buttons */}
         <div className="left-floating-group">
-          <button className="floating-btn home-btn" onClick={handleHome} title="Home">
+          <button className="floating-btn home-btn" onClick={handleHome} title={t('homeTitle')}>
             <Home size={28} />
           </button>
-          <button className="floating-btn restart-btn" onClick={handleRestart} title="Restart" disabled={isRestarting}>
+          <button className="floating-btn restart-btn" onClick={handleRestart} title={t('restartTitle')} disabled={isRestarting}>
             <RotateCw size={28} className={isRestarting ? 'animate-spin' : ''} />
           </button>
         </div>
@@ -355,7 +359,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
             target="_blank"
             rel="noopener noreferrer"
             className="floating-btn statistics-btn"
-            title="See Statistics"
+            title={t('statisticsTitle')}
           >
             <BarChart3 size={28} />
           </a>
@@ -365,7 +369,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         <div className="vanguard-section">
           {players.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-              <p>No players participated in this game.</p>
+              <p>{t('noPlayers')}</p>
             </div>
           ) : (
             <div className="podium-container">
@@ -434,10 +438,10 @@ export default function HostLeaderboardPage(): React.JSX.Element {
               <table className="rankings-table header-only">
                 <thead>
                   <tr>
-                    <th>Rank</th>
-                    <th>Player</th>
-                    <th>Score</th>
-                    <th>Time</th>
+                    <th>{t('rank')}</th>
+                    <th>{t('player')}</th>
+                    <th>{t('score')}</th>
+                    <th>{t('time')}</th>
                   </tr>
                 </thead>
               </table>
@@ -467,12 +471,12 @@ export default function HostLeaderboardPage(): React.JSX.Element {
           <div className="leaderboard-mobile-actions">
             <button className="btn-result-mobile home" onClick={handleHome}>
               <Home size={20} />
-              <span>Home</span>
+              <span>{t('homeButton')}</span>
             </button>
 
             <button className="btn-result-mobile restart" onClick={handleRestart} disabled={isRestarting}>
               <RotateCw size={20} className={isRestarting ? 'animate-spin' : ''} />
-              <span>Restart</span>
+              <span>{t('restartButton')}</span>
             </button>
 
             {sessionId && (
@@ -483,7 +487,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                 className="btn-result-mobile stats"
               >
                 <BarChart3 size={20} />
-                <span>Statistics</span>
+                <span>{t('statisticsButton')}</span>
               </a>
             )}
           </div>

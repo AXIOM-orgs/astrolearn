@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EndGameConfirmationDialog } from '@/components/ui/EndGameConfirmationDialog';
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import { Link } from '@/i18n/routing';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface Participant {
     id: string;
@@ -48,6 +49,9 @@ export default function HostMonitorPage(): React.JSX.Element {
     const gamePin = params.roomCode as string;
     const { showLoading, hideLoading } = useGame();
     const { showError } = useDialog(); // Use Dialog Hook
+    const t = useTranslations('Monitor');
+    const locale = useLocale();
+    const isArabic = locale === 'ar';
 
     const [session, setSession] = useState<Session | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
@@ -468,7 +472,7 @@ export default function HostMonitorPage(): React.JSX.Element {
 
                     <div className="info-item actions">
                         <button className="btn-red-3d" onClick={() => setIsEndConfirmOpen(true)}>
-                            <span>END</span>
+                            <span>{t('endButton')}</span>
                         </button>
                     </div>
                 </div>
@@ -495,7 +499,7 @@ export default function HostMonitorPage(): React.JSX.Element {
                         <div className="progress-grid">
                             {sortedPlayers.length === 0 ? (
                                 <div className="empty-state" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem' }}>
-                                    <p style={{ color: 'var(--text-secondary)' }}>No players have joined yet.</p>
+                                    <p style={{ color: 'var(--text-secondary)' }}>{t('noPlayers')}</p>
                                 </div>
                             ) : (
                                 <AnimatePresence>

@@ -8,6 +8,7 @@ import { supabaseGame } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { Home, BarChart3 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface ParticipantData {
     id: string;
@@ -25,6 +26,9 @@ export default function JoinResultsPage(): React.JSX.Element {
     const params = useParams();
     const { user, profile } = useAuth();
     const { resetGame, showLoading, hideLoading } = useGame();
+    const t = useTranslations('PlayerResult');
+    const locale = useLocale();
+    const isArabic = locale === 'ar';
 
     // State for DB data
     const [myRank, setMyRank] = useState<number | string>('?');
@@ -193,9 +197,13 @@ export default function JoinResultsPage(): React.JSX.Element {
     // Get ordinal suffix for rank
     const getOrdinal = (n: number | string): string => {
         if (typeof n === 'string') return '';
-        const s = ['th', 'st', 'nd', 'rd'];
         const v = n % 100;
-        return s[(v - 20) % 10] || s[v] || s[0];
+        const suffixKey = (v - 20) % 10 === 1 || v === 1 ? 'st' :
+            (v - 20) % 10 === 2 || v === 2 ? 'nd' :
+                (v - 20) % 10 === 3 || v === 3 ? 'rd' : 'th';
+
+        // Return translated suffix
+        return t(`ordinals.${suffixKey}`);
     };
 
     // Format duration mm:ss from SECONDS
@@ -238,7 +246,7 @@ export default function JoinResultsPage(): React.JSX.Element {
             </header>
 
             {/* Navigation Buttons */}
-            <button className="floating-btn home-btn" onClick={handleRestart} title="Home">
+            <button className="floating-btn home-btn" onClick={handleRestart} title={t('homeTitle')}>
                 <Home size={28} />
             </button>
 
@@ -249,7 +257,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="floating-btn statistics-btn"
-                    title="See Statistics"
+                    title={t('statisticsTitle')}
                 >
                     <BarChart3 size={28} />
                 </a>
@@ -258,7 +266,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                     disabled
                     className="floating-btn statistics-btn"
                     style={{ opacity: 0.5, cursor: 'not-allowed', filter: 'grayscale(100%)' }}
-                    title="Waiting for host to finish game"
+                    title={t('waitingStats')}
                 >
                     <BarChart3 size={28} />
                 </button>
@@ -270,7 +278,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                     {/* Elimination Message */}
                     {myStats?.eliminated && (
                         <div className="eliminated-badge">
-                            ELIMINATED
+                            {t('eliminated')}
                         </div>
                     )}
                     {/* Display Spacecraft Image */}
@@ -288,7 +296,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                     )}
                     <div className="result-top-info">
                         <p className="result-pilot-name" id="result-name-display">
-                            {myStats?.nickname || profile?.nickname || profile?.username || 'Pilot'}
+                            {myStats?.nickname || profile?.nickname || profile?.username || t('pilot')}
                         </p>
                     </div>
                 </div>
@@ -297,14 +305,13 @@ export default function JoinResultsPage(): React.JSX.Element {
                     {/* Rank Card */}
                     <div className="result-stat-card rank-card">
                         <div className="rank-display">
-                            <span className="trophy-icon">🏆</span>
                             <span className="result-stat-value rank-value">
-                                {myRank}
+                                #{myRank}
                                 {typeof myRank === 'number' && <sup>{getOrdinal(myRank)}</sup>}
                             </span>
                         </div>
                         <span className="result-stat-label">
-                            {isSessionFinished ? 'Rank' : 'Waiting...'}
+                            {isSessionFinished ? t('rank') : t('waitingRank')}
                         </span>
                     </div>
 
@@ -313,7 +320,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                         <span className="result-stat-value" id="result-score">
                             {myStats?.score ?? '-'}
                         </span>
-                        <span className="result-stat-label">Score</span>
+                        <span className="result-stat-label">{t('score')}</span>
                     </div>
 
                     {/* Correct Card - FROM DB */}
@@ -322,7 +329,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                             <span id="result-correct">{myStats?.correct ?? '-'}</span>
                             /<span id="result-total">{totalQuestions}</span>
                         </span>
-                        <span className="result-stat-label">Correct</span>
+                        <span className="result-stat-label">{t('correct')}</span>
                     </div>
 
                     {/* Duration Card - FROM DB */}
@@ -330,7 +337,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                         <span className="result-stat-value">
                             {formatDuration(myStats?.duration)}
                         </span>
-                        <span className="result-stat-label">Time</span>
+                        <span className="result-stat-label">{t('time')}</span>
                     </div>
                 </div>
 
@@ -338,7 +345,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                 <div className="result-mobile-actions">
                     <button className="btn-result-mobile home" onClick={handleRestart}>
                         <Home size={20} />
-                        <span>Home</span>
+                        <span>{t('homeTitle')}</span>
                     </button>
 
                     {isSessionFinished && sessionId && myStats?.id ? (
@@ -349,12 +356,12 @@ export default function JoinResultsPage(): React.JSX.Element {
                             className="btn-result-mobile stats"
                         >
                             <BarChart3 size={20} />
-                            <span>Statistics</span>
+                            <span>{t('statisticsButton')}</span>
                         </a>
                     ) : (
                         <button className="btn-result-mobile stats disabled" disabled>
                             <BarChart3 size={20} />
-                            <span>Statistics</span>
+                            <span>{t('statisticsButton')}</span>
                         </button>
                     )}
                 </div>

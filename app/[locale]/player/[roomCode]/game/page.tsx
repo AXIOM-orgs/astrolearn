@@ -6,6 +6,7 @@ import { useGame } from '@/context/GameContext';
 import { startMiniGame, cleanupMiniGame, GameStats } from '@/lib/miniGame';
 import { supabaseGame } from '@/lib/supabase';
 import { Spaceship, spaceships, DifficultyLevel } from '@/lib/data';
+import { useTranslations } from 'next-intl';
 
 // Helper: find Spaceship object from filename (replicated from waiting page)
 const findSpaceshipByFilename = (filename: string | null): Spaceship | null => {
@@ -14,6 +15,7 @@ const findSpaceshipByFilename = (filename: string | null): Spaceship | null => {
 };
 
 export default function GamePage(): React.JSX.Element {
+    const t = useTranslations('MiniGame');
     const router = useRouter();
     const params = useParams();
     const roomCode = params.roomCode as string;
@@ -205,13 +207,25 @@ export default function GamePage(): React.JSX.Element {
 
         const initTimeout = setTimeout(() => {
             if (gameState.selectedSpaceship) {
+                const translations = {
+                    mobileControls: t('mobileControls'),
+                    desktopControls: t('desktopControls'),
+                    bossWarning: t('bossWarning'),
+                    bossApproaching: t('bossApproaching'),
+                    bossLabel: t('bossLabel'),
+                    victory: t('victory'),
+                    gameOver: t('gameOver'),
+                    continuing: t('continuing')
+                };
+
                 startMiniGame(
                     gameState.selectedSpaceship,
                     gameState.selectedDifficulty || 'easy',
                     handleGameComplete,
                     initialLives,
                     initialHP,
-                    handleStateChange
+                    handleStateChange,
+                    translations
                 );
             }
         }, 600);
@@ -220,7 +234,7 @@ export default function GamePage(): React.JSX.Element {
             clearTimeout(initTimeout);
             cleanupMiniGame();
         };
-    }, [isInitializing, gameState.selectedSpaceship, gameState.selectedDifficulty, handleGameComplete]);
+    }, [isInitializing, gameState.selectedSpaceship, gameState.selectedDifficulty, handleGameComplete, t]);
 
     if (isInitializing) {
         return (

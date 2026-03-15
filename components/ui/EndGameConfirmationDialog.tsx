@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 interface EndGameConfirmationDialogProps {
     isOpen: boolean;
@@ -9,6 +10,8 @@ interface EndGameConfirmationDialogProps {
 }
 
 export function EndGameConfirmationDialog({ isOpen, onClose, onConfirm }: EndGameConfirmationDialogProps): React.JSX.Element | null {
+    const t = useTranslations('Monitor');
+
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -38,20 +41,20 @@ export function EndGameConfirmationDialog({ isOpen, onClose, onConfirm }: EndGam
                     </svg>
                 </div>
 
-                <h2 className="exit-dialog-title">END GAME</h2>
+                <h2 className="exit-dialog-title">{t('endDialogTitle')}</h2>
                 <p className="exit-dialog-message">
-                    Are you sure you want to end the game?
+                    {t('endDialogMessage')}
                 </p>
 
                 <div className="exit-dialog-actions">
                     <button className="btn-dialog-cancel" onClick={onClose}>
-                        CANCEL
+                        {t('cancel')}
                     </button>
                     <button className="btn-dialog-confirm-exit" onClick={onConfirm}>
-                        END
+                        {t('end')}
                     </button>
                 </div>
             </div>
         </div>
     );
-}
+}

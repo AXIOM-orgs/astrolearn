@@ -2741,12 +2741,14 @@ input[type="text"]:focus {
 [dir='rtl'] .custom-dropdown-trigger span:first-child {
   flex: 1;
   text-align: right;
-  order: 1; /* Text first (left) */
+  order: 1;
+  /* Text first (left) */
 }
 
 [dir='rtl'] .custom-dropdown-trigger .flag-icon,
 [dir='rtl'] .custom-dropdown-trigger svg {
-  order: 2; /* Icon last (right) */
+  order: 2;
+  /* Icon last (right) */
   margin-left: 8px;
   margin-right: 0;
 }
@@ -3201,21 +3203,40 @@ input[type="text"]:focus {
   gap: 0.75rem;
 }
 
-/* Settings RTL Overrides */
-.settings-rtl .form-group label {
+/* Selective RTL Support for Arabic (LTR overall, RTL for specific elements) */
+[dir='rtl'] .kick-dialog-title,
+[dir='rtl'] .exit-dialog-title,
+[dir='rtl'] .cyan-dialog-title {
+  text-align: right !important;
+  direction: rtl;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  flex-direction: row-reverse !important;
+  justify-content: flex-start !important;
+}
+
+[dir='rtl'] .cyan-dialog-search-wrapper input {
   text-align: right !important;
   direction: rtl;
 }
 
-.settings-rtl .dropdown-trigger {
+[dir='rtl'] .cyan-dialog-search-wrapper input::placeholder {
+  text-align: right !important;
+}
+
+/* Lobby Settings Menu RTL */
+[dir='rtl'] .settings-menu-item {
+  flex-direction: row-reverse !important;
+  text-align: right !important;
+}
+
+[dir='rtl'] .settings-menu-item .flex.items-center.gap-3 {
   flex-direction: row-reverse !important;
 }
 
-.settings-rtl .sound-card-wrapper {
-  flex-direction: row-reverse !important;
-}
-
-.settings-rtl .difficulty-grid {
+[dir='rtl'] .settings-menu-title {
+  text-align: right !important;
   direction: rtl;
 }
 

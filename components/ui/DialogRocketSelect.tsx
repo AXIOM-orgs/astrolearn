@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { spaceships, Spaceship } from '@/lib/data';
 
 interface DialogRocketSelectProps {
@@ -16,6 +17,8 @@ export function DialogRocketSelect({
     onSelect,
     currentSpaceship
 }: DialogRocketSelectProps): React.JSX.Element | null {
+    const t = useTranslations('WaitingRoom');
+
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -52,7 +55,7 @@ export function DialogRocketSelect({
                     <span>✕</span>
                 </button>
 
-                <h2 className="dialog-title">Select Rocket</h2>
+                <h2 className="dialog-title text-center">{t('selectRocketTitle')}</h2>
                 <div className="rocket-select-grid">
                     {spaceships.map(ship => (
                         <div
@@ -67,7 +70,7 @@ export function DialogRocketSelect({
                                 <span className="rocket-name" style={{ color: ship.color }}>{ship.name}</span>
                             </div>
                             {currentSpaceship?.id === ship.id && (
-                                <div className="current-badge">CURRENT</div>
+                                <div className="current-badge">{t('currentBadge')}</div>
                             )}
                         </div>
                     ))}

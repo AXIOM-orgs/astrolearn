@@ -156,10 +156,10 @@ export default function AutoJoinPage() {
             {showAlert && (
                 <div className="loading-overlay" style={{ background: 'rgba(0,0,0,0.8)' }}>
                     <div className="glass-panel" style={{ width: '90%', maxWidth: '400px', textAlign: 'center', position: 'relative' }}>
-                        <div className="mb-4">
-                            {/* Uses a generic error icon or image if available, otherwise just text */}
+                        {/* <div className="mb-4">
+                            {/* Uses a generic error icon or image if available, otherwise just text 
                             <div className="text-6xl mb-2">⚠️</div>
-                        </div>
+                        </div> */}
                         <h2 className="section-title" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
                             {errorDetails.title}
                         </h2>

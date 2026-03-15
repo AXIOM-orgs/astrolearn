@@ -50,6 +50,11 @@ export default async function RootLayout({ children, params }: RootLayoutProps):
     await getTranslations({ locale, namespace: 'SelectQuiz' });
     await getTranslations({ locale, namespace: 'Categories' });
     await getTranslations({ locale, namespace: 'HostSettings' });
+    await getTranslations({ locale, namespace: 'WaitingRoom' });
+    await getTranslations({ locale, namespace: 'Monitor' });
+    await getTranslations({ locale, namespace: 'PlayerResult' });
+    await getTranslations({ locale, namespace: 'Leaderboard' });
+    await getTranslations({ locale, namespace: 'Lobby' });
 
     return (
         <NextIntlClientProvider messages={messages} locale={locale}>
