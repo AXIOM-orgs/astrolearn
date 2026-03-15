@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 interface ExitConfirmationDialogProps {
     isOpen: boolean;
@@ -9,6 +10,8 @@ interface ExitConfirmationDialogProps {
 }
 
 export function ExitConfirmationDialog({ isOpen, onClose, onConfirm }: ExitConfirmationDialogProps): React.JSX.Element | null {
+    const t = useTranslations('WaitingRoom');
+
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -38,9 +41,9 @@ export function ExitConfirmationDialog({ isOpen, onClose, onConfirm }: ExitConfi
                     </svg>
                 </div>
 
-                <h2 className="exit-dialog-title">EXIT</h2>
+                <h2 className="exit-dialog-title">{t('exitTitle')}</h2>
                 <p className="exit-dialog-message">
-                    Are you sure you want to end this game session?<br />
+                    {t('exitConfirmMessage')}<br />
                 </p>
 
                 <div className="exit-dialog-actions">
@@ -48,7 +51,7 @@ export function ExitConfirmationDialog({ isOpen, onClose, onConfirm }: ExitConfi
                         className="btn-dialog-cancel"
                         onClick={onClose}
                     >
-                        CANCEL
+                        {t('cancel')}
                     </button>
                     <button
                         className="btn-dialog-confirm-exit"
@@ -59,7 +62,7 @@ export function ExitConfirmationDialog({ isOpen, onClose, onConfirm }: ExitConfi
                             <polyline points="16 17 21 12 16 7"></polyline>
                             <line x1="21" y1="12" x2="9" y2="12"></line>
                         </svg> */}
-                        EXIT
+                        {t('exit')}
                     </button>
                 </div>
             </div>

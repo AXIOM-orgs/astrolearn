@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { UserPlus, X, Search, Loader2, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface FriendProfile {
     id: string;
@@ -26,6 +27,9 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
     const [loadingFriends, setLoadingFriends] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [invitingStatus, setInvitingStatus] = useState<Record<string, 'idle' | 'loading' | 'invited'>>({});
+    const t = useTranslations('Lobby');
+    const locale = useLocale();
+    const isArabic = locale === 'ar';
 
     // Fetch mutual friends from Supabase
     const fetchFriends = useCallback(async () => {
@@ -44,7 +48,7 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
 
             if (iFollowError) {
                 console.error('Error fetching following:', iFollowError);
-                setFetchError('Gagal memuat daftar teman');
+                setFetchError(t('gagalMemuat') + ' ' + t('player'));
                 return;
             }
 
@@ -57,7 +61,7 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
 
             if (followMeError) {
                 console.error('Error fetching followers:', followMeError);
-                setFetchError('Gagal memuat daftar teman');
+                setFetchError(t('gagalMemuat') + ' ' + t('player'));
                 return;
             }
 
@@ -79,14 +83,14 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
 
             if (profilesError) {
                 console.error('Error fetching profiles:', profilesError);
-                setFetchError('Gagal memuat profil teman');
+                setFetchError(t('gagalMemuat') + ' ' + t('player'));
                 return;
             }
 
             setFriends(profiles || []);
         } catch (err) {
             console.error('Error fetching friends:', err);
-            setFetchError('Terjadi kesalahan saat memuat teman');
+            setFetchError(t('gagalMemuat') + ' ' + t('player'));
         } finally {
             setLoadingFriends(false);
         }
@@ -149,7 +153,10 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
                     user_id: friendId,
                     type: 'game_invite',
                     title: 'Game Invite',
-                    message: `${profile.username || profile.nickname || 'Someone'} mengundang kamu bermain quiz! Kode: ${roomCode}`,
+                    message: t('inviteNotificationMessage', { 
+                        name: profile.username || profile.nickname || 'Someone',
+                        code: roomCode 
+                    }),
                     data: {
                         room_code: roomCode,
                         invited_by: profile.id,
@@ -182,10 +189,10 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
             <div className="cyan-dialog-content">
 
                 {/* Header */}
-                <div className="cyan-dialog-header">
+                <div className="cyan-dialog-header" dir={isArabic ? 'rtl' : 'ltr'}>
                     <h2 className="cyan-dialog-title">
                         <UserPlus size={28} />
-                        Invite Friends
+                        {t('inviteFriends')}
                     </h2>
                 </div>
 
@@ -203,11 +210,12 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
                     <div className="cyan-dialog-search-wrapper">
                         <input
                             type="text"
-                            placeholder="Find a friend..."
+                            placeholder={t('findFriend')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(searchQuery)}
                             className="font-orbitron"
+                            dir={isArabic ? 'rtl' : 'ltr'}
                         />
                         <button
                             className="search-icon-btn"
@@ -224,7 +232,7 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
                             {loadingFriends && (
                                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-[#00d4ff]">
                                     <Loader2 size={32} className="animate-spin" />
-                                    <span className="font-orbitron text-sm tracking-widest uppercase text-white/40">Loading friends...</span>
+                                    <span className="font-orbitron text-sm tracking-widest uppercase text-white/40">{t('loadingFriends')}</span>
                                 </div>
                             )}
 
@@ -237,7 +245,7 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
                                         onClick={fetchFriends}
                                         className="mt-2 px-4 py-1.5 rounded-md font-orbitron text-[0.7rem] font-bold tracking-wider bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all"
                                     >
-                                        RETRY
+                                        {t('retry')}
                                     </button>
                                 </div>
                             )}
@@ -281,7 +289,7 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
                                                 }
                                         `}
                                         >
-                                            {status === 'idle' && 'INVITE'}
+                                            {status === 'idle' && t('invite')}
                                             {status === 'loading' && <Loader2 size={16} className="animate-spin text-[#00d4ff]" />}
                                             {status === 'invited' && (
                                                 <div className="flex items-center gap-1">
@@ -300,7 +308,7 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
                                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-white/30">
                                     <Search size={32} className="opacity-50" />
                                     <span className="font-orbitron text-sm tracking-widest uppercase">
-                                        {friends.length === 0 ? 'Belum ada teman' : 'No friends found'}
+                                        {friends.length === 0 ? t('noFriendsYet') : t('noFriendsFound')}
                                     </span>
                                 </div>
                             )}

@@ -1,6 +1,5 @@
-'use client';
-
 import React from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface KickPlayerDialogProps {
     isOpen: boolean;
@@ -17,6 +16,10 @@ export function KickPlayerDialog({
     playerNickname,
     playerSpacecraft
 }: KickPlayerDialogProps): React.JSX.Element | null {
+    const t = useTranslations('Lobby');
+    const locale = useLocale();
+    const isArabic = locale === 'ar';
+
     React.useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -50,8 +53,8 @@ export function KickPlayerDialog({
                     )}
                 </div>
 
-                <h2 className="kick-dialog-title">
-                    Kick {playerNickname}?
+                <h2 className="kick-dialog-title" dir={isArabic ? 'rtl' : 'ltr'}>
+                    {t('kickTitle', { name: playerNickname })}
                 </h2>
 
                 <div className="kick-dialog-actions">
@@ -59,13 +62,13 @@ export function KickPlayerDialog({
                         className="btn-kick-cancel"
                         onClick={onClose}
                     >
-                        CANCEL
+                        {t('cancel')}
                     </button>
                     <button
                         className="btn-kick-confirm"
                         onClick={onConfirm}
                     >
-                        KICK
+                        {t('kick')}
                     </button>
                 </div>
             </div>

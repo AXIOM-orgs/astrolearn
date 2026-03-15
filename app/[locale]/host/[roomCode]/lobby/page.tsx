@@ -13,6 +13,7 @@ import { KickPlayerDialog } from '@/components/ui/KickPlayerDialog';
 import { InviteGroupsDialog } from '@/components/ui/InviteGroupsDialog';
 import { InviteFriendsDialog } from '@/components/ui/InviteFriendsDialog';
 import { X, Menu, Maximize, Minimize, Volume2, VolumeX, Users, UserPlus } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface Participant {
     id: string;
@@ -34,6 +35,9 @@ export default function HostLobbyPage(): React.JSX.Element {
     const params = useParams();
     const roomCode = params.roomCode as string;
     const { showLoading, hideLoading } = useGame();
+    const t = useTranslations('Lobby');
+    const locale = useLocale();
+    const isArabic = locale === 'ar';
 
     const [session, setSession] = useState<SessionData | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
@@ -463,7 +467,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                             <button
                                 className={`btn-copy-code-inline ${copySuccess ? 'success' : ''}`}
                                 onClick={handleCopyCode}
-                                title="Copy"
+                                title={t('invite')}
                             >
                                 {copySuccess ? (
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -522,7 +526,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                     setUrlCopySuccess(true);
                                     setTimeout(() => setUrlCopySuccess(false), 2000);
                                 }}
-                                title="Copy link"
+                                title={t('invite')}
                             >
                                 {urlCopySuccess ? (
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -542,7 +546,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M18 6L6 18M6 6l12 12"></path>
                             </svg>
-                            <span>EXIT</span>
+                            <span>{t('exit')}</span>
                         </button>
                         <button
                             className={`btn-launch ${participants.length === 0 ? 'disabled' : ''}`}
@@ -552,7 +556,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <polygon points="5 3 19 12 5 21 5 3"></polygon>
                             </svg>
-                            <span>{isStarting ? 'Starting...' : 'START'}</span>
+                            <span>{isStarting ? t('starting') : t('start')}</span>
                         </button>
                     </div>
                 </div>
@@ -569,18 +573,18 @@ export default function HostLobbyPage(): React.JSX.Element {
                                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                 </svg>
-                                <span className="font-orbitron">{totalCount} {totalCount <= 1 ? 'Player' : 'Players'}</span>
+                                <span className="font-orbitron">{t('playerCount', { count: totalCount })}</span>
                             </div>
                             <button
                                 className="btn-invite-lobby"
-                                title="Invite Group"
+                                title={t('inviteGroup')}
                                 onClick={() => setShowInviteGroupsDialog(true)}
                             >
                                 <Users size={20} />
                             </button>
                             <button
                                 className="btn-invite-lobby"
-                                title="Invite Friends"
+                                title={t('inviteFriends')}
                                 onClick={() => setShowInviteFriendsDialog(true)}
                             >
                                 <UserPlus size={20} />
@@ -600,42 +604,42 @@ export default function HostLobbyPage(): React.JSX.Element {
                                 <button
                                     className={`w-[38px] h-[38px] flex items-center justify-center bg-white/10 border border-white/20 rounded-lg text-white transition-all backdrop-blur-[10px] hover:bg-white/20 hover:border-[#00d4ff] hover:shadow-[0_0_15px_rgba(0,212,255,0.3)] ${showSettings ? 'bg-[#00d4ff] text-white border-[#00d4ff] shadow-[0_0_20px_rgba(0,212,255,0.5)]' : ''}`}
                                     onClick={() => setShowSettings(!showSettings)}
-                                    title="Settings"
+                                    title={t('settings')}
                                 >
                                     <Menu size={20} />
                                 </button>
 
                                 {showSettings && (
-                                    <div className="absolute top-[calc(100%+20px)] right-0 w-[290px] bg-[#0a0e27]/95 backdrop-blur-[24px] border border-[#00d4ff]/30 rounded-xl p-0 z-[1000] shadow-[0_25px_60px_rgba(0,0,0,0.9)] animate-in fade-in slide-in-from-top-4 duration-300 ring-1 ring-white/10 overflow-hidden">
-                                        <div className="font-orbitron text-[0.9rem] font-bold text-[#00d4ff] bg-white/5 py-4 px-5 tracking-[3px] border-b border-white/10 flex items-center justify-center uppercase">
-                                            SETTINGS
+                                    <div className="absolute top-[calc(100%+20px)] right-0 w-[290px] bg-[#0a0e27]/95 backdrop-blur-[24px] border border-[#00d4ff]/30 rounded-xl p-0 z-[1000] shadow-[0_25px_60px_rgba(0,0,0,0.9)] animate-in fade-in slide-in-from-top-4 duration-300 ring-1 ring-white/10 overflow-hidden" dir={isArabic ? 'rtl' : 'ltr'}>
+                                        <div className="font-orbitron text-[0.9rem] font-bold text-[#00d4ff] bg-white/5 py-4 px-5 tracking-[3px] border-b border-white/10 flex items-center justify-center uppercase settings-menu-title">
+                                            {t('settingsTitle')}
                                         </div>
 
                                         <div className="p-4 !mx-3 !my-2 flex flex-col gap-2">
                                             {/* Fullscreen Toggle */}
                                             <button
-                                                className="flex items-center justify-between w-full p-4 pr-6 rounded-lg hover:bg-[#00d4ff]/10 hover:shadow-[inset_0_0_15px_rgba(0,212,255,0.1)] transition-all group"
+                                                className="flex items-center justify-between w-full p-4 pr-6 rounded-lg hover:bg-[#00d4ff]/10 hover:shadow-[inset_0_0_15px_rgba(0,212,255,0.1)] transition-all group settings-menu-item"
                                                 onClick={toggleFullscreen}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex items-center justify-center w-8 h-8 rounded-md bg-white/5 text-[#00d4ff] group-hover:scale-110 transition-transform">
                                                         {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
                                                     </div>
-                                                    <span className="font-space-mono text-sm text-[#b8c1ec] group-hover:text-white transition-colors">Fullscreen</span>
+                                                    <span className="font-space-mono text-sm text-[#b8c1ec] group-hover:text-white transition-colors">{t('fullscreen')}</span>
                                                 </div>
                                                 <div className="text-[10px] text-[#00d4ff] font-orbitron font-bold drop-shadow-[0_0_5px_rgba(0,212,255,0.5)]">{isFullscreen ? 'ON' : 'OFF'}</div>
                                             </button>
 
                                             {/* Sound Toggle */}
                                             <div
-                                                className="flex items-center justify-between w-full p-4 pr-6 rounded-lg hover:bg-[#00d4ff]/10 hover:shadow-[inset_0_0_15px_rgba(0,212,255,0.1)] transition-all group cursor-pointer"
+                                                className="flex items-center justify-between w-full p-4 pr-6 rounded-lg hover:bg-[#00d4ff]/10 hover:shadow-[inset_0_0_15px_rgba(0,212,255,0.1)] transition-all group cursor-pointer settings-menu-item"
                                                 onClick={toggleSound}
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex items-center justify-center w-8 h-8 rounded-md bg-white/5 text-[#00d4ff] group-hover:scale-110 transition-transform">
                                                         {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
                                                     </div>
-                                                    <span className="font-space-mono text-sm text-[#b8c1ec] group-hover:text-white transition-colors">Sound</span>
+                                                    <span className="font-space-mono text-sm text-[#b8c1ec] group-hover:text-white transition-colors">{t('sound')}</span>
                                                 </div>
 
                                                 {/* Premium Toggle Switch */}
@@ -672,7 +676,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                         className="waiting-astronaut"
                                     />
                                 </div>
-                                <p className="waiting-text">WAITING FOR PLAYERS...</p>
+                                <p className="waiting-text">{t('waitingForPlayers')}</p>
                                 <div className="waiting-dots">
                                     <span></span>
                                     <span></span>
@@ -687,7 +691,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                         <button
                                             className="btn-kick-player"
                                             onClick={() => handleKickPlayer(player)}
-                                            title="Kick player"
+                                            title={t('kick')}
                                         >
                                             <X size={16} />
                                         </button>

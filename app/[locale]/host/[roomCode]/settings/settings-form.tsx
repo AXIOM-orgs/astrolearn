@@ -191,7 +191,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
     const isSetupComplete = duration && questionCount && selectedDifficulty;
 
     return (
-        <section id="screen-setup" className={`screen active ${isRtl ? 'settings-rtl' : ''}`}>
+        <section id="screen-setup" className="screen active">
             <div className="container">
                 <div className="glass-panel">
 

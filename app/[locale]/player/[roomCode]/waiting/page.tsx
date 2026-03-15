@@ -10,6 +10,7 @@ import { ExitConfirmationDialog } from '@/components/ui/ExitConfirmationDialog';
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import { Spaceship, spaceships } from '@/lib/data';
 import { Link } from '@/i18n/routing';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface Participant {
     id: string;
@@ -49,6 +50,9 @@ export default function PlayerWaitingPage(): React.JSX.Element {
     const params = useParams();
     const roomCode = params.roomCode as string;
     const { showLoading, hideLoading } = useGame();
+    const t = useTranslations('WaitingRoom');
+    const locale = useLocale();
+    const isArabic = locale === 'ar';
 
     const [session, setSession] = useState<SessionData | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
@@ -338,7 +342,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                             backgroundClip: 'text',
                             textShadow: '0 4px 10px rgba(0,0,0,0.5)'
                         }}>
-                        WAITING ROOM
+                        {t('waitingRoomTitle')}
                     </h1> */}
 
                     {/* Player Panel*/}
@@ -362,7 +366,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                                                 className={`waiting-player-card ${isCurrentUser ? 'current-user' : ''}`}
                                             >
                                                 {isCurrentUser && (
-                                                    <div className="you-badge">YOU</div>
+                                                    <div className="you-badge">{t('youBadge')}</div>
                                                 )}
                                                 <div className="player-icon">
                                                     {player.spacecraft ? (
@@ -398,7 +402,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                         className="btn-refit"
                         onClick={() => setShowRefitDialog(true)}
                     >
-                        <span>CHANGE ROCKET</span>
+                        <span>{t('changeRocket')}</span>
                     </button>
                 </div>
 

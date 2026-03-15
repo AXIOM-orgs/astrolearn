@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Users, X, Search, Loader2, Check, Crown, Shield, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface GroupMember {
     user_id: string;
@@ -36,6 +37,9 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
     const [loadingGroups, setLoadingGroups] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [invitingStatus, setInvitingStatus] = useState<Record<string, 'idle' | 'loading' | 'invited'>>({});
+    const t = useTranslations('Lobby');
+    const locale = useLocale();
+    const isArabic = locale === 'ar';
 
     // Fetch groups the user has joined
     const fetchGroups = useCallback(async () => {
@@ -55,14 +59,14 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
 
             if (error) {
                 console.error('Error fetching groups:', error);
-                setFetchError('Gagal memuat groups');
+                setFetchError(t('gagalMemuat') + ' groups');
                 return;
             }
 
             setGroups(data || []);
         } catch (err) {
             console.error('Error fetching groups:', err);
-            setFetchError('Terjadi kesalahan saat memuat groups');
+            setFetchError(t('gagalMemuat') + ' groups');
         } finally {
             setLoadingGroups(false);
         }
@@ -133,7 +137,7 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
                 username: profile.username || profile.nickname || 'Unknown',
                 room_code: roomCode,
                 created_at: new Date().toISOString(),
-                message: `mengundang group untuk bermain quiz. Kode: ${roomCode}`
+                message: t('inviteActivityMessage', { code: roomCode })
             };
 
             // Update group activities with the new invite
@@ -166,9 +170,9 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
     // Role icon & badge
     const RoleBadge = ({ role }: { role: 'owner' | 'admin' | 'member' }) => {
         const config = {
-            owner: { icon: <Crown size={12} />, label: 'Owner', color: 'text-[#FFD700]', bg: 'bg-[#FFD700]/10 border-[#FFD700]/30' },
-            admin: { icon: <Shield size={12} />, label: 'Admin', color: 'text-[#00d4ff]', bg: 'bg-[#00d4ff]/10 border-[#00d4ff]/30' },
-            member: { icon: <User size={12} />, label: 'Member', color: 'text-white/50', bg: 'bg-white/5 border-white/10' },
+            owner: { icon: <Crown size={12} />, label: t('owner'), color: 'text-[#FFD700]', bg: 'bg-[#FFD700]/10 border-[#FFD700]/30' },
+            admin: { icon: <Shield size={12} />, label: t('admin'), color: 'text-[#00d4ff]', bg: 'bg-[#00d4ff]/10 border-[#00d4ff]/30' },
+            member: { icon: <User size={12} />, label: t('member'), color: 'text-white/50', bg: 'bg-white/5 border-white/10' },
         };
         const c = config[role];
         return (
@@ -184,10 +188,10 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
             <div className="cyan-dialog-content">
 
                 {/* Header */}
-                <div className="cyan-dialog-header">
+                <div className="cyan-dialog-header" dir={isArabic ? 'rtl' : 'ltr'}>
                     <h2 className="cyan-dialog-title">
                         <Users size={28} />
-                        Invite Groups
+                        {t('inviteGroup')}
                     </h2>
                 </div>
 
@@ -205,11 +209,12 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
                     <div className="cyan-dialog-search-wrapper">
                         <input
                             type="text"
-                            placeholder="Find a group..."
+                            placeholder={t('findGroup')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(searchQuery)}
                             className="font-orbitron"
+                            dir={isArabic ? 'rtl' : 'ltr'}
                         />
                         <button
                             className="search-icon-btn"
@@ -226,7 +231,7 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
                             {loadingGroups && (
                                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-[#00d4ff]">
                                     <Loader2 size={32} className="animate-spin" />
-                                    <span className="font-orbitron text-sm tracking-widest uppercase text-white/40">Loading groups...</span>
+                                    <span className="font-orbitron text-sm tracking-widest uppercase text-white/40">{t('loadingGroups')}</span>
                                 </div>
                             )}
 
@@ -239,7 +244,7 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
                                         onClick={fetchGroups}
                                         className="mt-2 px-4 py-1.5 rounded-md font-orbitron text-[0.7rem] font-bold tracking-wider bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all"
                                     >
-                                        RETRY
+                                        {t('retry')}
                                     </button>
                                 </div>
                             )}
@@ -278,18 +283,18 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
                                                     }
                                             `}
                                             >
-                                                {status === 'idle' && 'INVITE'}
+                                                {status === 'idle' && t('invite')}
                                                 {status === 'loading' && <Loader2 size={16} className="animate-spin text-[#00d4ff]" />}
                                                 {status === 'invited' && (
                                                     <div className="flex items-center gap-1">
                                                         <Check size={14} className="drop-shadow-[0_0_8px_rgba(6,255,165,0.8)]" />
-                                                        <span>INVITED</span>
+                                                        <span>{t('invited')}</span>
                                                     </div>
                                                 )}
                                             </button>
                                         ) : (
                                             <span className="px-3 py-1 rounded-md font-orbitron text-[0.65rem] font-bold tracking-wider text-white/30 bg-white/5 border border-white/10 min-w-[90px] text-center">
-                                                NO ACCESS
+                                                {t('noAccess')}
                                             </span>
                                         )}
 
@@ -302,7 +307,7 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
                                 <div className="flex flex-col items-center justify-center py-12 gap-3 text-white/30">
                                     <Search size={32} className="opacity-50" />
                                     <span className="font-orbitron text-sm tracking-widest uppercase">
-                                        {groups.length === 0 ? 'Belum join group' : 'No groups found'}
+                                        {groups.length === 0 ? t('notJoinedGroup') : t('noGroupsFound')}
                                     </span>
                                 </div>
                             )}
