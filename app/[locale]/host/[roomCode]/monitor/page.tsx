@@ -12,12 +12,13 @@ import { EndGameConfirmationDialog } from '@/components/ui/EndGameConfirmationDi
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
+import { getSpacecraftImage } from '@/lib/data';
 
 interface Participant {
     id: string;
     nickname: string;
-    spacecraft: string; // contoh: "characters/players/galaksi2.webp"
-    answers: any; // JSON string array
+    spacecraft: string;
+    answers: any;
     current_question?: number;
     finished_at: string | null;
     joined_at: string;
@@ -540,7 +541,7 @@ export default function HostMonitorPage(): React.JSX.Element {
                                                 <div className="progress-card-body">
                                                     {player.spacecraft ? (
                                                         <img
-                                                            src={`/assets/images/characters/players/${player.spacecraft}`}
+                                                            src={getSpacecraftImage(player.spacecraft)}
                                                             alt="spacecraft"
                                                             className={`progress-spacecraft ${!player.isCompleted && !player.isEliminated ? 'animate-float' : ''}`}
                                                         />

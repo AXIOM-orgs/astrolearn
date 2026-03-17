@@ -460,36 +460,36 @@ export const spaceships: Spaceship[] = [
         name: "Nebula Striker",
         description: "Fast and agile fighter craft",
         speed: 9,
-        color: "#0026ffff",
+        color: "#ff9e00",
         emoji: "🚀",
-        image: "/assets/images/characters/players/main_4_2_2.png"
+        image: "/assets/images/characters/roket/roket-1.webp"
     },
     {
         id: 2,
         name: "Quantum UFO",
         description: "Advanced exploration vessel",
         speed: 7,
-        color: "#9d4edd",
+        color: "#ff9e00",
         emoji: "🛸",
-        image: "/assets/images/characters/players/galaksi2.webp"
+        image: "/assets/images/characters/roket/roket-2.webp"
     },
     {
         id: 3,
         name: "Stellar Phoenix",
         description: "Heavy combat cruiser",
         speed: 6,
-        color: "#ff006e",
+        color: "#ff9e00",
         emoji: "🛰️",
-        image: "/assets/images/characters/players/galaksi3.webp"
+        image: "/assets/images/characters/roket/roket-3.webp"
     },
     {
         id: 4,
         name: "Cosmic Ranger",
         description: "Balanced all-purpose ship",
         speed: 8,
-        color: "#1A5D1A",
+        color: "#ff9e00",
         emoji: "✨",
-        image: "/assets/images/characters/players/galaksi4.webp"
+        image: "/assets/images/characters/roket/roket-4.webp"
     },
     {
         id: 5,
@@ -498,15 +498,22 @@ export const spaceships: Spaceship[] = [
         speed: 10,
         color: "#ff9e00",
         emoji: "🌟",
-        image: "/assets/images/characters/players/galaksi5.gif"
+        image: "/assets/images/characters/roket/roket-5.webp"
     },
     {
         id: 6,
         name: "Galaxy Titan",
         description: "Massive flagship carrier",
         speed: 5,
-        color: "#FF4646",
+        color: "#ff9e00",
         emoji: "🌠",
-        image: "/assets/images/characters/players/galaksi6.png"
+        image: "/assets/images/characters/roket/roket-6.webp"
     }
 ];
+
+export const getSpacecraftImage = (filename: string | null): string => {
+    if (!filename) return spaceships[0].image;
+    const baseName = filename.split('/').pop() || '';
+    const ship = spaceships.find(s => s.image.endsWith(baseName));
+    return ship ? ship.image : spaceships[0].image;
+};

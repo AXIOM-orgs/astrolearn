@@ -8,6 +8,7 @@ import { useGame } from '@/context/GameContext'; // pastikan path sesuai
 import { generateXID } from '@/lib/id-generator';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
+import { getSpacecraftImage } from '@/lib/data';
 
 // Helper: Generate game PIN
 function generateGamePin(length = 6): string {
@@ -379,7 +380,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                   <div className="rank-badge">#2</div>
                   <div className="podium-image">
                     {top3[1].spacecraft ? (
-                      <img src={`/assets/images/characters/players/${top3[1].spacecraft}`} alt="spacecraft" />
+                      <img src={getSpacecraftImage(top3[1].spacecraft)} alt="spacecraft" />
                     ) : (
                       <span style={{ fontSize: '3rem' }}></span>
                     )}
@@ -397,7 +398,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                   <div className="rank-badge">#1</div>
                   <div className="podium-image">
                     {top3[0].spacecraft ? (
-                      <img src={`/assets/images/characters/players/${top3[0].spacecraft}`} alt="spacecraft" />
+                      <img src={getSpacecraftImage(top3[0].spacecraft)} alt="spacecraft" />
                     ) : (
                       <span style={{ fontSize: '3.5rem' }}></span>
                     )}
@@ -415,7 +416,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
                   <div className="rank-badge">#3</div>
                   <div className="podium-image">
                     {top3[2].spacecraft ? (
-                      <img src={`/assets/images/characters/players/${top3[2].spacecraft}`} alt="spacecraft" />
+                      <img src={getSpacecraftImage(top3[2].spacecraft)} alt="spacecraft" />
                     ) : (
                       <span style={{ fontSize: '2.5rem' }}>🚀</span>
                     )}

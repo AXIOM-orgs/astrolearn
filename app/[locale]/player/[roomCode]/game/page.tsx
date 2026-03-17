@@ -63,7 +63,7 @@ export default function GamePage(): React.JSX.Element {
 
                 const difficulty = (sessionRes.data.difficulty || 'easy') as DifficultyLevel;
                 const participant = participantRes.data;
-                
+
                 // Check if player is eliminated
                 if (participant.eliminated) {
                     router.replace(`/player/${roomCode}/result`);
@@ -196,7 +196,7 @@ export default function GamePage(): React.JSX.Element {
         // Restore persisted state
         const savedLives = localStorage.getItem('cosmicquest_lives');
         const savedHP = localStorage.getItem('cosmicquest_hp');
-        
+
         const initialLives = savedLives ? parseInt(savedLives) : undefined;
         const initialHP = savedHP ? parseInt(savedHP) : undefined;
 

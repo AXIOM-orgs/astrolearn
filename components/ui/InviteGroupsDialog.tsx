@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Users, X, Search, Loader2, Check, Crown, Shield, User } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslations, useLocale } from 'next-intl';
@@ -32,6 +33,7 @@ interface InviteGroupsDialogProps {
 
 export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDialogProps): React.JSX.Element | null {
     const { profile } = useAuth();
+    const { toast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [groups, setGroups] = useState<Group[]>([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
@@ -155,6 +157,7 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
             }
 
             setInvitingStatus(prev => ({ ...prev, [groupId]: 'invited' }));
+            toast(t('invited'), 'success');
         } catch (err) {
             console.error('Error inviting group:', err);
             setInvitingStatus(prev => ({ ...prev, [groupId]: 'idle' }));
@@ -176,7 +179,7 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
         };
         const c = config[role];
         return (
-            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.65rem] font-orbitron font-bold tracking-wider border ${c.bg} ${c.color}`}>
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.65rem] font-orbitron font-bold tracking-wider border ${c.bg} ${c.color}`}>
                 {c.label}
             </span>
         );
@@ -261,7 +264,7 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
 
                                         <div className="flex flex-col gap-1">
                                             <span className="text-white font-bold font-orbitron text-[0.9rem] tracking-wide drop-shadow-md">{group.name}</span>
-                                            <div className="flex items-center gap-3 text-[0.75rem] font-orbitron flex-wrap">
+                                            <div className="flex items-center gap-4 text-[0.75rem] font-orbitron flex-wrap">
                                                 <div className="flex items-center gap-1.5 text-white/60">
                                                     <Users size={14} className="text-[#00d4ff]/70" />
                                                     <span>{memberCount}</span>
@@ -274,22 +277,12 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
                                             <button
                                                 onClick={() => handleInvite(group.id)}
                                                 disabled={status !== 'idle'}
-                                                className={`!px-4 !py-1 rounded-md font-orbitron text-[0.75rem] font-bold tracking-widest transition-all duration-200 min-w-[90px] flex items-center justify-center relative outline-none
-                                                ${status === 'idle'
-                                                        ? 'bg-gradient-to-b from-[#00d4ff] to-[#0077b6] text-[#030613] shadow-[0_4px_0_#00426b,0_8px_15px_rgba(0,212,255,0.3)] hover:-translate-y-1 hover:shadow-[0_6px_0_#00426b,0_12px_20px_rgba(0,212,255,0.4)] active:translate-y-[4px] active:shadow-[0_0_0_#00426b,0_0_5px_rgba(0,212,255,0.4)]'
-                                                        : status === 'loading'
-                                                            ? 'bg-white/5 border border-white/10 text-[#00d4ff] cursor-not-allowed translate-y-[4px] shadow-none'
-                                                            : 'bg-[#06ffa5]/10 border border-[#06ffa5]/30 text-[#06ffa5] cursor-not-allowed translate-y-[4px] shadow-[0_0_15px_rgba(6,255,165,0.2)]'
-                                                    }
-                                            `}
+                                                className={`btn-invite-action ${status === 'invited' ? 'invited' : ''} ${status === 'loading' ? 'loading' : ''}`}
                                             >
                                                 {status === 'idle' && t('invite')}
-                                                {status === 'loading' && <Loader2 size={16} className="animate-spin text-[#00d4ff]" />}
+                                                {status === 'loading' && <Loader2 size={14} className="animate-spin" />}
                                                 {status === 'invited' && (
-                                                    <div className="flex items-center gap-1">
-                                                        <Check size={14} className="drop-shadow-[0_0_8px_rgba(6,255,165,0.8)]" />
-                                                        <span>{t('invited')}</span>
-                                                    </div>
+                                                    <span>{t('invited')}</span>
                                                 )}
                                             </button>
                                         ) : (

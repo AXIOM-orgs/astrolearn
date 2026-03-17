@@ -8,7 +8,7 @@ import { supabaseGame } from '@/lib/supabase';
 import { DialogRocketSelect } from '@/components/ui/DialogRocketSelect';
 import { ExitConfirmationDialog } from '@/components/ui/ExitConfirmationDialog';
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
-import { Spaceship, spaceships } from '@/lib/data';
+import { Spaceship, spaceships, getSpacecraftImage } from '@/lib/data';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -42,7 +42,7 @@ const findSpaceshipByFilename = (filename: string | null): Spaceship | null => {
 
 // Helper: extract filename from Spaceship image path
 const getFilenameFromSpaceship = (ship: Spaceship): string => {
-    return ship.image.replace('/assets/', '');
+    return ship.image.split('/').pop() || '';
 };
 
 export default function PlayerWaitingPage(): React.JSX.Element {
@@ -133,7 +133,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             setCurrentPlayer({
                 id: me.id,
                 nickname: me.nickname,
-                spacecraft: me.spacecraft || '/assets/images/characters/players/galaksi2.webp'
+                spacecraft: me.spacecraft || '/assets/images/characters/roket/roket-1.webp'
             });
 
             // Set current spaceship object
@@ -371,7 +371,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                                                 <div className="player-icon">
                                                     {player.spacecraft ? (
                                                         <img
-                                                            src={`/assets/images/characters/players/${player.spacecraft}`}
+                                                            src={getSpacecraftImage(player.spacecraft)}
                                                             alt="spacecraft"
                                                             className="player-spacecraft-icon"
                                                         />

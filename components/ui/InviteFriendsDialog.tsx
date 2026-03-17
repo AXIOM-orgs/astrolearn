@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { UserPlus, X, Search, Loader2, Check } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslations, useLocale } from 'next-intl';
@@ -22,6 +23,7 @@ interface InviteFriendsDialogProps {
 
 export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriendsDialogProps): React.JSX.Element | null {
     const { profile } = useAuth();
+    const { toast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [friends, setFriends] = useState<FriendProfile[]>([]);
     const [loadingFriends, setLoadingFriends] = useState(false);
@@ -171,6 +173,7 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
             }
 
             setInvitingStatus(prev => ({ ...prev, [friendId]: 'invited' }));
+            toast(t('invited'), 'success');
         } catch (err) {
             console.error('Error inviting friend:', err);
             setInvitingStatus(prev => ({ ...prev, [friendId]: 'idle' }));
@@ -276,26 +279,15 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
                                                 <span className="text-white/40 font-orbitron text-[0.7rem]">@{friend.username}</span>
                                             </div>
                                         </div>
-
                                         <button
                                             onClick={() => handleInvite(friend.id)}
                                             disabled={status !== 'idle'}
-                                            className={`!px-4 !py-1 rounded-md font-orbitron text-[0.75rem] font-bold tracking-widest transition-all duration-200 min-w-[90px] flex items-center justify-center relative outline-none
-                                            ${status === 'idle'
-                                                    ? 'bg-gradient-to-b from-[#00d4ff] to-[#0077b6] text-[#030613] shadow-[0_4px_0_#00426b,0_8px_15px_rgba(0,212,255,0.3)] hover:-translate-y-1 hover:shadow-[0_6px_0_#00426b,0_12px_20px_rgba(0,212,255,0.4)] active:translate-y-[4px] active:shadow-[0_0_0_#00426b,0_0_5px_rgba(0,212,255,0.4)]'
-                                                    : status === 'loading'
-                                                        ? 'bg-white/5 border border-white/10 text-[#00d4ff] cursor-not-allowed translate-y-[4px] shadow-none'
-                                                        : 'bg-[#06ffa5]/10 border border-[#06ffa5]/30 text-[#06ffa5] cursor-not-allowed translate-y-[4px] shadow-[0_0_15px_rgba(6,255,165,0.2)]'
-                                                }
-                                        `}
+                                            className={`btn-invite-action ${status === 'invited' ? 'invited' : ''} ${status === 'loading' ? 'loading' : ''}`}
                                         >
                                             {status === 'idle' && t('invite')}
-                                            {status === 'loading' && <Loader2 size={16} className="animate-spin text-[#00d4ff]" />}
+                                            {status === 'loading' && <Loader2 size={14} className="animate-spin" />}
                                             {status === 'invited' && (
-                                                <div className="flex items-center gap-1">
-                                                    <Check size={14} className="drop-shadow-[0_0_8px_rgba(6,255,165,0.8)]" />
-                                                    <span>INVITED</span>
-                                                </div>
+                                                <span>{t('invited')}</span>
                                             )}
                                         </button>
 
