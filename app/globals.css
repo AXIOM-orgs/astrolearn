@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 :root {
   --primary-color: #46a7bb;
@@ -738,9 +738,23 @@ input[type="text"]:focus {
 /* Quiz Interface */
 #screen-quiz {
   min-height: 100vh;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
+  padding: 1rem;
+  padding-top: 0.5rem;
+  /* Very minimal padding for mobile */
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  /* Align to top */
+  align-items: center !important;
+  margin-top: 0;
+  /* Ensure no extra margin pushes it down */
+}
+
+@media (min-width: 1024px) {
+  #screen-quiz {
+    padding-top: 3rem;
+    /* Specific desktop padding */
+  }
 }
 
 .quiz-header-grid {
@@ -795,14 +809,53 @@ input[type="text"]:focus {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   /* Slightly tighter radius */
-  padding: 1.5rem;
-  /* Reduced from 2rem+ */
+  padding: 1rem;
+  /* Reduced padding for mobile */
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  width: 100%;
-  max-width: 100%;
-  /* Ensure needed responsiveness */
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+  /* Balanced height */
+  overflow: visible;
+  /* Remove scrollbar from the panel itself */
 }
+
+
+
+/* Question Container Scrollability */
+.question-container {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+  /* Allow answers to be visible even if they overflow this specific container */
+  flex: 1;
+}
+
+.question-text-wrapper {
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+  padding-right: 5px;
+  max-height: 15vh;
+  min-height: 2.5rem;
+  /* Prevent collapse */
+  flex-shrink: 0;
+  /* Ensure it doesn't get squashed to 0 */
+}
+
+/* Custom scrollbar for question text */
+.question-text-wrapper::-webkit-scrollbar {
+  width: 4px;
+}
+
+.question-text-wrapper::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.question-text-wrapper::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 2px;
+}
+
 
 /* Compact Progress Bar with Track */
 .quiz-progress-container {
@@ -1048,8 +1101,38 @@ input[type="text"]:focus {
 
   .answers-grid-new {
     grid-template-columns: 1fr;
-    /* Stack on mobile */
+    /* Stack on mobile by default */
     gap: 0.75rem;
+  }
+
+  .answers-grid-new.has-image-answers {
+    grid-template-columns: 1fr 1fr;
+    /* Force 2 columns on mobile if images present */
+    gap: 0.5rem;
+  }
+
+  .answers-grid-new.has-image-answers .answer-card {
+    flex-direction: column !important;
+    align-items: center;
+    padding-bottom: 0.5rem;
+  }
+
+  .answers-grid-new.has-image-answers .option-letter-box {
+    width: 100%;
+    height: 25px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.8rem;
+  }
+
+  .answers-grid-new.has-image-answers .answer-content {
+    padding: 0.4rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  .answers-grid-new.has-image-answers .answer-content span {
+    font-size: 0.85rem;
   }
 
   .answer-card {
@@ -3219,6 +3302,11 @@ input[type="text"]:focus {
 [dir='rtl'] .cyan-dialog-search-wrapper input {
   text-align: right !important;
   direction: rtl;
+}
+
+[dir='rtl'] .cyan-dialog-search-wrapper .search-icon-btn {
+  border-left: none !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 [dir='rtl'] .cyan-dialog-search-wrapper input::placeholder {
@@ -6289,7 +6377,7 @@ input[type="text"]:focus {
   gap: 0.5rem;
   font-family: var(--font-orbitron), 'Orbitron', sans-serif;
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   border-radius: 8px;
 }
 
@@ -6340,7 +6428,7 @@ input[type="text"]:focus {
 
 .waiting-player-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 1.5rem 1rem;
   /* More vertical gap for tooltips */
   width: 100%;
@@ -6830,7 +6918,7 @@ input[type="text"]:focus {
 }
 
 .rocket-select-card.selected {
-  border-color: var(--success-color);
+  border-color:  #285A48;
   background: rgba(6, 255, 165, 0.1);
   box-shadow: 0 0 20px rgba(6, 255, 165, 0.2);
 }
@@ -6872,7 +6960,7 @@ input[type="text"]:focus {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  background: var(--success-color);
+  background: #285A48;
   color: white;
   font-size: 0.55rem;
   font-weight: 700;
@@ -7521,7 +7609,7 @@ input[type="text"]:focus {
 
 .cyan-dialog-title {
   font-family: 'Orbitron', sans-serif;
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: 900;
   color: #00d4ff;
   text-align: left;
@@ -7563,8 +7651,10 @@ input[type="text"]:focus {
   background: rgba(30, 30, 50, 0.6) !important;
   border: 2px solid var(--primary-color) !important;
   border-radius: 12px !important;
-  padding: 0 0 0 1.2rem !important;
+  padding: 0 !important;
+  padding-inline-start: 1.2rem !important;
   transition: all 0.3s ease !important;
+  overflow: hidden !important;
 }
 
 .cyan-dialog-content .cyan-dialog-search-wrapper:focus-within {
@@ -7580,8 +7670,9 @@ input[type="text"]:focus {
   font-family: var(--font-orbitron), 'Orbitron', sans-serif !important;
   font-size: 0.9rem !important;
   flex: 1 !important;
-  width: auto !important;
-  padding: 0.3rem 0 !important;
+  width: 0 !important;
+  /* Allow flex to control width */
+  padding: 0 0.5rem !important;
   box-shadow: none !important;
   letter-spacing: 2px !important;
 }
@@ -7590,13 +7681,37 @@ input[type="text"]:focus {
   background: transparent !important;
   border: none !important;
   border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
-  padding: 0.5rem 1rem !important;
+  padding: 0 1rem !important;
+  height: 40px !important;
   color: rgba(255, 255, 255, 0.4) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  margin-bottom: 2px !important;
+  transition: all 0.2s ease !important;
+}
+
+.cyan-dialog-content .cyan-dialog-search-wrapper .search-icon-btn:hover {
+  color: var(--primary-color) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Mobile specific overrides for search bar */
+@media (max-width: 768px) {
+  .cyan-dialog-content .cyan-dialog-search-wrapper {
+    padding-inline-start: 0.8rem !important;
+  }
+
+  .cyan-dialog-content .cyan-dialog-search-wrapper input {
+    font-size: 0.8rem !important;
+    letter-spacing: 1px !important;
+    padding: 0 0.5rem !important;
+  }
+
+  .cyan-dialog-content .cyan-dialog-search-wrapper .search-icon-btn {
+    padding: 0 0.5rem !important;
+    height: 36px !important;
+  }
 }
 
 .cyan-dialog-content .group-card {
@@ -7616,8 +7731,98 @@ input[type="text"]:focus {
 
 .cyan-dialog-list-container {
   padding: 10px 10px !important;
-  margin: 1.5rem -10px !important;
+  margin: 0.5rem -10px !important;
   overflow: visible !important;
+}
+
+/* Invite Action Button — matches .btn-launch (START) style */
+.btn-invite-action {
+  padding: 0.35rem 1.2rem;
+  font-family: var(--font-orbitron), 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: var(--teal-solid);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  box-shadow: 0 4px 0 #0077b6, 0 8px 12px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  transform: translateY(0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 80px;
+  white-space: nowrap;
+}
+
+.btn-invite-action::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-invite-action:hover::before {
+  left: 100%;
+}
+
+.btn-invite-action:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #0077b6, 0 12px 18px rgba(0, 180, 216, 0.3);
+}
+
+.btn-invite-action:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #0077b6, 0 3px 6px rgba(0, 0, 0, 0.4);
+  transition: all 0.05s ease;
+}
+
+/* Invited state (disabled) — same teal but darker/dimmed */
+.btn-invite-action.invited {
+  background: #005f73;
+  /* Darker teal */
+  color: rgba(255, 255, 255, 0.4);
+  cursor: default;
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #00426b, 0 4px 8px rgba(0, 0, 0, 0.4);
+  filter: saturate(0.5);
+}
+
+.btn-invite-action.invited::before {
+  display: none;
+}
+
+/* Loading state */
+.btn-invite-action.loading {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  color: #00d4ff;
+  cursor: default;
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
+.btn-invite-action.loading::before {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .btn-invite-action {
+    padding: 0.3rem 0.9rem;
+    font-size: 0.65rem;
+    min-width: 70px;
+    letter-spacing: 1.5px;
+  }
 }
 
 /* Custom Cyan Scrollbar */
@@ -8312,6 +8517,8 @@ input[type="text"]:focus {
   .quiz-main-content {
     justify-content: center !important;
     padding: 0 !important;
+    margin-top: 0.5rem !important;
+    /* Reduced margin */
   }
 
   .quiz-main-content .container {

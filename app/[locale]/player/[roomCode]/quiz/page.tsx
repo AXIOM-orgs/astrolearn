@@ -550,29 +550,31 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                             <div className="question-container">
                                 {/* Question Image */}
                                 {currentQuestion.image && (
-                                    <div className="!mb-6 flex justify-center">
+                                    <div className="!mb-4 flex justify-center">
                                         <Image
                                             src={currentQuestion.image}
                                             alt="Question"
                                             width={300}
                                             height={400}
-                                            className="rounded-lg max-h-80 object-contain cursor-pointer shadow-lg hover:scale-105 transition-transform duration-300"
+                                            className="rounded-lg max-h-[80px] md:max-h-[120px] object-contain cursor-pointer shadow-lg hover:scale-105 transition-transform duration-300"
                                             unoptimized
                                             onClick={() => setZoomedImage(currentQuestion.image!)}
                                         />
                                     </div>
                                 )}
 
-                                {/* Centered Question Text */}
-                                <h3
-                                    className={`${isArabic(currentQuestion.question) ? 'font-arabic question-text-right' : 'question-text-left'} whitespace-pre-wrap`}
-                                    dir={isArabic(currentQuestion.question) ? 'rtl' : 'ltr'}
-                                >
-                                    {currentQuestion.question}
-                                </h3>
+                                {/* Centered Question Text with Scrollable Container */}
+                                <div className="question-text-wrapper">
+                                    <h3
+                                        className={`${isArabic(currentQuestion.question) ? 'font-arabic question-text-right' : 'question-text-left'} whitespace-pre-wrap`}
+                                        dir={isArabic(currentQuestion.question) ? 'rtl' : 'ltr'}
+                                    >
+                                        {currentQuestion.question}
+                                    </h3>
+                                </div>
 
                                 {/* New Answer Grid */}
-                                <div className="answers-grid-new">
+                                <div className={`answers-grid-new ${(currentQuestion.answers || []).some((ans: any) => ans.image) ? 'has-image-answers' : ''}`}>
                                     {(currentQuestion.answers || []).map((ans: any, index: number) => {
                                         const letter = String.fromCharCode(65 + index); // A, B, C, D
 
@@ -599,7 +601,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                                                 <div className="answer-content">
                                                     {ans.image ? (
                                                         <div className="flex flex-col gap-2 w-full">
-                                                            <div className="h-32 relative w-full">
+                                                            <div className="h-10 md:h-12 relative w-full">
                                                                 <Image
                                                                     src={ans.image}
                                                                     alt={`Option ${letter}`}

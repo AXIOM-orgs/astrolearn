@@ -436,8 +436,8 @@ let bossWarningStartTime: number = 0;
 // Weapon settings (obsolete duration)
 
 // Lives system
-const PLAYER_MAX_LIVES = 3;
-const LIFE_MAX_HP = 10;
+const PLAYER_MAX_LIVES = 10;
+const LIFE_MAX_HP = 100;
 const IMMUNITY_DURATION = 3000; // 3 seconds immunity after losing a life
 let playerLives: number = 3;
 let playerLifeHP: number = 10;

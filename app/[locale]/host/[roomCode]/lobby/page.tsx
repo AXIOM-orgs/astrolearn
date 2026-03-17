@@ -14,6 +14,7 @@ import { InviteGroupsDialog } from '@/components/ui/InviteGroupsDialog';
 import { InviteFriendsDialog } from '@/components/ui/InviteFriendsDialog';
 import { X, Menu, Maximize, Minimize, Volume2, VolumeX, Users, UserPlus } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import { getSpacecraftImage } from '@/lib/data';
 
 interface Participant {
     id: string;
@@ -354,12 +355,12 @@ export default function HostLobbyPage(): React.JSX.Element {
         try {
             // Using spacecrafts from lib/data.ts (stripping /assets/ prefix)
             const spacecrafts = [
-                'main_4_2_2.png',
-                'galaksi2.webp',
-                'galaksi3.webp',
-                'galaksi4.webp',
-                'galaksi5.gif',
-                'galaksi6.png'
+                'roket-1.webp',
+                'roket-2.webp',
+                'roket-3.webp',
+                'roket-4.webp',
+                'roket-5.webp',
+                'roket-6.webp'
             ];
             const existingBotsCount = participants.filter(p => p.nickname.startsWith('Bot-')).length;
             const startIdx = existingBotsCount;
@@ -698,7 +699,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                         <div className="player-icon">
                                             {player.spacecraft ? (
                                                 <img
-                                                    src={`/assets/images/characters/players/${player.spacecraft}`}
+                                                    src={getSpacecraftImage(player.spacecraft)}
                                                     alt="spacecraft"
                                                     style={{ width: '40px', height: '30px', objectFit: 'contain' }}
                                                 />

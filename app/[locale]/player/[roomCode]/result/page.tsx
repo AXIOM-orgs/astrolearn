@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Home, BarChart3 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
-
+import { getSpacecraftImage } from '@/lib/data';
 interface ParticipantData {
     id: string;
     score: number;
@@ -216,15 +216,6 @@ export default function JoinResultsPage(): React.JSX.Element {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Helper to get image path:
-    const getSpacecraftImage = (sc: string | undefined) => {
-        if (!sc) return null;
-        if (sc.startsWith('/') || sc.startsWith('http')) return sc;
-        // Check if user confirmed assets are in public/assets. 
-        // Logic: if filename only, prepend /assets/
-        return `/assets/${sc}`;
-    };
-
     return (
         <section id="screen-results" className="result-screen">
             {/* Header */}
@@ -284,7 +275,7 @@ export default function JoinResultsPage(): React.JSX.Element {
                     {/* Display Spacecraft Image */}
                     {myStats?.spacecraft ? (
                         <img
-                            src={`/assets/images/characters/players/${myStats.spacecraft}`}
+                            src={getSpacecraftImage(myStats.spacecraft)}
                             alt="Spacecraft"
                             id="result-character-img"
                             className="result-spaceship-img"
