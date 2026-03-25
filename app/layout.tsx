@@ -20,22 +20,35 @@ const spaceMono = Space_Mono({
 });
 
 import { NextIntlClientProvider } from 'next-intl';
-import enMessages from '../messages/en.json';
+import { getMessages, getTranslations, getLocale } from 'next-intl/server';
 
 export const metadata: Metadata = {
     title: 'Axiom',
     description: 'Answer the quiz and complete the mission',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const locale = await getLocale();
+    const messages = await getMessages();
+
+    // Preload namespaces to ensure they are available for Client Components
+    await getTranslations({ locale, namespace: 'SelectQuiz' });
+    await getTranslations({ locale, namespace: 'Categories' });
+    await getTranslations({ locale, namespace: 'HostSettings' });
+    await getTranslations({ locale, namespace: 'WaitingRoom' });
+    await getTranslations({ locale, namespace: 'Monitor' });
+    await getTranslations({ locale, namespace: 'PlayerResult' });
+    await getTranslations({ locale, namespace: 'Leaderboard' });
+    await getTranslations({ locale, namespace: 'Lobby' });
+
     return (
-        <html lang="en">
+        <html lang={locale}>
             <body className={`${orbitron.variable} ${spaceMono.variable}`}>
-                <NextIntlClientProvider locale="en" messages={enMessages}>
+                <NextIntlClientProvider messages={messages} locale={locale}>
                     <AuthProvider>
                         <GameProvider>
                             <ClientLayout>

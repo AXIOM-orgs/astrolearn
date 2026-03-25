@@ -19,7 +19,7 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
     const locale = useLocale();
     const isRtl = locale === 'ar';
 
-    // Load initial state from localStorage
+    // Load initial state and add event listeners
     useEffect(() => {
         if (open) {
             const savedBgm = localStorage.getItem('cosmicquest_bgm_enabled');
@@ -28,6 +28,30 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
             if (savedBgm !== null) setBgmEnabled(savedBgm === 'true');
             if (savedSfx !== null) setSfxEnabled(savedSfx === 'true');
         }
+
+        const handleSoundChange = (e: any) => {
+            if (e.detail?.type === 'bgm') {
+                setBgmEnabled(e.detail.enabled);
+            } else if (e.detail?.type === 'sfx') {
+                setSfxEnabled(e.detail.enabled);
+            }
+        };
+
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'cosmicquest_bgm_enabled') {
+                setBgmEnabled(e.newValue === 'true');
+            } else if (e.key === 'cosmicquest_sfx_enabled') {
+                setSfxEnabled(e.newValue === 'true');
+            }
+        };
+
+        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            window.removeEventListener('storage', handleStorageChange);
+        };
     }, [open]);
 
     // Keyboard escape handler

@@ -4,12 +4,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useGame, GameState, initialGameState } from '@/context/GameContext';
 import { supabaseGame } from '@/lib/supabase';
-import { isArabic } from '@/lib/utils';
+import { isArabic, toArabicNumerals } from '@/lib/utils';
 import Image from 'next/image';
 import { generateXID } from '@/lib/id-generator';
 import { QuizQuestion } from '@/lib/data';
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
-import { Link } from '@/i18n/routing';
+import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface AnswerEntry {
     id: string;
@@ -23,6 +24,9 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     const params = useParams();
     const roomCode = params.roomCode as string;
     const { gameState, setGameState, showLoading, hideLoading } = useGame();
+    const t = useTranslations('QuizPage');
+    const locale = useLocale();
+    const isArabicLocale = locale === 'ar';
 
     const [answeredIndex, setAnsweredIndex] = useState<number | null>(null);
     const [correctIndex, setCorrectIndex] = useState<number | null>(null);
@@ -429,7 +433,8 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        return isArabicLocale ? toArabicNumerals(timeStr) : timeStr;
     };
 
     // Loading State - shows black screen matching countdown overlay
@@ -452,7 +457,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     if (!currentQuestion) {
         return (
             <div className="flex items-center justify-center h-screen bg-[#0a0e27] text-white">
-                <p>No questions found.</p>
+                <p>{t('noQuestionsFound')}</p>
             </div>
         );
     }
@@ -491,7 +496,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
             {/* Minigame Countdown Overlay */}
             {showCountdown && (
                 <div className="countdown-overlay">
-                    <div className="countdown-number">{countdownNumber}</div>
+                    <div className="countdown-number">{isArabicLocale ? toArabicNumerals(countdownNumber) : countdownNumber}</div>
                 </div>
             )}
 
@@ -532,10 +537,10 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                         <div className="glass-panel">
 
                             {/* Header: Question Count | Timer | Score */}
-                            <div className="quiz-header-grid">
+                            <div className="quiz-header-grid" dir={isArabicLocale ? 'rtl' : 'ltr'}>
                                 <div className="quiz-info-left">
                                     <span className="text-lg md:text-md font-bold text-white font-orbitron">
-                                        Question <span className="text-primary">{gameState.currentQuestionIndex + 1}</span><span className="text-gray-500 text-lg">/{gameState.selectedQuestions}</span>
+                                        {t('question')} <span className="text-primary">{isArabicLocale ? toArabicNumerals(gameState.currentQuestionIndex + 1) : gameState.currentQuestionIndex + 1}</span><span className="text-gray-500 text-lg">/{isArabicLocale ? toArabicNumerals(gameState.selectedQuestions) : gameState.selectedQuestions}</span>
                                     </span>
                                 </div>
 
@@ -545,7 +550,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                                 </div>
 
                                 <div className="quiz-info-right">
-                                    Score: <span className="text-yellow-400">{gameState.score}</span>
+                                    {t('score')}: <span className="text-yellow-400">{isArabicLocale ? toArabicNumerals(gameState.score) : gameState.score}</span>
                                 </div>
                             </div>
 

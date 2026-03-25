@@ -6,7 +6,7 @@ import { Home, RotateCw, BarChart3 } from 'lucide-react';
 import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai
 import { useGame } from '@/context/GameContext'; // pastikan path sesuai
 import { generateXID } from '@/lib/id-generator';
-import { Link } from '@/i18n/routing';
+import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { getSpacecraftImage } from '@/lib/data';
 
@@ -183,7 +183,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         }
 
         // 3. Proses data (handle null duration, formatting, etc if needed)
-        const processed = participants.map(p => {
+        const processed = participants.map((p: any) => {
           // Jika duration null/0, anggap sangat lama (misal 999999) agar di urutan bawah
           // Tapi karena query .not('finished_at', 'is', null), seharusnya duration ada.
           // Jaga-jaga:
@@ -196,7 +196,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         });
 
         // 4. Urutkan client-side: Eliminated (False) -> Score (DESC) -> Duration (ASC) -> Joined at -> id
-        const sorted = processed.sort((a, b) => {
+        const sorted = processed.sort((a: any, b: any) => {
           // 1. Not eliminated first
           if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
 
@@ -239,7 +239,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'participants', filter: `session_id=eq.${sessionId}` },
-        payload => {
+        (payload: any) => {
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const p = payload.new as Participant;
             if (p.finished_at) {
@@ -494,40 +494,6 @@ export default function HostLeaderboardPage(): React.JSX.Element {
           </div>
         )}
       </section>
-      <style jsx>{`
-    .rankings-table {
-  table-layout: fixed;
-  width: 100%; 
-}
-
-.left-floating-group {
-  position: fixed;
-  left: 30px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  z-index: 100;
-}
-
-.left-floating-group .floating-btn {
-  position: static;
-  transform: none;
-}
-
-.left-floating-group .floating-btn:hover {
-  transform: scale(1.1);
-}
-
-.left-floating-group .floating-btn:active {
-  transform: scale(0.95);
-}
-
-.statistics-btn {
-  right: 30px;
-}
-    `}</style>
     </>
   );
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslations, useLocale } from 'next-intl';
+import { getSpacecraftImage } from '@/lib/data';
 
 interface KickPlayerDialogProps {
     isOpen: boolean;
@@ -44,7 +45,7 @@ export function KickPlayerDialog({
                 <div className="kick-icon-wrapper">
                     {playerSpacecraft ? (
                         <img
-                            src={`/assets/images/characters/players/${playerSpacecraft}`}
+                            src={getSpacecraftImage(playerSpacecraft)}
                             alt="spacecraft"
                             className="kick-spaceship-img"
                         />

@@ -7,7 +7,7 @@ import { clearCurrentPlayer } from '@/lib/gameSession';
 import { supabaseGame } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { Home, BarChart3 } from 'lucide-react';
-import { Link } from '@/i18n/routing';
+import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { getSpacecraftImage } from '@/lib/data';
 interface ParticipantData {
