@@ -8,6 +8,7 @@ export function BackgroundMusic(): React.JSX.Element | null {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [isEnabled, setIsEnabled] = useState(true);
     const [hasInteracted, setHasInteracted] = useState(false);
+    const [isCountdownActive, setIsCountdownActive] = useState(false);
 
     // Initial load of settings
     useEffect(() => {
@@ -22,7 +23,12 @@ export function BackgroundMusic(): React.JSX.Element | null {
             }
         };
 
+        const handleCountdownChange = (e: any) => {
+            setIsCountdownActive(!!e.detail?.active);
+        };
+
         window.addEventListener('cosmicquest_sound_settings_changed', handleSettingsChange as EventListener);
+        window.addEventListener('cosmicquest_countdown_active', handleCountdownChange as EventListener);
         
         // Interaction listener to overcome autoplay policy
         const handleFirstInteraction = () => {
@@ -36,43 +42,54 @@ export function BackgroundMusic(): React.JSX.Element | null {
 
         return () => {
             window.removeEventListener('cosmicquest_sound_settings_changed', handleSettingsChange as EventListener);
+            window.removeEventListener('cosmicquest_countdown_active', handleCountdownChange as EventListener);
             window.removeEventListener('click', handleFirstInteraction);
             window.removeEventListener('keydown', handleFirstInteraction);
         };
     }, []);
 
     // Check if current route is allowed
-    const isAllowedRoute = (): boolean => {
-        // Normalize pathname (remove locale prefix if any)
-        // Paths: /id, /en, /id/host/..., etc.
+    const getAudioSource = (): string => {
         const pathParts = pathname.split('/').filter(Boolean);
-        
-        // If it starts with a 2-letter locale, remove it for easier matching
-        const normalizedPath = (pathParts[0]?.length === 2) 
-            ? '/' + pathParts.slice(1).join('/') 
-            : pathname;
+        const lowerParts = pathParts.map(p => p.toLowerCase());
 
-        // Homepage
-        if (normalizedPath === '/' || normalizedPath === '') return true;
-
-        // Host paths: /host/select-quiz, /host/[roomCode]/settings
-        const hostPathParts = normalizedPath.split('/').filter(Boolean);
-        if (hostPathParts[0] === 'host') {
-            if (hostPathParts[1] === 'select-quiz') return true;
-            if (hostPathParts[2] === 'settings') return true;
-            if (hostPathParts[2] === 'lobby') return true;
+        // Routes for Quiz BGM
+        if (lowerParts.includes('quiz') || lowerParts.includes('monitor')) {
+            return "/assets/audio/web/bgm_quiz_monitor.mp3";
         }
 
-        // Player paths: /player/[roomCode]/waiting
-        const playerPathParts = normalizedPath.split('/').filter(Boolean);
-        if (playerPathParts[0] === 'player') {
-            if (playerPathParts[2] === 'waiting') return true;
-        }
-
-        return false;
+        // Default Homepage BGM
+        return "/assets/audio/web/bgm_hmpage.wav";
     };
 
-    const shouldPlay = isEnabled && isAllowedRoute();
+    const isAllowedRoute = (): boolean => {
+        const pathParts = pathname.split('/').filter(Boolean);
+        
+        // Exclude specific routes where BGM should not play
+        // game: Active gameplay (MiniGame has its own music/sounds)
+        const excludedRoutes = ['game'];
+        
+        return !pathParts.some(part => excludedRoutes.includes(part.toLowerCase()));
+    };
+
+    const currentSrc = getAudioSource();
+    const shouldPlay = isEnabled && isAllowedRoute() && !isCountdownActive;
+
+    // Handle track changes
+    useEffect(() => {
+        if (!audioRef.current) return;
+        
+        // If track changed while playing, restart with new source
+        const currentAudio = audioRef.current;
+        const isPlaying = !currentAudio.paused;
+
+        if (isPlaying && currentAudio.src !== currentSrc) {
+            currentAudio.load();
+            if (shouldPlay && hasInteracted) {
+                currentAudio.play().catch(() => {});
+            }
+        }
+    }, [currentSrc, shouldPlay, hasInteracted]);
 
     useEffect(() => {
         if (!audioRef.current) return;
@@ -88,7 +105,7 @@ export function BackgroundMusic(): React.JSX.Element | null {
         }
     }, [shouldPlay, hasInteracted]);
 
-    // Handle initial play attempt if they already interacted elsewhere
+    // Handle initial play attempt or navigation
     useEffect(() => {
         if (shouldPlay && hasInteracted && audioRef.current && audioRef.current.paused) {
             audioRef.current.play().catch(() => {});
@@ -98,7 +115,7 @@ export function BackgroundMusic(): React.JSX.Element | null {
     return (
         <audio
             ref={audioRef}
-            src="/assets/audio/web/bgm_hmpage.wav"
+            src={currentSrc}
             loop
             preload="auto"
             style={{ display: 'none' }}

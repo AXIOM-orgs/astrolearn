@@ -362,6 +362,8 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                                         borderRadius: '8px',
                                         color: selectedDifficulty === diff.value ? diff.color : '#fff',
                                         fontSize: '1rem',
+                                        fontFamily: 'var(--font-orbitron)',
+                                        letterSpacing: '3px',
                                         fontWeight: selectedDifficulty === diff.value ? 'bold' : 'normal',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',

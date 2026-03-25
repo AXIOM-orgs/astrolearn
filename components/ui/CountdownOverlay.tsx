@@ -44,7 +44,18 @@ export function CountdownOverlay({ isActive, onComplete, targetDate, max }: Coun
         calculateTimeLeft(); // Initial calc
         const timer = setInterval(calculateTimeLeft, 100);
 
-        return () => clearInterval(timer);
+        // Notify BGM that countdown is active
+        window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
+            detail: { active: true } 
+        }));
+
+        return () => {
+            clearInterval(timer);
+            // Notify BGM that countdown is finished
+            window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
+                detail: { active: false } 
+            }));
+        };
     }, [isActive, targetDate, onComplete]);
 
     if (!isActive || count === null || count <= 0) return null;

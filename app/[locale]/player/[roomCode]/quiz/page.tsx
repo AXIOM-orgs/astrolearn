@@ -396,6 +396,11 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                 .eq('id', participantId);
         }
 
+        // Silence BGM during countdown
+        window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
+            detail: { active: true } 
+        }));
+
         let count = 3;
         const countdownInterval = setInterval(() => {
             count--;
@@ -405,6 +410,11 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                 clearInterval(countdownInterval);
                 setShowCountdown(false);
                 setIsFreezing(true);
+
+                // Ensure BGM is notified that countdown is over (though navigation to /game will keep it quiet)
+                window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
+                    detail: { active: false } 
+                }));
 
                 // Update index locally so when they return they are on next question
                 setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
