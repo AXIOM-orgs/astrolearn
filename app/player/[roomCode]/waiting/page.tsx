@@ -9,7 +9,7 @@ import { DialogRocketSelect } from '@/components/ui/DialogRocketSelect';
 import { ExitConfirmationDialog } from '@/components/ui/ExitConfirmationDialog';
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import { Spaceship, spaceships, getSpacecraftImage } from '@/lib/data';
-import { Link } from '@/i18n/routing';
+import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 
 interface Participant {

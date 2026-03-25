@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useLocale } from 'next-intl';
+import { toArabicNumerals } from '@/lib/utils';
 
 interface CountdownOverlayProps {
     isActive: boolean;
@@ -10,6 +12,7 @@ interface CountdownOverlayProps {
 }
 
 export function CountdownOverlay({ isActive, onComplete, targetDate, max }: CountdownOverlayProps) {
+    const locale = useLocale();
     const [count, setCount] = useState<number | null>(() => {
         if (!isActive || !targetDate) return null;
         const now = new Date().getTime();
@@ -63,7 +66,7 @@ export function CountdownOverlay({ isActive, onComplete, targetDate, max }: Coun
     return (
         <div className="countdown-overlay">
             <div className="countdown-number">
-                {count}
+                {locale === 'ar' ? toArabicNumerals(count) : count}
             </div>
         </div>
     );

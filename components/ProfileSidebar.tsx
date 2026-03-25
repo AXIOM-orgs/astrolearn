@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDialog } from '@/context/AlertContext';
 import { useTranslations, useLocale } from 'next-intl';
-import { usePathname, useRouter } from '@/i18n/routing';
-import { useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 interface ProfileMenuProps {
     isOpen: boolean;
@@ -22,8 +21,6 @@ export function ProfileMenu({ isOpen, onClose, username, onLogoutClick, onSoundC
     const locale = useLocale();
     const isRtl = locale === 'ar';
     const router = useRouter();
-    const pathname = usePathname();
-    const params = useParams();
 
     const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
 
@@ -71,12 +68,10 @@ export function ProfileMenu({ isOpen, onClose, username, onLogoutClick, onSoundC
         };
     }, [isOpen, onClose]);
 
-    const handleLanguageSelect = (locale: string): void => {
-        if (locale !== params.locale) {
-            router.replace(
-                { pathname },
-                { locale: locale }
-            );
+    const handleLanguageSelect = (newLocale: string): void => {
+        if (newLocale !== locale) {
+            document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
+            router.refresh();
         }
         setIsLanguageDropdownOpen(false);
     };
@@ -87,7 +82,7 @@ export function ProfileMenu({ isOpen, onClose, username, onLogoutClick, onSoundC
         { code: 'ar', label: 'AR' }
     ];
 
-    const currentLang = languages.find(l => l.code === params.locale) || languages[0];
+    const currentLang = languages.find(l => l.code === locale) || languages[0];
 
     const handleSoundClick = (): void => {
         onClose();
@@ -122,7 +117,7 @@ export function ProfileMenu({ isOpen, onClose, username, onLogoutClick, onSoundC
                     <div className="flex items-center gap-2">
                         <div className="w-5 h-5 rounded-full overflow-hidden border border-white/10 shrink-0">
                             <img 
-                                src={params.locale === 'en' ? '/assets/flag/us.webp' : params.locale === 'id' ? '/assets/flag/id.webp' : '/assets/flag/arab.jpg'} 
+                                src={locale === 'en' ? '/assets/flag/us.webp' : locale === 'id' ? '/assets/flag/id.webp' : '/assets/flag/arab.jpg'} 
                                 alt="Flag" 
                                 className="w-full h-full object-cover"
                             />
@@ -150,7 +145,7 @@ export function ProfileMenu({ isOpen, onClose, username, onLogoutClick, onSoundC
                         {languages.map(lang => (
                             <div
                                 key={lang.code}
-                                className={`dropdown-option ${params.locale === lang.code ? 'selected' : ''}`}
+                                className={`dropdown-option ${locale === lang.code ? 'selected' : ''}`}
                                 onClick={() => handleLanguageSelect(lang.code)}
                                 style={{ padding: '0.6rem 1rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '8px' }}
                             >

@@ -67,6 +67,11 @@
     "removeFromFavorites": "إزالة من المفضلة",
     "addToFavorites": "إضافة إلى المفضلة"
   },
+  "QuizPage": {
+    "noQuestionsFound": "لم يتم العثور على أسئلة.",
+    "question": "سؤال",
+    "score": "النتيجة"
+  },
   "Categories": {
     "all": "الكل",
     "general": "عام",

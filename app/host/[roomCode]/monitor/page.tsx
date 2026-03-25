@@ -10,9 +10,10 @@ import { Users, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EndGameConfirmationDialog } from '@/components/ui/EndGameConfirmationDialog';
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
-import { Link } from '@/i18n/routing';
+import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { getSpacecraftImage } from '@/lib/data';
+import { toArabicNumerals } from '@/lib/utils';
 
 interface Participant {
     id: string;
@@ -409,7 +410,8 @@ export default function HostMonitorPage(): React.JSX.Element {
     const formatTime = (seconds: number): string => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        return isArabic ? toArabicNumerals(timeStr) : timeStr;
     };
 
     // Determine if countdown is currently active
@@ -468,7 +470,7 @@ export default function HostMonitorPage(): React.JSX.Element {
                 <div className="info-row-mobile">
                     <div className="info-item completion-status">
                         <Users />
-                        <span className="info-value">{participants.length}</span>
+                        <span className="info-value">{isArabic ? toArabicNumerals(participants.length) : participants.length}</span>
                     </div>
 
                     <div className="info-item actions">
@@ -526,7 +528,7 @@ export default function HostMonitorPage(): React.JSX.Element {
                                                         />
                                                     </div>
                                                     <span className="progress-indicator">
-                                                        {player.questionsAnswered}/{totalQuestions}
+                                                        {isArabic ? toArabicNumerals(player.questionsAnswered) : player.questionsAnswered}/{isArabic ? toArabicNumerals(totalQuestions) : totalQuestions}
                                                     </span>
                                                     {player.isEliminated ? (
                                                         <div className="status-overlay">

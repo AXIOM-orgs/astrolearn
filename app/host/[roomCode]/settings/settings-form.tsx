@@ -70,6 +70,26 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
         if (savedBgm !== null) {
             setSoundEnabled(savedBgm === 'true');
         }
+
+        const handleSoundChange = (e: any) => {
+            if (e.detail?.type === 'bgm') {
+                setSoundEnabled(e.detail.enabled);
+            }
+        };
+
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'cosmicquest_bgm_enabled') {
+                setSoundEnabled(e.newValue === 'true');
+            }
+        };
+
+        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            window.removeEventListener('storage', handleStorageChange);
+        };
     }, [initialData.error, initialData.session, router, hideLoading]);
 
     const toggleSound = () => {
@@ -330,7 +350,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
                                     <line x1="23" y1="9" x2="17" y2="15" />
                                     <line x1="17" y1="9" x2="23" y2="15" />
                                 </svg>
-                                <div style={{ position: 'relative', width: '50px', height: '26px', background: soundEnabled ? 'var(--primary-color)' : '#333', borderRadius: '13px', transition: 'all 0.3s ease', flexShrink: 0 }}>
+                                <div style={{ position: 'relative', width: '50px', height: '26px', background: soundEnabled ? 'var(--primary-color)' : '#333', borderRadius: '13px', transition: 'all 0.3s ease', flexShrink: 0, direction: 'ltr' }}>
                                     <div style={{ position: 'absolute', top: '3px', left: soundEnabled ? '27px' : '3px', width: '20px', height: '20px', background: '#fff', borderRadius: '50%', transition: 'all 0.3s ease', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }} />
                                 </div>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={soundEnabled ? 'var(--primary-color)' : 'rgba(255,255,255,0.4)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'all 0.3s ease' }}>

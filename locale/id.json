@@ -67,6 +67,11 @@
     "removeFromFavorites": "Hapus dari favorit",
     "addToFavorites": "Tambah ke favorit"
   },
+  "QuizPage": {
+    "noQuestionsFound": "Pertanyaan tidak ditemukan.",
+    "question": "Pertanyaan",
+    "score": "Skor"
+  },
   "Categories": {
     "all": "Semua",
     "general": "Umum",

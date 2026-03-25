@@ -6,7 +6,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useGame } from '@/context/GameContext';
 import { supabaseGame } from '@/lib/supabase';
 import { GameCodeDialog } from '@/components/ui/GameCodeDialog';
-import { Link } from '@/i18n/routing';
+import Link from 'next/link';
 import { ExitConfirmationDialog } from '@/components/ui/ExitConfirmationDialog';
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import { KickPlayerDialog } from '@/components/ui/KickPlayerDialog';
@@ -77,6 +77,21 @@ export default function HostLobbyPage(): React.JSX.Element {
             setSoundEnabled(savedSound === 'true');
         }
 
+        const handleSoundChange = (e: any) => {
+            if (e.detail?.type === 'bgm') {
+                setSoundEnabled(e.detail.enabled);
+            }
+        };
+
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'cosmicquest_bgm_enabled') {
+                setSoundEnabled(e.newValue === 'true');
+            }
+        };
+
+        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+        window.addEventListener('storage', handleStorageChange);
+
         // Handle fullscreen changes
         const handleFullscreenChange = () => {
             setIsFullscreen(!!document.fullscreenElement);
@@ -94,6 +109,8 @@ export default function HostLobbyPage(): React.JSX.Element {
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
             document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            window.removeEventListener('storage', handleStorageChange);
         };
     }, [roomCode]);
 
@@ -644,7 +661,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                                                 </div>
 
                                                 {/* Premium Toggle Switch */}
-                                                <div className={`relative w-12 h-6 rounded-full transition-all duration-300 flex items-center px-1 ${soundEnabled ? 'bg-[#00d4ff]' : 'bg-black/40 border border-white/10'}`}>
+                                                <div dir="ltr" className={`relative w-12 h-6 rounded-full transition-all duration-300 flex items-center px-1 ${soundEnabled ? 'bg-[#00d4ff]' : 'bg-black/40 border border-white/10'}`}>
                                                     <div className={`w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(255,255,255,0.5)] ${soundEnabled ? 'translate-x-[24px]' : 'translate-x-0'}`}></div>
                                                 </div>
                                             </div>

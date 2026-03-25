@@ -67,6 +67,11 @@
     "removeFromFavorites": "Remove from favorites",
     "addToFavorites": "Add to favorites"
   },
+  "QuizPage": {
+    "noQuestionsFound": "No questions found.",
+    "question": "Question",
+    "score": "Score"
+  },
   "Categories": {
     "all": "All",
     "general": "General",
