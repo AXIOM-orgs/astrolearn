@@ -62,18 +62,6 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         const id = Math.random().toString(36).substring(2, 9);
         setToasts((prev) => [...prev, { id, message, type }]);
 
-        // Play notification sound if SFX is enabled
-        try {
-            const isSfxEnabled = localStorage.getItem('cosmicquest_sfx_enabled') !== 'false';
-            if (isSfxEnabled) {
-                const audio = new Audio('/assets/audio/efek/notif.mp3');
-                audio.volume = 0.5;
-                audio.play().catch(e => console.log('Audio error:', e));
-            }
-        } catch (error) {
-            console.log('Could not play notification audio', error);
-        }
-
         setTimeout(() => {
             removeToast(id);
         }, 2500);

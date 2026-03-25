@@ -38,7 +38,7 @@
   },
   "SoundSettings": {
     "title": "Sound Settings",
-    "bgm": "Background Music",
+    "bgm": "Backsound",
     "sfx": "Sound Effects"
   },
   "Errors": {
