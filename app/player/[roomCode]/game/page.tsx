@@ -7,6 +7,8 @@ import { startMiniGame, cleanupMiniGame, GameStats } from '@/lib/miniGame';
 import { supabaseGame } from '@/lib/supabase';
 import { Spaceship, spaceships, DifficultyLevel } from '@/lib/data';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
+import Link from 'next/link';
 
 // Helper: find Spaceship object from filename (replicated from waiting page)
 const findSpaceshipByFilename = (filename: string | null): Spaceship | null => {
@@ -21,6 +23,7 @@ export default function GamePage(): React.JSX.Element {
     const roomCode = params.roomCode as string;
     const { gameState, setGameState, showLoading, hideLoading } = useGame();
     const [isInitializing, setIsInitializing] = useState(true);
+    const [isGameOver, setIsGameOver] = useState(false);
     const hasInitialized = useRef(false);
 
     // Bootstrap data if needed
@@ -225,7 +228,8 @@ export default function GamePage(): React.JSX.Element {
                     initialLives,
                     initialHP,
                     handleStateChange,
-                    translations
+                    translations,
+                    () => setIsGameOver(true)
                 );
             }
         }, 600);
@@ -246,6 +250,23 @@ export default function GamePage(): React.JSX.Element {
 
     return (
         <section id="screen-minigame" className="screen active game-fullscreen">
+            {/* Logos Header */}
+            {!isGameOver && (
+                <header className="quiz-header">
+                    <div className="quiz-brand">
+                        <Link href="/">
+                            <Image
+                                src="/assets/logo2new.webp"
+                                alt="Logo Left"
+                                width={150}
+                                height={50}
+                                className="brand-logo-image"
+                                unoptimized
+                            />
+                        </Link>
+                    </div>
+                </header>
+            )}
             <canvas id="minigame-canvas"></canvas>
         </section>
     );
