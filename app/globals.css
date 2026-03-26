@@ -5966,15 +5966,15 @@ input[type="text"]:focus {
 .table-header-wrapper {
   width: 100%;
   overflow: hidden;
-  scrollbar-gutter: stable;
+  background: rgba(10, 14, 39, 0.95);
+  padding-right: 6px; /* Match scrollbar width */
 }
 
 .table-body-scroll {
-  max-height: 20.4rem;
-  /* Limit height to exactly 10 rows (10 * 2.38rem) */
+  max-height: 29.5rem;
+  /* Limit height to exactly roughly 10 rows */
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-gutter: stable;
 }
 
 /* Custom Scrollbar - Thin & Styled */
@@ -6003,7 +6003,7 @@ input[type="text"]:focus {
 }
 
 .rankings-table thead {
-  background: rgba(10, 14, 39, 0.95);
+  background: transparent;
 }
 
 .rankings-table th {
@@ -6243,7 +6243,7 @@ input[type="text"]:focus {
   justify-content: center;
 }
 
-.waiting-brand {
+.waiting-brand, .quiz-brand {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -7035,8 +7035,9 @@ input[type="text"]:focus {
 
   .leaderboard-screen {
     padding: 1rem 1.5rem;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    height: auto;
+    overflow-x: hidden;
   }
 
   /* Tablet: Use mobile-style buttons below table instead of floating */
@@ -7098,8 +7099,13 @@ input[type="text"]:focus {
 
   .leaderboard-screen {
     padding: 1rem 0.75rem;
-    height: 100vh;
-    overflow: hidden;
+    min-height: 100vh;
+    height: auto;
+    overflow-x: hidden;
+  }
+
+  .table-body-scroll {
+    max-height: 20.4rem !important; /* Limit height to 10 rows exactly on mobile */
   }
 
   .vanguard-title {
@@ -7214,6 +7220,10 @@ input[type="text"]:focus {
   .rankings-table {
     padding: 1px !important;
     /* Ensure padding applies correctly across all engines */
+  }
+
+  .table-header-wrapper {
+    padding-right: 3px; /* Match scrollbar width exactly for mobile */
   }
 }
 
@@ -8265,14 +8275,14 @@ input[type="text"]:focus {
 
 .rankings-table th:nth-child(3),
 .rankings-table td:nth-child(3) {
-  width: 20%;
-  text-align: center;
+  width: 20% !important;
+  text-align: center !important;
 }
 
 .rankings-table th:nth-child(4),
 .rankings-table td:nth-child(4) {
-  width: 20%;
-  text-align: center;
+  width: 20% !important;
+  text-align: center !important;
 }
 
 .left-floating-group {
@@ -8525,7 +8535,8 @@ input[type="text"]:focus {
     justify-content: center !important;
   }
 
-  .waiting-brand {
+  .waiting-brand,
+  .quiz-brand {
     margin-left: auto !important;
     margin-right: auto !important;
   }
@@ -9000,7 +9011,8 @@ input[type="text"]:focus {
   }
 
   header.waiting-header .waiting-brand,
-  header.quiz-header .waiting-brand {
+  header.quiz-header .waiting-brand,
+  header.quiz-header .quiz-brand {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;

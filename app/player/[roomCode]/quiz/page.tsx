@@ -511,7 +511,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                 <div className="quiz-main-content">
                     {/* Logos Header */}
                     <header className="quiz-header">
-                        <div className="waiting-brand">
+                        <div className="quiz-brand">
                             <Link href="/">
                                 <Image
                                     src="/assets/logo2new.webp"
