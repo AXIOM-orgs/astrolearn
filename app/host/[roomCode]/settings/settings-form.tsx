@@ -50,7 +50,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
     const [saving, setSaving] = useState(false);
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [soundEnabled, setSoundEnabled] = useState(false);
+    const [soundEnabled, setSoundEnabled] = useState(true);
     const [isDurationOpen, setIsDurationOpen] = useState(false);
     const [isQuestionsOpen, setIsQuestionsOpen] = useState(false);
     const [isDifficultyOpen, setIsDifficultyOpen] = useState(false);
