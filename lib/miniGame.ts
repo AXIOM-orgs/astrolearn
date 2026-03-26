@@ -740,6 +740,7 @@ function getScreenPosition(laneX: number, z: number): { x: number; y: number; sc
 let onComplete: ((stats: GameStats) => void) | null = null;
 let callbackCalled = false;
 let gameTranslations: any = null;
+let handleGameOver: (() => void) | null = null;
 
 export function startMiniGame(
     spaceship: Spaceship,
@@ -748,7 +749,8 @@ export function startMiniGame(
     initialLives?: number,
     initialHP?: number,
     onStateChange?: (lives: number, hp: number) => void,
-    translations?: any
+    translations?: any,
+    onGameOver?: () => void
 ): void {
     if (isGameRunning) return;
     
@@ -758,6 +760,7 @@ export function startMiniGame(
     callbackCalled = false;
     handleStateChange = onStateChange || null;
     gameTranslations = translations;
+    handleGameOver = onGameOver || null;
     // CRITICAL: Ensure any existing game is fully stopped before starting a new one
     cleanupMiniGame();
 
@@ -1917,10 +1920,10 @@ function drawUI(isInDodgePhase: boolean, elapsed: number): void {
     const isMobile = canvas.width < 768;
     const scale = isMobile ? 1.0 : 1; // Increased for mobile from 0.7 for better readability
 
-    // ===== TOP LEFT: SIMPLE HP BAR (Reference Design) =====
-    const barX = 15 * scale;
-    const barY = 15 * scale;
+    // ===== TOP RIGHT: SIMPLE HP BAR (Reference Design) =====
     const barWidth = 180 * scale;
+    const barX = canvas.width - barWidth - (15 * scale);
+    const barY = 15 * scale;
     const barHeight = 22 * scale;
     const borderRadius = 4 * scale;
 
@@ -1954,29 +1957,35 @@ function drawUI(isInDodgePhase: boolean, elapsed: number): void {
     // ===== LIVES COUNTER: ❤️ x 3 =====
     const livesY = barY + barHeight + 8 * scale;
     const heartSize = 22 * scale;
+    const rightEdgeX = barX + barWidth;
+
+    // Set font first to measure text width accurately
+    ctx.font = `bold ${Math.floor(16 * scale)}px Orbitron, sans-serif`;
+    const textWidth = ctx.measureText(`x ${playerLives}`).width;
+    const heartX = rightEdgeX - textWidth - heartSize - (5 * scale);
+
+    // Draw "x N" text
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'right';
+    ctx.fillText(`x ${playerLives}`, rightEdgeX, livesY + 17 * scale);
 
     // Draw heart icon
     if (loveImage && loveImage.complete) {
-        ctx.drawImage(loveImage, barX, livesY, heartSize, heartSize);
+        ctx.drawImage(loveImage, heartX, livesY, heartSize, heartSize);
     } else {
         ctx.font = `${Math.floor(18 * scale)}px Arial`;
         ctx.fillStyle = '#ff4466';
-        ctx.textAlign = 'left';
-        ctx.fillText('❤️', barX, livesY + 16 * scale);
+        ctx.textAlign = 'right';
+        ctx.fillText('❤️', rightEdgeX - textWidth - (5 * scale), livesY + 16 * scale);
     }
 
-    // Draw "x N" text
-    ctx.font = `bold ${Math.floor(16 * scale)}px Orbitron, sans-serif`;
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'left';
-    ctx.fillText(`x ${playerLives}`, barX + heartSize + 5 * scale, livesY + 17 * scale);
-
-    // Immunity indicator (next to lives)
+    // Immunity indicator (left of heart)
     if (isImmune) {
         const immuneTimeLeft = Math.max(0, (immuneEndTime - Date.now()) / 1000);
         ctx.font = `bold ${Math.floor(12 * scale)}px Orbitron, sans-serif`;
         ctx.fillStyle = '#00ffff';
-        ctx.fillText(`🛡️ ${immuneTimeLeft.toFixed(1)}s`, barX + heartSize + 55 * scale, livesY + 17 * scale);
+        ctx.textAlign = 'right';
+        ctx.fillText(`🛡️ ${immuneTimeLeft.toFixed(1)}s`, heartX - (15 * scale), livesY + 17 * scale);
     }
 
     /* // HIDE TOP RIGHT HUD PER REQUEST
@@ -4084,6 +4093,10 @@ function updateUI(): void {
 
 function endGame(): void {
     isGameRunning = false;
+
+    if (handleGameOver) {
+        handleGameOver();
+    }
 
     // Stop all sounds
     audioManager.stopAllSounds();
