@@ -434,7 +434,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        return isArabicLocale ? toArabicNumerals(timeStr) : timeStr;
+        return timeStr;
     };
 
     // Loading State - shows black screen matching countdown overlay
@@ -540,7 +540,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                             <div className="quiz-header-grid" dir={isArabicLocale ? 'rtl' : 'ltr'}>
                                 <div className="quiz-info-left">
                                     <span className="text-lg md:text-md font-bold text-white font-orbitron">
-                                        {t('question')} <span className="text-primary">{isArabicLocale ? toArabicNumerals(gameState.currentQuestionIndex + 1) : gameState.currentQuestionIndex + 1}</span><span className="text-gray-500 text-lg">/{isArabicLocale ? toArabicNumerals(gameState.selectedQuestions) : gameState.selectedQuestions}</span>
+                                        {t('question')} <span className="text-primary">{gameState.currentQuestionIndex + 1}</span><span className="text-gray-500 text-lg">/{gameState.selectedQuestions}</span>
                                     </span>
                                 </div>
 
@@ -550,7 +550,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                                 </div>
 
                                 <div className="quiz-info-right">
-                                    {t('score')}: <span className="text-yellow-400">{isArabicLocale ? toArabicNumerals(gameState.score) : gameState.score}</span>
+                                    {t('score')}: <span className="text-yellow-400">{gameState.score}</span>
                                 </div>
                             </div>
 
