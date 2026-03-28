@@ -13,7 +13,7 @@ import { getSpacecraftImage } from '@/lib/data';
 interface ParticipantData {
     id: string;
     score: number;
-    duration: number; // in seconds
+    duration: number;
     correct: number;
     nickname: string;
     user_id: string;
@@ -213,7 +213,8 @@ export default function JoinResultsPage(): React.JSX.Element {
         const totalSeconds = Math.floor(Number(seconds));
         const mins = Math.floor(totalSeconds / 60);
         const secs = totalSeconds % 60;
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        return timeStr;
     };
 
     return (

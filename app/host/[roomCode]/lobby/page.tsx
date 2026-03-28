@@ -479,7 +479,7 @@ export default function HostLobbyPage(): React.JSX.Element {
             <div className="host-lobby-content">
                 {/* Left Panel - Game Code & QR */}
                 <div className="host-right-panel">
-                    <div className="game-code-section">
+                    <div className="game-code-section" dir={isArabic ? 'rtl' : 'ltr'}>
                         <div className="game-code-display">
                             <span className="game-code">{roomCode}</span>
                             <button
