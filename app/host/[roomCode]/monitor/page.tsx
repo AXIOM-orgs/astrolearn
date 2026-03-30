@@ -432,18 +432,20 @@ export default function HostMonitorPage(): React.JSX.Element {
                 targetDate={countdownTargetDate}
             />
 
-            {/* Header */}
-            <header className="monitor-header">
-                <div className="monitor-brand">
-                    <Link href="/">
-                        <img
-                            src="/assets/logo2new.webp"
-                            alt="Astro Learning"
-                            className="brand-logo-image"
-                            style={{ height: '75px', width: 'auto', objectFit: 'contain' }}
-                        />
-                    </Link>
-                </div>
+            {!isInitialLoading && !isCountdownActive && (
+                <>
+                    {/* Header */}
+                    <header className="monitor-header">
+                        <div className="monitor-brand">
+                            <Link href="/">
+                                <img
+                                    src="/assets/logo2new.webp"
+                                    alt="Astro Learning"
+                                    className="brand-logo-image"
+                                    style={{ height: '75px', width: 'auto', objectFit: 'contain' }}
+                                />
+                            </Link>
+                        </div>
                 <img
                     src="/assets/logo.webp"
                     alt="Gameforsmart Logo"
@@ -487,11 +489,6 @@ export default function HostMonitorPage(): React.JSX.Element {
                     setIsEndConfirmOpen(false);
                     handleEndGame();
                 }}
-            />
-
-            <CountdownOverlay
-                isActive={!!session?.countdown_started_at && session?.status === 'waiting'}
-                targetDate={session?.countdown_started_at ? new Date(new Date(session.countdown_started_at).getTime() + 10000).toISOString() : undefined}
             />
 
             {/* Player Progress Grid Wrapped in Panel */}
@@ -562,6 +559,8 @@ export default function HostMonitorPage(): React.JSX.Element {
                     </div>
                 </div>
             </div>
+            </>
+            )}
 
             {/* CSS tambahan untuk animasi yang diminta */}
             <style jsx>{`

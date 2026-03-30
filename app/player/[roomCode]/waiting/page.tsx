@@ -95,8 +95,8 @@ export default function PlayerWaitingPage(): React.JSX.Element {
 
             setSession(fetchedSession);
 
-            // If already active OR countdown started, redirect to game
-            if (fetchedSession.status === 'active' || (fetchedSession.status === 'waiting' && fetchedSession.countdown_started_at)) {
+            // If already active, redirect to game
+            if (fetchedSession.status === 'active') {
                 if (!isRedirecting.current) {
                     isRedirecting.current = true;
                     showLoading();
@@ -154,7 +154,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                         const newSession = payload.new as SessionData;
                         setSession(newSession);
 
-                        if (newSession.status === 'active' || (newSession.status === 'waiting' && newSession.countdown_started_at)) {
+                        if (newSession.status === 'active') {
                             if (!isRedirecting.current) {
                                 isRedirecting.current = true;
                                 showLoading();
@@ -423,7 +423,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             </div>
 
             <CountdownOverlay
-                isActive={!!session?.countdown_started_at}
+                isActive={!!session?.countdown_started_at && session?.status === 'waiting'}
                 targetDate={session?.countdown_started_at ? new Date(new Date(session.countdown_started_at).getTime() + 10000).toISOString() : undefined}
             />
         </section>
