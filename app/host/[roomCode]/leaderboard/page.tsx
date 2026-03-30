@@ -8,7 +8,6 @@ import { useGame } from '@/context/GameContext';
 import { generateXID } from '@/lib/id-generator';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
-import { getSpacecraftImage } from '@/lib/data';
 
 // Helper: Generate game PIN
 function generateGamePin(length = 6): string {
@@ -35,6 +34,7 @@ interface Participant {
   finished_at: string | null;
   joined_at: string;
   eliminated?: boolean;
+  user_id?: string;
 }
 
 export default function HostLeaderboardPage(): React.JSX.Element {
@@ -50,6 +50,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [visibleRanks, setVisibleRanks] = useState<number[]>([]);
   const [isRestarting, setIsRestarting] = useState(false);
+  const [avatarMap, setAvatarMap] = useState<Record<string, string>>({});
 
 
 
@@ -172,7 +173,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         // 2. Ambil semua participant yang finished (finished_at IS NOT NULL)
         const { data: participants, error: partErr } = await supabaseGame
           .from('participants')
-          .select('id, nickname, spacecraft, score, duration, finished_at, joined_at, eliminated')
+          .select('id, nickname, spacecraft, score, duration, finished_at, joined_at, eliminated, user_id')
           .eq('session_id', sess.id)
           .not('finished_at', 'is', null);
 
@@ -219,6 +220,28 @@ export default function HostLeaderboardPage(): React.JSX.Element {
 
 
         setPlayers(sorted);
+
+        // Fetch profile avatars for participants with user_id
+        const userIds = sorted
+          .filter((p: any) => p.user_id)
+          .map((p: any) => p.user_id);
+
+        if (userIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, avatar_url')
+            .in('id', userIds);
+
+          if (profiles) {
+            const map: Record<string, string> = {};
+            profiles.forEach((p: any) => {
+              if (p.avatar_url) {
+                map[p.id] = p.avatar_url;
+              }
+            });
+            setAvatarMap(map);
+          }
+        }
 
       } catch (err: any) {
         console.error("Error load leaderboard:", err);
@@ -378,11 +401,13 @@ export default function HostLeaderboardPage(): React.JSX.Element {
               {top3[1] && (
                 <div className={`podium-card silver ${visibleRanks.includes(2) ? 'visible' : 'hidden'}`}>
                   <div className="rank-badge">#2</div>
-                  <div className="podium-image">
-                    {top3[1].spacecraft ? (
-                      <img src={getSpacecraftImage(top3[1].spacecraft)} alt="spacecraft" />
+                  <div className="podium-image podium-avatar">
+                    {top3[1].user_id && avatarMap[top3[1].user_id] ? (
+                      <img src={avatarMap[top3[1].user_id]} alt={top3[1].nickname} className="podium-avatar-img" />
                     ) : (
-                      <span style={{ fontSize: '3rem' }}></span>
+                      <div className="podium-avatar-fallback">
+                        {top3[1].nickname.substring(0, 2).toUpperCase()}
+                      </div>
                     )}
                   </div>
                   <h3 className="podium-name has-tooltip" data-tooltip={top3[1].nickname}>
@@ -396,11 +421,13 @@ export default function HostLeaderboardPage(): React.JSX.Element {
               {top3[0] && (
                 <div className={`podium-card gold center ${visibleRanks.includes(1) ? 'visible' : 'hidden'}`}>
                   <div className="rank-badge">#1</div>
-                  <div className="podium-image">
-                    {top3[0].spacecraft ? (
-                      <img src={getSpacecraftImage(top3[0].spacecraft)} alt="spacecraft" />
+                  <div className="podium-image podium-avatar">
+                    {top3[0].user_id && avatarMap[top3[0].user_id] ? (
+                      <img src={avatarMap[top3[0].user_id]} alt={top3[0].nickname} className="podium-avatar-img" />
                     ) : (
-                      <span style={{ fontSize: '3.5rem' }}></span>
+                      <div className="podium-avatar-fallback">
+                        {top3[0].nickname.substring(0, 2).toUpperCase()}
+                      </div>
                     )}
                   </div>
                   <h3 className="podium-name has-tooltip" data-tooltip={top3[0].nickname}>
@@ -414,11 +441,13 @@ export default function HostLeaderboardPage(): React.JSX.Element {
               {top3[2] && (
                 <div className={`podium-card bronze ${visibleRanks.includes(3) ? 'visible' : 'hidden'}`}>
                   <div className="rank-badge">#3</div>
-                  <div className="podium-image">
-                    {top3[2].spacecraft ? (
-                      <img src={getSpacecraftImage(top3[2].spacecraft)} alt="spacecraft" />
+                  <div className="podium-image podium-avatar">
+                    {top3[2].user_id && avatarMap[top3[2].user_id] ? (
+                      <img src={avatarMap[top3[2].user_id]} alt={top3[2].nickname} className="podium-avatar-img" />
                     ) : (
-                      <span style={{ fontSize: '2.5rem' }}>🚀</span>
+                      <div className="podium-avatar-fallback">
+                        {top3[2].nickname.substring(0, 2).toUpperCase()}
+                      </div>
                     )}
                   </div>
                   <h3 className="podium-name has-tooltip" data-tooltip={top3[2].nickname}>

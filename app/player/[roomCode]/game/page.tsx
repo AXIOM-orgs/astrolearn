@@ -35,6 +35,7 @@ export default function GamePage(): React.JSX.Element {
             // If we have state, just verify valid spaceship
             if (gameState.selectedSpaceship && gameState.selectedDifficulty) {
                 setIsInitializing(false);
+                hideLoading();
                 return;
             }
 
@@ -74,7 +75,8 @@ export default function GamePage(): React.JSX.Element {
                 }
 
                 // Check if player should actually be in a minigame
-                if (!participant.minigame) {
+                // Kunjungan pertama (current_question === 0): izinkan masuk game tanpa flag minigame
+                if (!participant.minigame && (participant.current_question || 0) > 0) {
                     router.replace(`/player/${roomCode}/quiz`);
                     return;
                 }
@@ -252,8 +254,8 @@ export default function GamePage(): React.JSX.Element {
         <section id="screen-minigame" className="screen active game-fullscreen">
             {/* Logos Header */}
             {!isGameOver && (
-                <header className="quiz-header">
-                    <div className="quiz-brand">
+                <header className="game-header">
+                    <div className="game-brand">
                         <Link href="/">
                             <Image
                                 src="/assets/logo2new.webp"

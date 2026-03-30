@@ -100,7 +100,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                 if (!isRedirecting.current) {
                     isRedirecting.current = true;
                     showLoading();
-                    router.replace(`/player/${roomCode}/quiz`);
+                    router.replace(`/player/${roomCode}/game`);
                 }
                 return;
             } else if (fetchedSession.status === 'finished') {
@@ -158,7 +158,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                             if (!isRedirecting.current) {
                                 isRedirecting.current = true;
                                 showLoading();
-                                router.replace(`/player/${roomCode}/quiz`);
+                                router.replace(`/player/${roomCode}/game`);
                             }
                         } else if (newSession.status === 'finished') {
                             router.replace(`/player/${roomCode}/result`);

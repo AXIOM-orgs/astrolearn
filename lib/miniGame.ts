@@ -1918,7 +1918,7 @@ function drawUI(isInDodgePhase: boolean, elapsed: number): void {
 
     // Mobile-responsive scaling
     const isMobile = canvas.width < 768;
-    const scale = isMobile ? 1.0 : 1; // Increased for mobile from 0.7 for better readability
+    const scale = isMobile ? 0.65 : 1; // Scaled down to match desktop layout
 
     // ===== TOP RIGHT: SIMPLE HP BAR (Reference Design) =====
     const barWidth = 180 * scale;

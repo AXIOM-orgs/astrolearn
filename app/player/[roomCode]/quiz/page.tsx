@@ -388,8 +388,9 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     };
 
     const showMiniGame = async (nextIndex: number): Promise<void> => {
-        setShowCountdown(true);
-        setCountdownNumber(3);
+        // Countdown 3-2-1 di-comment sementara agar tidak bentrok dengan countdown 10 detik
+        // setShowCountdown(true);
+        // setCountdownNumber(3);
 
         const participantId = localStorage.getItem('cosmicquest_participant_id');
         if (participantId) {
@@ -400,33 +401,38 @@ export default function JoinQuizPage(): React.JSX.Element | null {
                 .eq('id', participantId);
         }
 
-        // Silence BGM during countdown
-        window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
-            detail: { active: true } 
-        }));
+        // Update index locally so when they return they are on next question
+        setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
 
-        let count = 3;
-        const countdownInterval = setInterval(() => {
-            count--;
-            if (count > 0) {
-                setCountdownNumber(count);
-            } else {
-                clearInterval(countdownInterval);
-                setShowCountdown(false);
-                setIsFreezing(true);
+        // Langsung navigate ke game tanpa countdown 3-2-1
+        showLoading();
+        router.push(`/player/${roomCode}/game`);
 
-                // Ensure BGM is notified that countdown is over (though navigation to /game will keep it quiet)
-                window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
-                    detail: { active: false } 
-                }));
-
-                // Update index locally so when they return they are on next question
-                setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
-
-                // Navigate to MiniGame
-                router.push(`/player/${roomCode}/game`);
-            }
-        }, 1000);
+        // === COMMENTED OUT: countdown 3-2-1 ===
+        // // Silence BGM during countdown
+        // window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
+        //     detail: { active: true } 
+        // }));
+        //
+        // let count = 3;
+        // const countdownInterval = setInterval(() => {
+        //     count--;
+        //     if (count > 0) {
+        //         setCountdownNumber(count);
+        //     } else {
+        //         clearInterval(countdownInterval);
+        //         setShowCountdown(false);
+        //         setIsFreezing(true);
+        //
+        //         // Ensure BGM is notified that countdown is over
+        //         window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
+        //             detail: { active: false } 
+        //         }));
+        //
+        //         setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
+        //         router.push(`/player/${roomCode}/game`);
+        //     }
+        // }, 1000);
     };
 
     // Format time mm:ss
