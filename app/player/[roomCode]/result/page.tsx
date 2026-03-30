@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Home, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
-import { getSpacecraftImage } from '@/lib/data';
+
 interface ParticipantData {
     id: string;
     score: number;
@@ -273,18 +273,18 @@ export default function JoinResultsPage(): React.JSX.Element {
                             {t('eliminated')}
                         </div>
                     )}
-                    {/* Display Spacecraft Image */}
-                    {myStats?.spacecraft ? (
+                    {/* Display Profile Avatar */}
+                    {profile?.avatar_url ? (
                         <img
-                            src={getSpacecraftImage(myStats.spacecraft)}
-                            alt="Spacecraft"
+                            src={profile.avatar_url}
+                            alt={myStats?.nickname || 'Avatar'}
                             id="result-character-img"
-                            className="result-spaceship-img"
-                            // Remove borderRadius: 50% because spaceships are usually ships, not round avatars.
-                            style={{ objectFit: 'contain', width: '120px', height: '120px' }}
+                            className="result-avatar-img"
                         />
                     ) : (
-                        <div className="result-spaceship-placeholder" style={{ fontSize: '4rem' }}>🚀</div>
+                        <div className="result-avatar-fallback">
+                            {(myStats?.nickname || profile?.nickname || profile?.username || 'P').substring(0, 2).toUpperCase()}
+                        </div>
                     )}
                     <div className="result-top-info">
                         <p className="result-pilot-name" id="result-name-display">
