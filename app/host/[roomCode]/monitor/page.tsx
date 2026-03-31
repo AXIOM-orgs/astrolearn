@@ -6,6 +6,7 @@ import { useGame } from '@/context/GameContext';
 import { useDialog } from '@/context/AlertContext'; // Import AlertContext
 import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai supabase.ts kamu
 import { generateXID } from '@/lib/id-generator';
+import { syncServerTime, getSyncedServerTime } from '@/lib/serverTime';
 import { Users, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EndGameConfirmationDialog } from '@/components/ui/EndGameConfirmationDialog';
@@ -98,24 +99,33 @@ export default function HostMonitorPage(): React.JSX.Element {
         });
     }, [processedPlayers]);
 
-    // Timer akurat berbasis server time
+    // Timer akurat berbasis server time (synced)
     useEffect(() => {
         if (!session?.started_at) return;
 
-        const interval = setInterval(() => {
-            const start = new Date(session.started_at).getTime();
-            const now = Date.now();
-            const elapsedSeconds = Math.floor((now - start) / 1000);
-            const remaining = Math.max(0, session.total_time_minutes * 60 - elapsedSeconds);
-            setTimeRemaining(remaining);
+        const startTimer = async () => {
+            await syncServerTime(); // Ensure offset is fresh
 
-            // Auto end jika waktu habis
-            if (remaining <= 0 && session.status === 'active') {
-                handleEndGame();
-            }
-        }, 1000);
+            const interval = setInterval(() => {
+                const start = new Date(session.started_at).getTime();
+                const now = getSyncedServerTime();
+                const elapsedSeconds = Math.floor((now - start) / 1000);
+                const remaining = Math.max(0, session.total_time_minutes * 60 - elapsedSeconds);
+                setTimeRemaining(remaining);
 
-        return () => clearInterval(interval);
+                // Auto end jika waktu habis
+                if (remaining <= 0 && session.status === 'active') {
+                    handleEndGame();
+                }
+            }, 1000);
+
+            return interval;
+        };
+
+        let intervalId: ReturnType<typeof setInterval> | undefined;
+        startTimer().then(id => { intervalId = id; });
+
+        return () => { if (intervalId) clearInterval(intervalId); };
     }, [session]);
 
     // Auto end jika semua pemain selesai
@@ -176,37 +186,38 @@ export default function HostMonitorPage(): React.JSX.Element {
         init();
     }, [gamePin, router, hideLoading]);
 
-    // Handle Countdown to Active Transition
+    // Handle Countdown to Active Transition (server-synced)
     useEffect(() => {
         if (session?.status === 'waiting' && session?.countdown_started_at) {
-            const startDate = new Date(session.countdown_started_at);
-            const targetTime = startDate.getTime() + 10000; // 10 seconds countdown
-            const now = Date.now();
-            const diff = targetTime - now;
+            let timer: ReturnType<typeof setTimeout> | undefined;
 
-            if (diff > 0) {
-                const timer = setTimeout(async () => {
-                    // Activate Game
-                    try {
-                        const { error } = await supabaseGame
-                            .from('sessions')
-                            .update({
-                                status: 'active',
-                                started_at: new Date().toISOString()
-                            })
-                            .eq('id', session.id);
+            const setupTransition = async () => {
+                await syncServerTime(); // Ensure offset is fresh
 
-                        if (error) console.error("Failed to activate session:", error);
-                    } catch (e) {
-                        console.error("Error activating session:", e);
-                    }
-                }, diff);
+                const startDate = new Date(session.countdown_started_at!);
+                const targetTime = startDate.getTime() + 10000; // 10 seconds countdown
+                const now = getSyncedServerTime();
+                const diff = targetTime - now;
 
-                return () => clearTimeout(timer);
-            } else {
-                // If time already passed, activate immediately
-                const activate = async () => {
-                    // Double check status to avoid loop if update failed
+                if (diff > 0) {
+                    timer = setTimeout(async () => {
+                        // Activate Game
+                        try {
+                            const { error } = await supabaseGame
+                                .from('sessions')
+                                .update({
+                                    status: 'active',
+                                    started_at: new Date().toISOString()
+                                })
+                                .eq('id', session.id);
+
+                            if (error) console.error("Failed to activate session:", error);
+                        } catch (e) {
+                            console.error("Error activating session:", e);
+                        }
+                    }, diff);
+                } else {
+                    // If time already passed, activate immediately
                     const { data } = await supabaseGame.from('sessions').select('status').eq('id', session.id).single();
                     if (data?.status === 'waiting') {
                         await supabaseGame
@@ -218,8 +229,11 @@ export default function HostMonitorPage(): React.JSX.Element {
                             .eq('id', session.id);
                     }
                 }
-                activate();
-            }
+            };
+
+            setupTransition();
+
+            return () => { if (timer) clearTimeout(timer); };
         }
     }, [session]);
 

@@ -25,7 +25,7 @@ export async function syncServerTime() {
     const serverNow = await getServerTime()
     serverTimeOffset = serverNow - now
     lastSyncTime = now
-    console.log("🕒 Synced server offset:", serverTimeOffset)
+    console.log("Synced server offset:", serverTimeOffset)
 }
 
 export function getSyncedServerTime(): number {
