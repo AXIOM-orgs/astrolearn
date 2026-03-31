@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocale } from 'next-intl';
 import { toArabicNumerals } from '@/lib/utils';
+import { syncServerTime, getSyncedServerTime } from '@/lib/serverTime';
 
 interface CountdownOverlayProps {
     isActive: boolean;
@@ -13,15 +14,15 @@ interface CountdownOverlayProps {
 
 export function CountdownOverlay({ isActive, onComplete, targetDate, max }: CountdownOverlayProps) {
     const locale = useLocale();
-    const [count, setCount] = useState<number | null>(() => {
-        if (!isActive || !targetDate) return null;
-        const now = new Date().getTime();
-        const target = new Date(targetDate).getTime();
-        const difference = target - now;
-        if (difference <= 0) return 0;
-        const calculated = Math.ceil(difference / 1000);
-        return max ? Math.min(calculated, max) : calculated;
-    });
+    const [count, setCount] = useState<number | null>(null);
+    const hasSynced = useRef(false);
+
+    // Sync server time once on mount
+    useEffect(() => {
+        if (hasSynced.current) return;
+        hasSynced.current = true;
+        syncServerTime();
+    }, []);
 
     useEffect(() => {
         if (!isActive || !targetDate) {
@@ -30,7 +31,7 @@ export function CountdownOverlay({ isActive, onComplete, targetDate, max }: Coun
         }
 
         const calculateTimeLeft = () => {
-            const now = new Date().getTime();
+            const now = getSyncedServerTime();
             const target = new Date(targetDate).getTime();
             const difference = target - now;
 
@@ -44,7 +45,13 @@ export function CountdownOverlay({ isActive, onComplete, targetDate, max }: Coun
             setCount(max ? Math.min(val, max) : val);
         };
 
-        calculateTimeLeft(); // Initial calc
+        // Sync server time first, then start countdown
+        const startCountdown = async () => {
+            await syncServerTime();
+            calculateTimeLeft(); // Initial calc with synced time
+        };
+
+        startCountdown();
         const timer = setInterval(calculateTimeLeft, 100);
 
         // Notify BGM that countdown is active

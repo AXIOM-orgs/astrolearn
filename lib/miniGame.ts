@@ -526,10 +526,21 @@ class AudioManager {
     private bgmSource: AudioBufferSourceNode | null = null;
     private bgmGain: GainNode | null = null;
     private isLoaded: boolean = false;
+    private masterGain: GainNode | null = null;
+    private masterVolume: number = 1.0;
 
     constructor() {
         try {
             this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            this.masterGain = this.audioContext.createGain();
+            this.masterGain.connect(this.audioContext.destination);
+            
+            // Load saved volume
+            const savedVolume = localStorage.getItem('cosmicquest_master_volume');
+            if (savedVolume !== null) {
+                this.masterVolume = parseFloat(savedVolume);
+            }
+            this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
         } catch (e) {
             console.log('Audio context not available');
         }
@@ -565,7 +576,7 @@ class AudioManager {
     }
 
     playSound(type: SoundType, volume: number = 0.5): void {
-        if (!this.audioContext || this.isMuted) return;
+        if (!this.audioContext || this.isMuted || !this.masterGain) return;
 
         // Resume audio context if suspended (browser autoplay policy)
         if (this.audioContext.state === 'suspended') {
@@ -577,7 +588,6 @@ class AudioManager {
         let duration: number | undefined = undefined;
         let playbackRate = 1.0;
 
-        // Special handling for specific sounds
         // Special handling for specific sounds
         if (type === 'bossLaser') {
             playbackRate = 2.0; // 2x speed
@@ -594,7 +604,7 @@ class AudioManager {
         gainNode.gain.value = volume;
 
         source.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
+        gainNode.connect(this.masterGain);
 
         // Track active sources for cleanup
         this.activeSources.push(source);
@@ -664,15 +674,34 @@ class AudioManager {
     toggleMute(): boolean {
         this.isMuted = !this.isMuted;
 
-        if (this.isMuted) {
-            this.stopAllSounds();
-        } else {
-            // Unmute: only start BGM if game is running (managed by caller or just start it)
-            // But usually we want BGM to resume if unmuted
+        if (this.masterGain) {
+            this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
+        }
+
+        if (!this.isMuted && !this.bgmSource && this.audioContext?.state !== 'suspended') {
             this.startBGM(0.5);
         }
 
         return this.isMuted;
+    }
+
+    setMasterVolume(volume: number): void {
+        this.masterVolume = Math.max(0, Math.min(1, volume)); // clamp 0-1
+        localStorage.setItem('cosmicquest_master_volume', this.masterVolume.toString());
+        
+        if (!this.isMuted && this.masterGain) {
+            this.masterGain.gain.value = this.masterVolume;
+        }
+        
+        // Auto unmute if volume > 0 and was muted
+        if (this.isMuted && this.masterVolume > 0) {
+            this.isMuted = false;
+            if (!this.bgmSource) this.startBGM(0.5);
+        }
+    }
+    
+    getMasterVolume(): number {
+        return this.masterVolume;
     }
 
     getMuted(): boolean {
@@ -753,7 +782,7 @@ export function startMiniGame(
     onGameOver?: () => void
 ): void {
     if (isGameRunning) return;
-    
+
     playerSpaceship = spaceship;
     currentDifficulty = difficulty;
     onComplete = completeCallback;
@@ -1050,6 +1079,10 @@ export function startMiniGame(
 
 
 
+// ============ GUI STATE ============
+let isVolumeSliderOpen = false;
+let isDraggingVolume = false;
+
 function drawMuteButton(): void {
     if (!ctx || !canvas) return;
 
@@ -1059,11 +1092,61 @@ function drawMuteButton(): void {
     const btnY = canvas.height - btnRadius - padding;
 
     const isMuted = audioManager.getMuted();
+    const currentVol = audioManager.getMasterVolume();
+
+    // Draw Master Volume Slider (if open)
+    if (isVolumeSliderOpen) {
+        const sliderWidth = 12;
+        const sliderHeight = 100;
+        const sliderX = btnX - sliderWidth / 2;
+        const sliderY = btnY - btnRadius - 40 - sliderHeight; // Increased gap to button
+        
+        // Background track
+        ctx.fillStyle = 'rgba(0, 30, 50, 0.8)';
+        ctx.beginPath();
+        // Added more padding (16px vertical, 14px horizontal)
+        ctx.roundRect(sliderX - 14, sliderY - 26, sliderWidth + 28, sliderHeight + 52, 32);
+        ctx.fill();
+        ctx.strokeStyle = '#4ab8c7';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Track line
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.beginPath();
+        ctx.roundRect(sliderX, sliderY, sliderWidth, sliderHeight, 6);
+        ctx.fill();
+
+        // Fill line based on volume
+        const fillHeight = sliderHeight * currentVol;
+        const fillY = sliderY + sliderHeight - fillHeight;
+        
+        // Green/cyan fill for volume
+        const gradient = ctx.createLinearGradient(0, sliderY, 0, sliderY + sliderHeight);
+        gradient.addColorStop(0, '#00d4ff');
+        gradient.addColorStop(1, '#00d4ff');
+        ctx.fillStyle = gradient;
+        
+        if (fillHeight > 0) {
+            ctx.beginPath();
+            ctx.roundRect(sliderX, fillY, sliderWidth, fillHeight, 6);
+            ctx.fill();
+        }
+
+        // Handle knob
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(sliderX + sliderWidth / 2, fillY, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#4ab8c7';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
 
     // Draw Button Background
     ctx.beginPath();
     ctx.arc(btnX, btnY, btnRadius, 0, Math.PI * 2);
-    ctx.fillStyle = '#10b981';
+    ctx.fillStyle = (isMuted || currentVol === 0) ? '#ff4444' : '#10b981';
     ctx.fill();
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
@@ -1090,7 +1173,7 @@ function drawMuteButton(): void {
     ctx.closePath();
     ctx.fill();
 
-    if (isMuted) {
+    if (isMuted || currentVol === 0) {
         // X mark
         ctx.beginPath();
         ctx.moveTo(cx + 5, cy - 3);
@@ -1099,13 +1182,16 @@ function drawMuteButton(): void {
         ctx.lineTo(cx + 5, cy + 3);
         ctx.stroke();
     } else {
-        // Sound Waves
+        // Sound Waves depending on volume level
         ctx.beginPath();
         ctx.arc(cx, cy, 6, -Math.PI / 5, Math.PI / 5);
         ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(cx, cy, 10, -Math.PI / 5, Math.PI / 5);
-        ctx.stroke();
+        
+        if (currentVol > 0.5) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, 10, -Math.PI / 5, Math.PI / 5);
+            ctx.stroke();
+        }
     }
 }
 
@@ -1123,13 +1209,49 @@ function setupControls(): void {
         targetY = Math.max(player.height / 2, Math.min(canvas.height - player.height / 2, crosshairY));
     };
 
+    const handleDragVolume = (clickX: number, clickY: number): boolean => {
+        if (!isVolumeSliderOpen || !canvas) return false;
+        
+        const btnRadius = 22;
+        const padding = 25;
+        const btnX = canvas.width - btnRadius - padding;
+        const btnY = canvas.height - btnRadius - padding;
+        
+        const sliderWidth = 12;
+        const sliderHeight = 100;
+        const sliderX = btnX - sliderWidth / 2;
+        const sliderY = btnY - btnRadius - 30 - sliderHeight; // Match the visual drawing
+        
+        // Check if inside slider bounding box + margin
+        if (clickX > sliderX - 25 && clickX < sliderX + sliderWidth + 25 &&
+            clickY > sliderY - 25 && clickY < sliderY + sliderHeight + 25) {
+            
+            // Calculate 0.0 to 1.0 volume
+            let vol = 1.0 - ((clickY - sliderY) / sliderHeight);
+            vol = Math.max(0, Math.min(1, vol));
+            audioManager.setMasterVolume(vol);
+            return true;
+        }
+        return false;
+    };
+
     mouseMoveHandler = (e: MouseEvent): void => {
+        if (isDraggingVolume && canvas) {
+            const rect = canvas.getBoundingClientRect();
+            handleDragVolume(e.clientX - rect.left, e.clientY - rect.top);
+            return; // Don't move player while dragging volume
+        }
         updateTargetPosition(e.clientX, e.clientY);
     };
     document.addEventListener('mousemove', mouseMoveHandler);
 
     touchMoveHandler = (e: TouchEvent): void => {
         e.preventDefault();
+        if (isDraggingVolume && canvas && e.touches.length > 0) {
+            const rect = canvas.getBoundingClientRect();
+            handleDragVolume(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+            return;
+        }
         if (e.touches.length > 0) {
             updateTargetPosition(e.touches[0].clientX, e.touches[0].clientY);
         }
@@ -1155,20 +1277,40 @@ function setupControls(): void {
         const clickX = e.clientX - rect.left;
         const clickY = e.clientY - rect.top;
 
-        // Check Mute Button Click
         const btnRadius = 22;
         const padding = 25;
         const btnX = canvas.width - btnRadius - padding;
         const btnY = canvas.height - btnRadius - padding;
 
+        // Check Mute Button Click First
         if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 5) {
-            audioManager.toggleMute();
+            isVolumeSliderOpen = !isVolumeSliderOpen;
+            if (!isVolumeSliderOpen) {
+                // If closing, toggle mute as a quick action (only if volume isn't changed)
+                // wait, if we open and close randomly it might be annoying.
+                // Let's make it so clicking speaker always toggles slider, double clicking or dragging changes volume.
+                // Actually, if slider is closed, clicking it opens slider AND toggles mute if it was 0.
+            }
             return;
+        }
+        
+        // Check Drag Slider
+        if (isVolumeSliderOpen) {
+            if (handleDragVolume(clickX, clickY)) {
+                isDraggingVolume = true;
+                return;
+            } else {
+                // Clicked outside slider - close it
+                isVolumeSliderOpen = false;
+            }
         }
 
         isFiring = true;
     };
-    mouseUpHandler = (): void => { isFiring = false; };
+    mouseUpHandler = (): void => { 
+        isFiring = false; 
+        isDraggingVolume = false;
+    };
     document.addEventListener('mousedown', mouseDownHandler);
     document.addEventListener('mouseup', mouseUpHandler);
 
@@ -1182,20 +1324,28 @@ function setupControls(): void {
             const clickX = e.touches[0].clientX - rect.left;
             const clickY = e.touches[0].clientY - rect.top;
 
-            // Check Mute Button Click
             const btnRadius = 22;
             const padding = 25;
             const btnX = canvas.width - btnRadius - padding;
             const btnY = canvas.height - btnRadius - padding;
 
             if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 10) { // +10 hit area
-                audioManager.toggleMute();
+                isVolumeSliderOpen = !isVolumeSliderOpen;
                 return;
+            }
+            
+            if (isVolumeSliderOpen) {
+                if (handleDragVolume(clickX, clickY)) {
+                    isDraggingVolume = true;
+                    return; // Prevent firing while dragging slider
+                } else {
+                    isVolumeSliderOpen = false;
+                }
             }
         }
 
         isFiring = true;
-        if (e.touches.length > 0) {
+        if (e.touches.length > 0 && !isDraggingVolume) {
             const rect = canvas.getBoundingClientRect();
             crosshairX = e.touches[0].clientX - rect.left;
             crosshairY = e.touches[0].clientY - rect.top;
@@ -1206,6 +1356,7 @@ function setupControls(): void {
         }
     };
     const touchEndHandler = (): void => {
+        isDraggingVolume = false;
         // Keep firing on mobile (auto-fire)
     };
     canvas.addEventListener('touchstart', touchStartHandler, { passive: false });
@@ -1714,19 +1865,40 @@ function updateSmokeParticles(): void {
 function drawBackground(): void {
     if (!ctx || !canvas) return;
 
+    // Ensure panels are perfectly arranged end-to-end once images are loaded
+    if (!(bgPanelY as any).isArranged) {
+        let allLoaded = true;
+        for (let j = 0; j < backgroundImages.length; j++) {
+            if (!backgroundImages[j] || !backgroundImages[j].complete || backgroundImages[j].width === 0) {
+                allLoaded = false;
+                break;
+            }
+        }
+        if (allLoaded && backgroundImages.length > 0) {
+            let currentY = bgPanelY[0];
+            for (let j = 0; j < bgPanelY.length; j++) {
+                bgPanelY[j] = currentY;
+                const img = backgroundImages[j];
+                const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+                currentY -= (img.height * scale - 4);
+            }
+            (bgPanelY as any).isArranged = true;
+        }
+    }
+
     // Scroll and Reset Panels
     for (let i = 0; i < bgPanelY.length; i++) {
         bgPanelY[i] += backgroundScrollSpeed;
 
-        // Reset panel based on its actual render height (to avoid gaps for tall assets)
         const img = backgroundImages[i];
-        const isPortrait = img && img.complete && img.height > img.width;
-        const scale = isPortrait ? canvas.width / img.width : 1;
-        const panelHeight = isPortrait ? (img.height * scale) : canvas.height;
+        let panelHeight = canvas.height;
+        if (img && img.complete && img.width > 0) {
+            const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+            panelHeight = img.height * scale;
+        }
 
         if (bgPanelY[i] >= canvas.height) {
             const minY = Math.min(...bgPanelY);
-            // Place it exactly above the topmost panel, matching its full height
             bgPanelY[i] = minY - (panelHeight - 4); // -4 for overlap
         }
     }
@@ -1734,46 +1906,30 @@ function drawBackground(): void {
     // Draw all panels
     for (let i = 0; i < backgroundImages.length; i++) {
         const img = backgroundImages[i];
-        if (img && img.complete) {
-            // Render Strategy: Dynamic Scaling based on Aspect Ratio and Mode
-            const isPortrait = currentBgMode === 'portrait_scene' || (img.height > img.width);
+        if (img && img.complete && img.width > 0) {
+            const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+            
+            const cropW = canvas.width / scale;
+            const cropH = img.height;
+            const sX = (img.width - cropW) / 2;
+            const sY = 0;
+            const sW = cropW;
+            const sH = cropH;
 
-            // 1. Calculate the 'cover' dimensions
-            // If portrait scene, scale to fill width. Otherwise, fill both (cover).
-            const scale = isPortrait
-                ? canvas.width / img.width
-                : Math.max(canvas.width / img.width, canvas.height / img.height);
-
-            // 2. Calculate source dimensions
-            // For portrait "level" backgrounds, we want the FULL source height
-            const sW = img.width - 2;
-            const sH = isPortrait ? img.height - 2 : (canvas.height / scale) - 2;
-            const sX = 1;
-            const sY = isPortrait ? 1 : ((img.height - (canvas.height / scale)) / 2) + 1;
-
-            // Calculate destination dimensions
+            const dX = 0;
+            const dY = Math.floor(bgPanelY[i]);
             const dW = canvas.width;
-            const dH = isPortrait ? (img.height * scale) : canvas.height;
+            const dH = cropH * scale;
 
             ctx.save();
-
-            // 3. Mirror Tiling: Only for starfield mode
             const useMirror = currentBgMode === 'starfield';
-
             const isFlipped = useMirror && (i % 2 === 1);
             if (isFlipped) {
-                // When flipped, translate to the bottom of the drawn area and scale -1
-                ctx.translate(0, Math.floor(bgPanelY[i]) + dH);
+                ctx.translate(0, dY + dH);
                 ctx.scale(1, -1);
-                ctx.drawImage(img,
-                    sX, sY, sW, sH,
-                    0, 0, dW, dH + 4
-                );
+                ctx.drawImage(img, sX, sY, sW, sH, dX, 0, dW, dH + 4);
             } else {
-                ctx.drawImage(img,
-                    sX, sY, sW, sH,
-                    0, Math.floor(bgPanelY[i]), dW, dH + 4
-                );
+                ctx.drawImage(img, sX, sY, sW, sH, dX, dY, dW, dH + 4);
             }
             ctx.restore();
         }
