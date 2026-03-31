@@ -19,9 +19,10 @@ interface InviteFriendsDialogProps {
     isOpen: boolean;
     onClose: () => void;
     roomCode: string;
+    sessionId: string;
 }
 
-export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriendsDialogProps): React.JSX.Element | null {
+export function InviteFriendsDialog({ isOpen, onClose, roomCode, sessionId }: InviteFriendsDialogProps): React.JSX.Element | null {
     const { profile } = useAuth();
     const { toast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
@@ -148,28 +149,29 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode }: InviteFriends
         setInvitingStatus(prev => ({ ...prev, [friendId]: 'loading' }));
 
         try {
-            // Insert a notification for the friend about the game invite
+            const hostName = profile.nickname || profile.username || 'Someone';
+
+            // Insert notification with correct schema
             const { error } = await supabase
                 .from('notifications')
                 .insert({
                     user_id: friendId,
-                    type: 'game_invite',
-                    title: 'Game Invite',
-                    message: t('inviteNotificationMessage', { 
-                        name: profile.username || profile.nickname || 'Someone',
-                        code: roomCode 
+                    actor_id: profile.id,
+                    type: 'sessionFriend',
+                    entity_type: 'session',
+                    entity_id: sessionId,
+                    content: JSON.stringify({
+                        message: `${hostName} invited you to join a game!`,
+                        roomCode: roomCode,
                     }),
-                    data: {
-                        room_code: roomCode,
-                        invited_by: profile.id,
-                        invited_by_name: profile.username || profile.nickname || 'Unknown'
-                    },
-                    is_read: false
+                    is_read: false,
+                    from_group_id: null,
                 });
 
             if (error) {
-                // If notifications table doesn't exist, just mark as invited anyway
-                console.warn('Could not send notification (table may not exist):', error.message);
+                console.error('Failed to send notification:', error.message);
+                setInvitingStatus(prev => ({ ...prev, [friendId]: 'idle' }));
+                return;
             }
 
             setInvitingStatus(prev => ({ ...prev, [friendId]: 'invited' }));

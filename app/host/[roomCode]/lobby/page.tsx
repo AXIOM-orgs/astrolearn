@@ -763,12 +763,14 @@ export default function HostLobbyPage(): React.JSX.Element {
                 isOpen={showInviteGroupsDialog}
                 onClose={() => setShowInviteGroupsDialog(false)}
                 roomCode={roomCode}
+                sessionId={session?.id || ''}
             />
 
             <InviteFriendsDialog
                 isOpen={showInviteFriendsDialog}
                 onClose={() => setShowInviteFriendsDialog(false)}
                 roomCode={roomCode}
+                sessionId={session?.id || ''}
             />
         </section>
     );

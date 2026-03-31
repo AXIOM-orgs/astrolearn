@@ -19,8 +19,7 @@ export default function LoginPage() {
         if (user && !loading) {
             const pendingCode = localStorage.getItem('pendingRoomCode');
             if (pendingCode) {
-                localStorage.removeItem('pendingRoomCode');
-                router.replace(`/`);
+                router.replace(`/join/${pendingCode}`);
             } else {
                 router.replace('/');
             }
