@@ -8,7 +8,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useTranslations, useLocale } from 'next-intl';
 
 interface GroupMember {
-    user_id: string;
+    user_id?: string;
+    id?: string;
     role: 'owner' | 'admin' | 'member';
     joined_at?: string;
 }
@@ -29,9 +30,10 @@ interface InviteGroupsDialogProps {
     isOpen: boolean;
     onClose: () => void;
     roomCode: string;
+    sessionId: string;
 }
 
-export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDialogProps): React.JSX.Element | null {
+export function InviteGroupsDialog({ isOpen, onClose, roomCode, sessionId }: InviteGroupsDialogProps): React.JSX.Element | null {
     const { profile } = useAuth();
     const { toast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
@@ -51,11 +53,9 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
         setFetchError(null);
 
         try {
-            // Query groups where members JSONB contains current user_id
             const { data, error } = await supabase
                 .from('groups')
                 .select('id, name, description, avatar_url, cover_url, creator_id, members, activities, category')
-                .contains('members', JSON.stringify([{ user_id: profile.id }]))
                 .is('deleted_at', null)
                 .order('created_at', { ascending: false });
 
@@ -65,7 +65,16 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
                 return;
             }
 
-            setGroups(data || []);
+            // Client-side filter: only groups where user is owner or admin
+            const myGroups = (data || []).filter((g) => {
+                const members = Array.isArray(g.members) ? g.members : [];
+                const member = members.find(
+                    (m: GroupMember) => m.user_id === profile.id || m.id === profile.id
+                );
+                return member && (member.role === 'owner' || member.role === 'admin');
+            });
+
+            setGroups(myGroups);
         } catch (err) {
             console.error('Error fetching groups:', err);
             setFetchError(t('gagalMemuat') + ' groups');
@@ -106,7 +115,9 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
     // Get current user's role in a group
     const getUserRole = (group: Group): 'owner' | 'admin' | 'member' => {
         if (!profile?.id || !group.members) return 'member';
-        const member = group.members.find((m: GroupMember) => m.user_id === profile.id);
+        const member = group.members.find(
+            (m: GroupMember) => m.user_id === profile.id || m.id === profile.id
+        );
         return member?.role || 'member';
     };
 
@@ -156,6 +167,51 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
                 return;
             }
 
+            // Bulk insert notifications for all group members (except the inviter)
+            const hostName = profile.nickname || profile.username || 'Someone';
+
+            // DEBUG: Log raw members data from JSONB
+            console.log('[DEBUG] group.members raw:', JSON.stringify(group.members, null, 2));
+            console.log('[DEBUG] profile.id (inviter):', profile.id);
+            console.log('[DEBUG] sessionId:', sessionId);
+
+            const memberIds = (group.members || [])
+                .map((m: GroupMember) => m.user_id || m.id)
+                .filter((uid): uid is string => !!uid && uid !== profile.id);
+
+            console.log('[DEBUG] memberIds after filter:', memberIds);
+
+            if (memberIds.length > 0) {
+                const notificationRows = memberIds.map((uid: string) => ({
+                    user_id: uid,
+                    actor_id: profile.id,
+                    type: 'sessionGroup',
+                    entity_type: 'session',
+                    entity_id: sessionId,
+                    content: JSON.stringify({
+                        message: `${hostName} invited your group to a game!`,
+                        roomCode: roomCode,
+                    }),
+                    is_read: false,
+                    from_group_id: groupId,
+                }));
+
+                console.log('[DEBUG] notificationRows:', JSON.stringify(notificationRows, null, 2));
+
+                const { error: notifError, data: notifData } = await supabase
+                    .from('notifications')
+                    .insert(notificationRows)
+                    .select();
+
+                console.log('[DEBUG] notification insert result:', { data: notifData, error: notifError });
+
+                if (notifError) {
+                    console.error('Failed to send group notifications:', notifError.message);
+                }
+            } else {
+                console.warn('[DEBUG] No memberIds to notify! All filtered out.');
+            }
+
             setInvitingStatus(prev => ({ ...prev, [groupId]: 'invited' }));
             toast(t('invited'), 'success');
         } catch (err) {
@@ -179,7 +235,7 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode }: InviteGroupsDi
         };
         const c = config[role];
         return (
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.65rem] font-orbitron font-bold tracking-wider border ${c.bg} ${c.color}`}>
+            <span className={`inline-flex items-center gap-1.5 !px-2 py-1 rounded-md text-[0.75rem] font-orbitron tracking-wider border ${c.bg} ${c.color}`}>
                 {c.label}
             </span>
         );

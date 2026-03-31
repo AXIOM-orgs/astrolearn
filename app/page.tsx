@@ -38,7 +38,6 @@ export default function LandingPage(): React.JSX.Element {
 
     // Sync Auth user with local state
     useEffect(() => {
-        hideLoading();
         if (loading || !user) return;
 
         const displayName = profile?.nickname || profile?.fullname || profile?.username || user?.email?.split('@')[0] || '';
