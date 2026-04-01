@@ -379,7 +379,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
         {/* Statistics Button (Right Side) */}
         {sessionId && (
           <a
-            href={`https://gameforsmartnewui.vercel.app/stat/${sessionId}`}
+            href={`https://app.gameforsmart.com/stat/${sessionId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="floating-btn statistics-btn"
@@ -511,7 +511,7 @@ export default function HostLeaderboardPage(): React.JSX.Element {
 
             {sessionId && (
               <a
-                href={`https://gameforsmartnewui.vercel.app/stat/${sessionId}`}
+                href={`https://app.gameforsmart.com/stat/${sessionId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-result-mobile stats"
