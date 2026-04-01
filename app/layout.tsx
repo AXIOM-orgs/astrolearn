@@ -4,27 +4,45 @@ import { GameProvider } from '@/context/GameContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { Metadata } from 'next';
 import { ClientLayout } from './ClientLayout';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations, getLocale } from 'next-intl/server';
 
 const orbitron = Orbitron({
     subsets: ['latin'],
     weight: ['400', '700', '900'],
     variable: '--font-orbitron',
-    display: 'swap',
 });
 
 const spaceMono = Space_Mono({
     subsets: ['latin'],
     weight: ['400', '700'],
     variable: '--font-space-mono',
-    display: 'swap',
 });
 
-import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getTranslations, getLocale } from 'next-intl/server';
-
 export const metadata: Metadata = {
+    icons: {
+        icon: '/assets/images/logo/favicon.png',
+    },
     title: 'Axiom',
     description: 'Answer the quiz and complete the mission',
+    openGraph: {
+        title: 'Axiom',
+        description: 'Answer the quiz and complete the mission',
+        images: [
+            {
+                url: '/assets/images/logo/logo2new.webp',
+                width: 1200,
+                height: 630,
+                alt: 'Axiom Logo',
+            },
+        ],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'Axiom',
+        description: 'Answer the quiz and complete the mission',
+        images: ['/assets/images/logo/logo2new.webp'],
+    },
 };
 
 export default async function RootLayout({
@@ -35,15 +53,12 @@ export default async function RootLayout({
     const locale = await getLocale();
     const messages = await getMessages();
 
-    // Preload namespaces to ensure they are available for Client Components
-    await getTranslations({ locale, namespace: 'SelectQuiz' });
-    await getTranslations({ locale, namespace: 'Categories' });
-    await getTranslations({ locale, namespace: 'HostSettings' });
-    await getTranslations({ locale, namespace: 'WaitingRoom' });
-    await getTranslations({ locale, namespace: 'Monitor' });
-    await getTranslations({ locale, namespace: 'PlayerResult' });
-    await getTranslations({ locale, namespace: 'Leaderboard' });
-    await getTranslations({ locale, namespace: 'Lobby' });
+    const NAMESPACES = [
+        'SelectQuiz', 'Categories', 'HostSettings',
+        'WaitingRoom', 'Monitor', 'PlayerResult', 'Leaderboard', 'Lobby'
+    ];
+
+    await Promise.all(NAMESPACES.map(namespace => getTranslations({ locale, namespace })));
 
     return (
         <html lang={locale}>
