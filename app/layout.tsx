@@ -20,28 +20,38 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
+    metadataBase: new URL('https://axiom.gameforsmart.com'), // Updated to reflect Axiom
     icons: {
-        icon: '/assets/images/logo/favicon.png',
+        icon: [
+            { url: '/assets/images/logo/favicon.png' },
+            { url: '/assets/images/logo/favicon.png', type: 'image/png' },
+        ],
+        apple: '/assets/images/logo/axiom.png',
     },
     title: 'Axiom',
     description: 'Answer the quiz and complete the mission',
     openGraph: {
         title: 'Axiom',
         description: 'Answer the quiz and complete the mission',
+        url: 'https://axiom.gameforsmart.com',
+        siteName: 'Axiom',
         images: [
             {
-                url: '/assets/images/logo/logo2new.webp',
-                width: 1200,
-                height: 630,
+                url: '/assets/images/logo/axiom.png',
+                width: 1000,
+                height: 430,
                 alt: 'Axiom Logo',
             },
         ],
+        locale: 'en_US',
+        type: 'website',
     },
     twitter: {
         card: 'summary_large_image',
         title: 'Axiom',
         description: 'Answer the quiz and complete the mission',
-        images: ['/assets/images/logo/logo2new.webp'],
+        images: ['/assets/images/logo/axiom.png'],
+        creator: '@Gameforsmart',
     },
 };
 
