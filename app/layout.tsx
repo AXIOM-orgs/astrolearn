@@ -20,7 +20,7 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-    metadataBase: new URL('https://axiom.gameforsmart.com'), // Updated to reflect Axiom
+    metadataBase: new URL('https://axiom.gameforsmart.com'),
     icons: {
         icon: [
             { url: '/assets/images/logo/favicon.png' },
@@ -30,6 +30,12 @@ export const metadata: Metadata = {
     },
     title: 'Axiom',
     description: 'Answer the quiz and complete the mission',
+    keywords: 'Axiom, answer quiz, complete mission, educational game, quiz mission',
+    authors: [{ name: 'Axiom Team' }],
+    robots: 'index, follow',
+    alternates: {
+        canonical: 'https://axiom.gameforsmart.com/',
+    },
     openGraph: {
         title: 'Axiom',
         description: 'Answer the quiz and complete the mission',
