@@ -245,7 +245,7 @@ export default function JoinResultsPage(): React.JSX.Element {
             {/* Tombol Statistik */}
             {isSessionFinished && sessionId && myStats?.id ? (
                 <a
-                    href={`https://gameforsmartnewui.vercel.app/stat/${sessionId}`}
+                    href={`https://app.gameforsmart.com/stat/${sessionId}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="floating-btn statistics-btn"
@@ -342,7 +342,7 @@ export default function JoinResultsPage(): React.JSX.Element {
 
                     {isSessionFinished && sessionId && myStats?.id ? (
                         <a
-                            href={`https://gameforsmartnewui.vercel.app/stat/${sessionId}`}
+                            href={`https://app.gameforsmart.com/stat/${sessionId}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn-result-mobile stats"
