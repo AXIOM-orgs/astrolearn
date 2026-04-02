@@ -163,7 +163,7 @@ export function QuizDetailDialog({ quizId, isOpen, onClose, onStart }: QuizDetai
                                 <span className={locale === 'ar' ? 'font-arabic' : ''}>
                                     {t.rich('questions', { 
                                         count: Array.isArray(quizDetail.questions) ? quizDetail.questions.length : 0,
-                                        orbitron: (chunks) => <span dir="ltr" style={{ fontFamily: 'var(--font-orbitron)', letterSpacing: '2px', margin: '0 4px', display: 'inline-block' }}>{chunks}</span>
+                                        orbitron: (chunks) => <span dir="ltr" style={{ fontFamily: 'var(--font-orbitron)', letterSpacing: '2px', display: 'inline-block', fontWeight: 'bold'}}>{chunks}</span>
                                     })}
                                 </span>
                             </div>
@@ -174,7 +174,7 @@ export function QuizDetailDialog({ quizId, isOpen, onClose, onStart }: QuizDetai
                                 <span className={locale === 'ar' ? 'font-arabic' : ''}>
                                     {t.rich('played', { 
                                         count: quizDetail.played || 0,
-                                        orbitron: (chunks) => <span dir="ltr" style={{ fontFamily: 'var(--font-orbitron)', letterSpacing: '3px', display: 'inline-block' }}>{chunks}</span>
+                                        orbitron: (chunks) => <span dir="ltr" style={{ fontFamily: 'var(--font-orbitron)', letterSpacing: '2px', display: 'inline-block', fontWeight: 'bold' }}>{chunks}</span>
                                     })}
                                 </span>
                             </div>   

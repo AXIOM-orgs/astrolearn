@@ -31,7 +31,6 @@ export const metadata: Metadata = {
     title: 'Axiom',
     description: 'Answer the quiz and complete the mission',
     keywords: 'Axiom, answer quiz, complete mission, educational game, quiz mission',
-    authors: [{ name: 'Axiom Team' }],
     robots: 'index, follow',
     alternates: {
         canonical: 'https://axiom.gameforsmart.com/',
