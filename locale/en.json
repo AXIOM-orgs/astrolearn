@@ -121,7 +121,9 @@
     "endDialogTitle": "END GAME",
     "endDialogMessage": "Are you sure you want to end the game?",
     "cancel": "CANCEL",
-    "end": "END"
+    "end": "END",
+    "unmuteSound": "Unmute Sound",
+    "muteSound": "Mute Sound"
   },
   "PlayerResult": {
     "eliminated": "ELIMINATED",

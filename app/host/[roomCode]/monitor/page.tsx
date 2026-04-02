@@ -7,10 +7,11 @@ import { useDialog } from '@/context/AlertContext'; // Import AlertContext
 import { supabaseGame, supabase } from '@/lib/supabase'; // pastikan path sesuai supabase.ts kamu
 import { generateXID } from '@/lib/id-generator';
 import { syncServerTime, getSyncedServerTime } from '@/lib/serverTime';
-import { Users, Check, X } from 'lucide-react';
+import { Users, Check, X, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EndGameConfirmationDialog } from '@/components/ui/EndGameConfirmationDialog';
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
+import { FullscreenToggle } from '@/components/FullscreenToggle';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { getSpacecraftImage } from '@/lib/data';
@@ -62,6 +63,44 @@ export default function HostMonitorPage(): React.JSX.Element {
     const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [soundEnabled, setSoundEnabled] = useState(true);
+
+    useEffect(() => {
+        // Load sound preference from localStorage
+        const savedSound = localStorage.getItem('cosmicquest_bgm_enabled');
+        if (savedSound !== null) {
+            setSoundEnabled(savedSound === 'true');
+        }
+
+        const handleSoundChange = (e: any) => {
+            if (e.detail?.type === 'bgm') {
+                setSoundEnabled(e.detail.enabled);
+            }
+        };
+
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'cosmicquest_bgm_enabled') {
+                setSoundEnabled(e.newValue === 'true');
+            }
+        };
+
+        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+        window.addEventListener('storage', handleStorageChange);
+
+        return () => {
+            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, []);
+
+    const handleToggleSound = () => {
+        const newValue = !soundEnabled;
+        setSoundEnabled(newValue);
+        localStorage.setItem('cosmicquest_bgm_enabled', String(newValue));
+        window.dispatchEvent(new CustomEvent('cosmicquest_sound_settings_changed', {
+            detail: { type: 'bgm', enabled: newValue }
+        }));
+    };
 
     // Hitung progress & status completed
     const processedPlayers = useMemo(() => {
@@ -576,8 +615,66 @@ export default function HostMonitorPage(): React.JSX.Element {
             </>
             )}
 
+            {/* Bottom Right Controls */}
+            <button
+                onClick={handleToggleSound}
+                className={`sound-toggle-float-btn ${soundEnabled ? 'enabled' : 'disabled'}`}
+                title={soundEnabled ? t('muteSound') || 'Mute Sound' : t('unmuteSound') || 'Unmute Sound'}
+            >
+                {soundEnabled ? (
+                    <Volume2 size={22} />
+                ) : (
+                    <VolumeX size={22} />
+                )}
+            </button>
+            
+            {!isInitialLoading && <FullscreenToggle />}
+
             {/* CSS tambahan untuk animasi yang diminta */}
             <style jsx>{`
+        .sound-toggle-float-btn {
+          position: fixed;
+          bottom: 1.5rem;
+          right: 4.8rem;
+          width: 44px;
+          height: 44px;
+          background: rgba(13, 27, 42, 0.9);
+          backdrop-filter: blur(10px);
+          border: 1px solid var(--card-border);
+          border-radius: 10px;
+          color: var(--text-secondary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          z-index: 100;
+        }
+
+        .sound-toggle-float-btn:hover {
+          border-color: var(--cyan-glow);
+          color: var(--text-primary);
+          box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+          transform: translateY(-2px);
+        }
+
+        .sound-toggle-float-btn.enabled {
+          color: #10b981;
+        }
+
+        .sound-toggle-float-btn.disabled {
+          color: #ff4444;
+        }
+
+        @media (max-width: 900px) {
+          .sound-toggle-float-btn {
+            width: 36px;
+            height: 36px;
+            bottom: 0.8rem;
+            right: 3.5rem;
+          }
+        }
+
         .progress-card.completed {
           border: 3px solid #00ff00;
           box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
