@@ -203,5 +203,14 @@
     "victory": "VICTORY!",
     "gameOver": "GAME OVER",
     "continuing": "Continuing..."
+  },
+  "QuizDetail": {
+    "loading": "Loading...",
+    "questions": "<orbitron>{count}</orbitron> Questions",
+    "played": "<orbitron>{count}</orbitron>x Played",
+    "start": "Start",
+    "categoryTitle": "Category",
+    "languageTitle": "Language",
+    "favoritedTitle": "Favorited"
   }
 }

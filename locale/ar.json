@@ -203,5 +203,14 @@
     "victory": "انتصار!",
     "gameOver": "انتهت اللعبة",
     "continuing": "جاري المتابعة..."
+  },
+  "QuizDetail": {
+    "loading": "جاري التحميل...",
+    "questions": "<orbitron>{count}</orbitron> أسئلة",
+    "played": "لُعبت <orbitron>{count}</orbitron> مرة",
+    "start": "البدء",
+    "categoryTitle": "الفئة",
+    "languageTitle": "اللغة",
+    "favoritedTitle": "مفضل"
   }
 }
