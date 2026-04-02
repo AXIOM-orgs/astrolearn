@@ -121,7 +121,9 @@
     "endDialogTitle": "إنهاء اللعبة",
     "endDialogMessage": "هل أنت متأكد أنك تريد إنهاء اللعبة؟",
     "cancel": "إلغاء",
-    "end": "إنهاء"
+    "end": "إنهاء",
+    "unmuteSound": "إلغاء كتم الصوت",
+    "muteSound": "كتم الصوت"
   },
   "PlayerResult": {
     "eliminated": "تم استبعاده",

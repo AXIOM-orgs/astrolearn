@@ -121,7 +121,9 @@
     "endDialogTitle": "AKHIRI GAME",
     "endDialogMessage": "Apakah kamu yakin ingin mengakhiri permainan?",
     "cancel": "BATAL",
-    "end": "AKHIRI"
+    "end": "AKHIRI",
+    "unmuteSound": "Bunyikan Suara",
+    "muteSound": "Matikan Suara"
   },
   "PlayerResult": {
     "eliminated": "TERELIMINASI",
