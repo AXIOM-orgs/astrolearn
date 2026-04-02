@@ -71,7 +71,8 @@ export default async function RootLayout({
 
     const NAMESPACES = [
         'SelectQuiz', 'Categories', 'HostSettings',
-        'WaitingRoom', 'Monitor', 'PlayerResult', 'Leaderboard', 'Lobby'
+        'WaitingRoom', 'Monitor', 'PlayerResult', 'Leaderboard', 'Lobby',
+        'QuizDetail', 'Logout', 'Common', 'SoundSettings'
     ];
 
     await Promise.all(NAMESPACES.map(namespace => getTranslations({ locale, namespace })));

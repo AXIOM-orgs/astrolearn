@@ -203,5 +203,14 @@
     "victory": "MENANG!",
     "gameOver": "GAME OVER",
     "continuing": "Melanjutkan..."
+  },
+  "QuizDetail": {
+    "loading": "Memuat...",
+    "questions": "<orbitron>{count}</orbitron> Pertanyaan",
+    "played": "<orbitron>{count}</orbitron>x Dimainkan",
+    "start": "Mulai",
+    "categoryTitle": "Kategori",
+    "languageTitle": "Bahasa",
+    "favoritedTitle": "Difavoritkan"
   }
 }

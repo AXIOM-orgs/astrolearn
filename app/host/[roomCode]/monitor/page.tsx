@@ -666,11 +666,23 @@ export default function HostMonitorPage(): React.JSX.Element {
           color: #ff4444;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 1024px) {
+          .sound-toggle-float-btn {
+            right: 4.5rem;
+          }
+        }
+
+        @media (max-width: 768px) {
           .sound-toggle-float-btn {
             width: 36px;
             height: 36px;
             bottom: 0.8rem;
+            right: 3.8rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .sound-toggle-float-btn {
             right: 3.5rem;
           }
         }

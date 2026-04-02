@@ -8,6 +8,7 @@ import { generateXID } from '@/lib/id-generator';
 import { useGame } from '@/context/GameContext';
 import { isArabic } from '@/lib/utils';
 import { useTranslations, useLocale } from 'next-intl';
+import { QuizDetailDialog } from '@/components/ui/QuizDetailDialog';
 
 // Generate game PIN
 function generateGamePin(length = 6): string {
@@ -77,6 +78,9 @@ export default function SelectQuizPage(): React.JSX.Element {
     const [creating, setCreating] = useState(false);
     const [creatingQuizId, setCreatingQuizId] = useState<string | null>(null);
     const [tooltipData, setTooltipData] = useState<{ title: string; x: number; y: number } | null>(null);
+
+    // Quiz Detail Modal State
+    const [detailQuizId, setDetailQuizId] = useState<string | null>(null);
 
     const totalPages = Math.ceil(totalCount / cardsPerPage);
 
@@ -344,6 +348,16 @@ export default function SelectQuizPage(): React.JSX.Element {
         if (e.key === 'Enter') handleSearch();
     };
 
+    // Quiz Detail Modal
+    const handleCardClick = (quizId: string) => {
+        if (creating) return;
+        setDetailQuizId(quizId);
+    };
+
+    const handleCloseModal = () => {
+        setDetailQuizId(null);
+    };
+
     const getEmptyStateMessage = () => {
         if (showFavoritesOnly && favorites.length === 0) {
             return { title: t('noFavorites'), subtitle: t('noFavoritesSub') };
@@ -485,7 +499,8 @@ export default function SelectQuizPage(): React.JSX.Element {
                                 <div
                                     key={quiz.id}
                                     className={`quiz-card relative ${isThisQuizCreating ? 'creating' : ''} ${creating && !isThisQuizCreating ? 'disabled' : ''}`}
-                                    style={{ cursor: creating ? (isThisQuizCreating ? 'wait' : 'not-allowed') : 'default' }}
+                                    style={{ cursor: creating ? (isThisQuizCreating ? 'wait' : 'not-allowed') : 'pointer' }}
+                                    onClick={() => handleCardClick(quiz.id)}
                                 >
                                     <div className="quiz-card-content justify-between">
                                         <div className="quiz-card-header">
@@ -528,7 +543,7 @@ export default function SelectQuizPage(): React.JSX.Element {
                                             </div>
                                             <button
                                                 className="btn-card-start"
-                                                onClick={() => !creating && handleStartQuiz(quiz.id)}
+                                                onClick={(e) => { e.stopPropagation(); !creating && handleStartQuiz(quiz.id); }}
                                             >
                                                 {t('start')}
                                             </button>
@@ -593,6 +608,14 @@ export default function SelectQuizPage(): React.JSX.Element {
                     {tooltipData.title}
                 </div>
             )}
+
+            {/* Quiz Detail Modal */}
+            <QuizDetailDialog
+                quizId={detailQuizId}
+                isOpen={detailQuizId !== null}
+                onClose={handleCloseModal}
+                onStart={handleStartQuiz}
+            />
         </section>
     );
 }
