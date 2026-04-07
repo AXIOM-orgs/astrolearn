@@ -8,7 +8,7 @@ import { supabaseGame } from '@/lib/supabase';
 import { DialogRocketSelect } from '@/components/ui/DialogRocketSelect';
 import { ExitConfirmationDialog } from '@/components/ui/ExitConfirmationDialog';
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
-import { Spaceship, spaceships, getSpacecraftImage } from '@/lib/data';
+import { Spaceship, spaceships, getSpacecraftSpriteClass } from '@/lib/data';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -370,10 +370,10 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                                                 )}
                                                 <div className="player-icon">
                                                     {player.spacecraft ? (
-                                                        <img
-                                                            src={getSpacecraftImage(player.spacecraft)}
-                                                            alt="spacecraft"
-                                                            className="player-spacecraft-icon"
+                                                        <div
+                                                            className={`rocket-sprite rocket-sm ${getSpacecraftSpriteClass(player.spacecraft)}`}
+                                                            role="img"
+                                                            aria-label="spacecraft"
                                                         />
                                                     ) : '🚀'}
                                                 </div>

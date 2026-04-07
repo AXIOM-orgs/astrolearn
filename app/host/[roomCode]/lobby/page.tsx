@@ -14,7 +14,7 @@ import { InviteGroupsDialog } from '@/components/ui/InviteGroupsDialog';
 import { InviteFriendsDialog } from '@/components/ui/InviteFriendsDialog';
 import { X, Menu, Maximize, Minimize, Volume2, VolumeX, Users, UserPlus } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import { getSpacecraftImage } from '@/lib/data';
+import { getSpacecraftSpriteClass } from '@/lib/data';
 
 interface Participant {
     id: string;
@@ -689,7 +689,7 @@ export default function HostLobbyPage(): React.JSX.Element {
                             <div className="waiting-animation">
                                 <div className="waiting-icon">
                                     <img
-                                        src="/assets/waitplayer.webp"
+                                        src="/assets/images/hiasan/waitplayer.webp"
                                         alt="Waiting players"
                                         className="waiting-astronaut"
                                     />
@@ -715,10 +715,10 @@ export default function HostLobbyPage(): React.JSX.Element {
                                         </button>
                                         <div className="player-icon">
                                             {player.spacecraft ? (
-                                                <img
-                                                    src={getSpacecraftImage(player.spacecraft)}
-                                                    alt="spacecraft"
-                                                    style={{ width: '40px', height: '30px', objectFit: 'contain' }}
+                                                <div
+                                                    className={`rocket-sprite rocket-sm ${getSpacecraftSpriteClass(player.spacecraft)}`}
+                                                    role="img"
+                                                    aria-label="spacecraft"
                                                 />
                                             ) : '🚀'}
                                         </div>

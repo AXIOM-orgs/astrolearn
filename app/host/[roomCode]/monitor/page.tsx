@@ -14,7 +14,7 @@ import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import { FullscreenToggle } from '@/components/FullscreenToggle';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
-import { getSpacecraftImage } from '@/lib/data';
+import { getSpacecraftSpriteClass } from '@/lib/data';
 
 interface Participant {
     id: string;
@@ -591,10 +591,10 @@ export default function HostMonitorPage(): React.JSX.Element {
                                                 </div>
                                                 <div className="progress-card-body">
                                                     {player.spacecraft ? (
-                                                        <img
-                                                            src={getSpacecraftImage(player.spacecraft)}
-                                                            alt="spacecraft"
-                                                            className={`progress-spacecraft ${!player.isCompleted && !player.isEliminated ? 'animate-float' : ''}`}
+                                                        <div
+                                                            className={`rocket-sprite rocket-sm ${getSpacecraftSpriteClass(player.spacecraft)} ${!player.isCompleted && !player.isEliminated ? 'animate-float' : ''}`}
+                                                            role="img"
+                                                            aria-label="spacecraft"
                                                         />
                                                     ) : (
                                                         <div className="progress-icon">🚀</div>
