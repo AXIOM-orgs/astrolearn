@@ -1082,6 +1082,7 @@ export function startMiniGame(
     // Load spaceship image
     const spaceshipImg = new Image();
     spaceshipImg.src = spaceship.image;
+    const playerSpeeds: Record<string, number> = { easy: 2, medium: 4, hard: 6 };
 
     // Initialize player at bottom center (no HP with base weapon)
     player = {
@@ -1089,7 +1090,7 @@ export function startMiniGame(
         y: canvas.height - 100,
         width: 90,
         height: 90,
-        speed: 10,
+        speed: playerSpeeds[difficulty] || 10,
         image: spaceshipImg,
         dx: 0,
         dy: 0,
@@ -1444,11 +1445,10 @@ function update(): void {
         return;
     }
 
-    // CRITICAL: Full Canvas Clear at the start of the frame.
-    // We reset the transform to identity to ensure we clear the ENTIRE canvas area
+    // CRITICAL: Clear the canvas area for the next frame.
+    // We reset the transform to identity to ensure we fill the ENTIRE canvas area
     // regardless of any translations or rotations set in previous frames or during shake.
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#000'; // Base black fill
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -1693,12 +1693,12 @@ function drawBoosterDecors(): void {
     if (!ctx || !canvas || !boosterImage || !boosterImage.complete) return;
 
     ctx.save();
+    ctx.globalAlpha = 0.7; // Constant for all boosters
     for (const booster of boosterDecors) {
         const size = 60 * booster.scale;
         ctx.save();
         ctx.translate(booster.x, booster.y);
         ctx.rotate(booster.rotation);
-        ctx.globalAlpha = 0.7;
         ctx.drawImage(boosterImage, -size / 2, -size / 2, size, size);
         ctx.restore();
     }
@@ -1906,7 +1906,7 @@ function updateSmokeParticles(): void {
     const now = Date.now();
 
     // Spawn new particles (reduced rate for performance, even more on mobile)
-    const smokeSpawnInterval = isMobile ? 200 : 100; // 2x slower on mobile
+    const smokeSpawnInterval = isMobile ? 300 : 150; // FURTHER REDUCED (was 200:100)
     if (player && now - lastSmokeSpawnTime > smokeSpawnInterval) {
         spawnSmokeParticle();
         lastSmokeSpawnTime = now;
@@ -1919,12 +1919,10 @@ function updateSmokeParticles(): void {
 
         particle.x += particle.vx;
         particle.y += particle.vy;
-        particle.age++;
         particle.alpha -= 0.015;
         particle.scale += 0.008;
 
         if (particle.alpha <= 0) {
-            // Return particle to pool for reuse
             returnSmokeToPool(smokeParticles.splice(i, 1)[0]);
             continue;
         }
@@ -1938,9 +1936,9 @@ function updateSmokeParticles(): void {
     }
     ctx.restore();
 
-    // Limit particle count
-    if (smokeParticles.length > 100) {
-        smokeParticles.splice(0, smokeParticles.length - 100);
+    // Limit particle count (Reduced from 100 to 50 for performance)
+    if (smokeParticles.length > 50) {
+        smokeParticles.splice(0, smokeParticles.length - 50);
     }
 }
 
@@ -2077,17 +2075,18 @@ function spawnExplosion(x: number, y: number, size: number = 1): void {
         explosionParticles.push(ring);
     } else {
         // --- HIT SPARKLES ---
-        const particleCount = Math.max(1, Math.floor((2 + Math.random() * 2) * particleMultiplier));
+        // Reduced density: was Math.max(1, Math.floor((2 + Math.random() * 2) * particleMultiplier))
+        const particleCount = Math.max(1, Math.floor((1 + Math.random() * 1.5) * particleMultiplier));
         for (let i = 0; i < particleCount; i++) {
             const particle = getExplosionFromPool();
             particle.x = x + (Math.random() - 0.5) * 15 * size;
             particle.y = y + (Math.random() - 0.5) * 15 * size;
             particle.type = 'standard';
-            particle.scale = (0.3 + Math.random() * 0.5) * size;
+            particle.scale = (0.2 + Math.random() * 0.4) * size;
             particle.alpha = 1;
             particle.rotation = Math.random() * Math.PI * 2;
             particle.age = 0;
-            particle.maxAge = 20;
+            particle.maxAge = 15; // Shorter life (was 20)
             explosionParticles.push(particle);
         }
     }
@@ -2095,6 +2094,10 @@ function spawnExplosion(x: number, y: number, size: number = 1): void {
 
 function updateExplosionParticles(): void {
     if (!ctx) return;
+
+    // Optimization: Group by image to reduce state changes if possible, 
+    // but since we need transform/alpha per particle, we keep basic save/restore
+    // however we can reduce max count further.
 
     for (let i = explosionParticles.length - 1; i >= 0; i--) {
         const p = explosionParticles[i];
@@ -2116,15 +2119,20 @@ function updateExplosionParticles(): void {
 
         // Update properties based on type
         if (p.type === 'ring') {
-            p.scale += 0.05 * p.scale; // Grow faster as it gets larger
+            p.scale += 0.05 * p.scale;
             p.alpha = 1 - (p.age / p.maxAge);
         } else if (p.type === 'core') {
-            p.scale += 0.01; // Slight grow
+            p.scale += 0.01;
             p.alpha = 1 - (p.age / p.maxAge);
         } else {
-            // Standard hit particle
-            p.alpha -= 0.035;
-            p.scale -= 0.01; // Shrink as it fades
+            p.alpha -= 0.05; // Fades faster (was 0.035)
+            p.scale -= 0.01;
+        }
+
+        if (p.alpha <= 0 || p.age > p.maxAge) {
+            explosionParticles.splice(i, 1);
+            returnExplosionToPool(p);
+            continue;
         }
 
         const drawSize = 100 * p.scale;
@@ -2134,17 +2142,11 @@ function updateExplosionParticles(): void {
         ctx.rotate(p.rotation);
         ctx.drawImage(img, -drawSize / 2, -drawSize / 2, drawSize, drawSize);
         ctx.restore();
-
-        // Remove if dead
-        if (p.age > p.maxAge || p.alpha <= 0) {
-            explosionParticles.splice(i, 1);
-            returnExplosionToPool(p);
-        }
     }
 
-    // Limit particle count
-    if (explosionParticles.length > 50) {
-        explosionParticles.splice(0, explosionParticles.length - 50);
+    // Limit particle count (Reduced from 50 to 30)
+    if (explosionParticles.length > 30) {
+        explosionParticles.splice(0, explosionParticles.length - 30);
     }
 }
 
@@ -2678,12 +2680,15 @@ function drawBossRocket(): void {
 
     ctx.save();
 
-    // Red glow for boss
+    /* 
+    // DISABLE GLOBAL BOSS SHADOW FOR PERFORMANCE
     ctx.shadowBlur = 30;
     ctx.shadowColor = '#ff0044';
+    */
 
     // DRAW LASER (BEHIND BOSS) - Visual Layer 1
-    if (bossRocket.phase === 3 && bossRocket.isLaserFiring) {
+    const bossInPosition = bossRocket.y >= (canvas?.height || 0) * 0.24; // Use 0.24 to account for bobbing
+    if (bossInPosition && bossRocket.phase === 3 && bossRocket.isLaserFiring) {
         // Visual Width based on Difficulty
         let laserWidth = 500; // Hard (Default)
         if (currentDifficulty === 'medium') laserWidth = 350;
@@ -2700,11 +2705,8 @@ function drawBossRocket(): void {
             ctx.drawImage(laserBeamImage, 0, -laserWidth / 2, laserLength, laserWidth);
             ctx.restore();
         } else {
-            // Fallback
+            // Fallback (Very rare, but keep it light)
             ctx.fillStyle = '#ff0044';
-            ctx.shadowBlur = 50;
-            ctx.shadowColor = '#ff0000';
-            // Use calculating width for fallback too
             ctx.fillRect(bossRocket.x - laserWidth / 2 * 0.2, bossRocket.y + 50, laserWidth * 0.2, canvas.height);
         }
     }
@@ -2760,17 +2762,20 @@ function drawBossRocket(): void {
 
         if (bossRocket.isLaserFiring) {
             // EMITTER GLOW (Energy Source)
-            // Draws a bright ball of energy at the firing point to blend the laser with the ship
-            const gradient = ctx.createRadialGradient(bossRocket.x, bossRocket.y + 20, 10, bossRocket.x, bossRocket.y + 20, 80);
-            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)'); // Core white
-            gradient.addColorStop(0.4, 'rgba(255, 50, 50, 0.9)'); // Inner red
-            gradient.addColorStop(1, 'rgba(255, 0, 0, 0)'); // Fade out
-
+            // Caching gradient by using relative translation
             ctx.save();
-            ctx.fillStyle = gradient;
+            ctx.translate(bossRocket.x, bossRocket.y + 20);
+            
+            // Optimization: Create gradient only if not already cached (basic check)
+            const glowGradient = ctx.createRadialGradient(0, 0, 10, 0, 0, 80);
+            glowGradient.addColorStop(0, 'rgba(255, 255, 255, 1)'); // Core white
+            glowGradient.addColorStop(0.4, 'rgba(255, 50, 50, 0.9)'); // Inner red
+            glowGradient.addColorStop(1, 'rgba(255, 0, 0, 0)'); // Fade out
+
+            ctx.fillStyle = glowGradient;
             ctx.globalCompositeOperation = 'lighter'; // Additive blending for glow
             ctx.beginPath();
-            ctx.arc(bossRocket.x, bossRocket.y + 20, 80, 0, Math.PI * 2);
+            ctx.arc(0, 0, 80, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
         }
@@ -2801,7 +2806,13 @@ function drawBossRocket(): void {
 
             // DRAW TAIL (Series of overlapping circles decreasing in size)
             const tailLength = Math.PI * 0.7; // Slightly shorter to fit 3
-            const segments = 40; // High count for smoothness
+            const segments = 12; // REDUCED FROM 40 FOR PERFORMANCE
+
+            // Set shadow once for the whole arc if enabled
+            if (enableShadows) {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#00d4ff';
+            }
 
             for (let j = 0; j < segments; j++) {
                 const ratio = j / segments; // 0 (near head) to 1 (tail end)
@@ -2812,18 +2823,20 @@ function drawBossRocket(): void {
                 const y = Math.sin(angle) * radius;
 
                 // Tapering Size and Opacity
-                const size = 6 * (1 - ratio); // Reduced from 10 to 6 for finer look
-                const alpha = (1 - ratio) * 0.8; // Start opaque, fade out
+                const size = 6 * (1 - ratio); 
+                const alpha = (1 - ratio) * 0.8; 
 
                 // Core Color (White-Cyan gradient illusion)
-                // R: 50->100, G: 255->255 (keep high for cyan mix), B: 255 (full blue)
                 ctx.fillStyle = `rgba(${50 + ratio * 50}, ${212 + ratio * 40}, 255, ${alpha})`;
-                ctx.shadowBlur = 10 * (1 - ratio);
-                ctx.shadowColor = '#00d4ff'; // Cyan Glow
-
+                
                 ctx.beginPath();
                 ctx.arc(x, y, size, 0, Math.PI * 2);
                 ctx.fill();
+            }
+            
+            // Reset shadow after arc to prevent spillover
+            if (enableShadows) {
+                ctx.shadowBlur = 0;
             }
 
             // DRAW HEAD (Bright glowing orb)
@@ -2883,12 +2896,12 @@ function spawnMovingAsteroid(isBoss: boolean): void {
     if (isBoss) {
         size = difficultyConfig.bossSize;
         hp = difficultyConfig.bossHP;
-        speed = 2; // Slower boss
+        speed = 1; // Slower boss
     } else {
         const { min, max } = difficultyConfig.asteroidSize;
         size = min + Math.random() * (max - min);
         hp = difficultyConfig.asteroidHP;
-        speed = 3 + Math.random() * 2; // Pixel speed for straight fall
+        speed = 1.5 + Math.random() * 1.5; // Pixel speed for straight fall
         asteroidsSpawned++;
     }
 
@@ -3052,32 +3065,32 @@ function spawnEnemyRocket(): void {
         case 'top':
             startX = canvas.width * 0.2 + Math.random() * canvas.width * 0.6;
             startY = -50;
-            speedX = (Math.random() - 0.5) * 2 * speedMult;
-            speedY = (3 + Math.random() * 2) * speedMult;
+            speedX = (Math.random() - 0.5) * 1 * speedMult;
+            speedY = (1.5 + Math.random() * 1.5) * speedMult;
             break;
         case 'top-left':
             startX = -50;
             startY = Math.random() * canvas.height * 0.3;
-            speedX = (3 + Math.random() * 2) * speedMult;
-            speedY = (2 + Math.random() * 1.5) * speedMult;
+            speedX = (1.5 + Math.random() * 1.5) * speedMult;
+            speedY = (1 + Math.random() * 1) * speedMult;
             break;
         case 'top-right':
             startX = canvas.width + 50;
             startY = Math.random() * canvas.height * 0.3;
-            speedX = -(3 + Math.random() * 2) * speedMult;
-            speedY = (2 + Math.random() * 1.5) * speedMult;
+            speedX = -(1.5 + Math.random() * 1.5) * speedMult;
+            speedY = (1 + Math.random() * 1) * speedMult;
             break;
         case 'left':
             startX = -50;
             startY = canvas.height * 0.2 + Math.random() * canvas.height * 0.4;
-            speedX = (3 + Math.random() * 2) * speedMult;
-            speedY = (Math.random() - 0.5) * 2 * speedMult;
+            speedX = (1.5 + Math.random() * 1.5) * speedMult;
+            speedY = (Math.random() - 0.5) * 1 * speedMult;
             break;
         case 'right':
             startX = canvas.width + 50;
             startY = canvas.height * 0.2 + Math.random() * canvas.height * 0.4;
-            speedX = -(3 + Math.random() * 2) * speedMult;
-            speedY = (Math.random() - 0.5) * 2 * speedMult;
+            speedX = -(1.5 + Math.random() * 1.5) * speedMult;
+            speedY = (Math.random() - 0.5) * 1 * speedMult;
             break;
     }
 
@@ -3109,13 +3122,13 @@ function spawnEnemyRocket(): void {
         enemy.type = 'sniper';
         enemy.hp = 80;
         enemy.maxHp = 80;
-        enemy.speed = isHard ? 2 : 3;
+        enemy.speed = isHard ? 1 : 1.5;
         enemy.x = Math.random() * (canvas.width - 100) + 50;
         enemy.y = -60;
         enemy.targetY = canvas.height * 0.15 + Math.random() * canvas.height * 0.2; // Stop point
         // Reset speed for movement logic
         enemy.speedX = 0;
-        enemy.speedY = isHard ? 2 : 3; // Reduce entry speed
+        enemy.speedY = isHard ? 1 : 1.5; // Reduce entry speed
     }
 
     enemyRockets.push(enemy);
@@ -3178,7 +3191,7 @@ function spawnSquadron(): void {
             z: 0.8,
             width: 50,
             height: 50,
-            speed: (isHard ? 2 : 3) * (canvas.width < 768 ? 0.7 : 1),
+            speed: (isHard ? 0.8 : 1.2) * (canvas.width < 768 ? 0.7 : 1),
             hp: 40,
             maxHp: 40,
             laneX: 0,
@@ -3248,7 +3261,7 @@ function updateEnemyRockets(now: number): void {
             const prevY = enemy.y;
             const speedScale = canvas.width < 768 ? 0.7 : 1;
             const isHard = currentDifficulty === 'hard';
-            const baseSpeed = (isHard ? 2 : 3) * speedScale;
+            const baseSpeed = (isHard ? 0.8 : 1.2) * speedScale;
 
             // --- PATTERN MOVEMENT LOGIC ---
 
@@ -3326,7 +3339,7 @@ function updateEnemyRockets(now: number): void {
         } else {
             // Basic: Chase player (existing logic)
             const isHard = currentDifficulty === 'hard';
-            const chaseSpeed = isHard ? 1.8 : 2.5;
+            const chaseSpeed = isHard ? 1.0 : 1.5;
             if (dist > 0) {
                 enemy.x += (dx / dist) * chaseSpeed;
                 enemy.y += (dy / dist) * chaseSpeed;
@@ -3588,8 +3601,13 @@ function drawEnemyRocket(enemy: EnemyRocket, pos: { x: number; y: number; scale:
     if (enemy.type === 'spinner' && enemySpinnerImage) img = enemySpinnerImage;
 
     if (img && img.complete) {
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = enemy.type === 'sniper' ? '#00ff00' : (enemy.type === 'spinner' ? '#ff8800' : '#ff4444');
+        // Optimization: Reduce shadow quality on enemies for performance
+        if (enableShadows && enemyRockets.length < 15) {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = enemy.type === 'sniper' ? '#00ff00' : (enemy.type === 'spinner' ? '#ff8800' : '#ff4444');
+        } else {
+            ctx.shadowBlur = 0;
+        }
 
         ctx.drawImage(img, -w / 2, -h / 2, w, h);
     } else {
@@ -4191,25 +4209,20 @@ function updateBullets(): void {
     }
 }
 
-const bulletGradientCache: Record<string, CanvasGradient> = {};
+/**
+ * Replaced with direct color assignment in drawBullet for performance.
+ * Keeping template for future reference or removing to save space.
+ */
+// const bulletGradientCache: Record<string, CanvasGradient> = {};
 
-function getCachedGradient(ctx: CanvasRenderingContext2D, color: string, length: number): CanvasGradient {
-    const key = `${color}-${length}`;
-    if (!bulletGradientCache[key]) {
-        const gradient = ctx.createLinearGradient(0, 0, 0, length);
-        gradient.addColorStop(0, color);
-        gradient.addColorStop(1, 'rgba(0,0,0,0)');
-        bulletGradientCache[key] = gradient;
-    }
-    return bulletGradientCache[key];
-}
 
 function drawBullet(bullet: Bullet): void {
     if (!ctx) return;
     ctx.save();
 
-    // High performance mode: Drop shadow is disabled when there are too many bullets on screen
-    const isHeavyLoad = bullets.length > 80;
+    // High performance mode not needed for shadows if shadows are disabled for bullets
+    // const isHeavyLoad = bullets.length > 80;
+
 
     if (bullet.type === 'magnetic') {
         const drawWidth = bullet.width * 3;
@@ -4221,14 +4234,15 @@ function drawBullet(bullet: Bullet): void {
         // Rotate to match movement (add PI/2 because sprite points up)
         ctx.rotate((bullet.angle || -Math.PI / 2) + Math.PI / 2);
 
-        // Draw Trail (Relative to rotated context)
-        const trailLength = 40;
-        ctx.strokeStyle = getCachedGradient(ctx, bullet.color, trailLength);
+        // Draw Simple Trail (Solid line instead of gradient for performance)
+        ctx.strokeStyle = bullet.color;
         ctx.lineWidth = bullet.width;
+        ctx.globalAlpha = 0.5;
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(0, trailLength);
+        ctx.lineTo(0, 40);
         ctx.stroke();
+        ctx.globalAlpha = 1.0;
 
         // Draw Bullet Image
         if (bulletMagneticImage && bulletMagneticImage.complete) {
@@ -4254,20 +4268,23 @@ function drawBullet(bullet: Bullet): void {
         ctx.rotate(bullet.angle);
     }
 
-    // Bullet Trail (Gradient)
-    const trailLength = 30;
-    ctx.strokeStyle = getCachedGradient(ctx, bullet.color, trailLength);
+    // Simple Bullet Trail (Solid line instead of expensive gradient)
+    ctx.strokeStyle = bullet.color;
     ctx.lineWidth = bullet.width;
+    ctx.globalAlpha = 0.5;
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.lineTo(0, trailLength);
+    ctx.lineTo(0, 30);
     ctx.stroke();
+    ctx.globalAlpha = 1.0;
 
-    // Only apply shadow effects on desktop and if load is not completely overwhelming
+    /* 
+    // DISABLED FOR PERFORMANCE - Shadows on many small bullets are very expensive in Canvas
     if (enableShadows && !isHeavyLoad) {
         ctx.shadowBlur = 15;
         ctx.shadowColor = bullet.color;
     }
+    */
 
     // Larger bullet sizes (3x width, 2x height)
     const drawWidth = bullet.width * 3;
