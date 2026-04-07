@@ -168,7 +168,7 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode, sessionId }: Inv
             }
 
             // Bulk insert notifications for all group members (except the inviter)
-            const hostName = profile.nickname || profile.username || 'Someone';
+
 
             // DEBUG: Log raw members data from JSONB
             console.log('[DEBUG] group.members raw:', JSON.stringify(group.members, null, 2));
@@ -188,10 +188,6 @@ export function InviteGroupsDialog({ isOpen, onClose, roomCode, sessionId }: Inv
                     type: 'sessionGroup',
                     entity_type: 'session',
                     entity_id: sessionId,
-                    content: JSON.stringify({
-                        message: `${hostName} invited your group to a game!`,
-                        roomCode: roomCode,
-                    }),
                     is_read: false,
                     from_group_id: groupId,
                 }));
