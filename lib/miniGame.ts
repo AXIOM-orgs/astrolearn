@@ -36,6 +36,7 @@ interface Bullet {
     dirY?: number;
     isStationBullet?: boolean;
     isSniperBullet?: boolean;
+    isSpinnerBullet?: boolean;
 }
 
 
@@ -402,6 +403,7 @@ let stationBulletImage: HTMLImageElement | null = null; // bullet_1_1_4.png
 let loveImage: HTMLImageElement | null = null;
 let barHpImage: HTMLImageElement | null = null;
 let enemySniperBulletImage: HTMLImageElement | null = null;
+let enemySpinnerBulletImage: HTMLImageElement | null = null;
 
 // Additional scrolling decorations
 let spaceStation1Image: HTMLImageElement | null = null;
@@ -1065,6 +1067,8 @@ export function startMiniGame(
     stationBulletImage.src = '/assets/bullet_1_1_4.png';
     enemySniperBulletImage = new Image();
     enemySniperBulletImage.src = '/assets/bullet_2_3_2.png';
+    enemySpinnerBulletImage = new Image();
+    enemySpinnerBulletImage.src = '/assets/images/peluru/orange.webp';
 
     // musuh hiasan
     spaceStation1Image = new Image();
@@ -3297,6 +3301,13 @@ function updateEnemyRockets(now: number): void {
                 }
             }
 
+            // --- SPINNER FIRING LOGIC ---
+            // Only fire if on screen (y > 0)
+            if (enemy.y > 0 && enemy.y < canvas.height && now - (enemy.lastFireTime || 0) > 2000) {
+                spawnEnemyBulletStraight(enemy, dx, dy, dist, 1, true); // Damage 1, isSpinner true
+                enemy.lastFireTime = now;
+            }
+
             // --- END PATTERN LOGIC ---
 
             // Calculate Angle
@@ -3418,7 +3429,7 @@ function drawEnemyRocketAtPosition(enemy: any, angle: number): void {
 }
 
 // Spawn straight bullet from enemy in specific direction
-function spawnEnemyBulletStraight(enemy: EnemyRocket, dx: number, dy: number, dist: number): void {
+function spawnEnemyBulletStraight(enemy: EnemyRocket, dx: number, dy: number, dist: number, damage: number = 25, isSpinner: boolean = false): void {
     if (!player || dist === 0) return;
 
     // Calculate direction at spawn time (bullet goes straight, doesn't track)
@@ -3430,14 +3441,15 @@ function spawnEnemyBulletStraight(enemy: EnemyRocket, dx: number, dy: number, di
         x: enemy.x,
         y: enemy.y,
         z: enemy.z,
-        width: enemy.type === 'sniper' ? 20 : 6,
-        height: enemy.type === 'sniper' ? 40 : 12,
+        width: enemy.type === 'sniper' ? 20 : 10,
+        height: enemy.type === 'sniper' ? 40 : 20,
         speed: 8,
-        damage: 25,
-        color: '#ff4444',
+        damage: damage, // Use dynamic damage
+        color: isSpinner ? '#ff8800' : '#ff4444', // Orange for spinner
         type: 'spread',
         isEnemy: true,
         isSniperBullet: enemy.type === 'sniper',
+        isSpinnerBullet: isSpinner,
         // @ts-ignore - adding direction for straight movement
         dirX: dirX,
         dirY: dirY
@@ -3483,7 +3495,7 @@ function updateEnemyBullets(): void {
 
         if (hitDist < hitRadius) {
             // Apply damage using lives system
-            applyDamage(1); // 1 HP damage per bullet
+            applyDamage(bullet.damage || 1); // Use bullet's damage property
             enemyBullets.splice(i, 1);
             continue;
         }
@@ -3491,7 +3503,7 @@ function updateEnemyBullets(): void {
         // Draw enemy bullet
         ctx.save();
         if (enableShadows) {
-            ctx.shadowBlur = 8;
+            ctx.shadowBlur = 10;
             ctx.shadowColor = bullet.color || '#ff0000';
         }
 
@@ -3530,6 +3542,18 @@ function updateEnemyBullets(): void {
                 ctx.rotate(angle + Math.PI / 2);
             }
             ctx.drawImage(enemySniperBulletImage, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+            ctx.restore();
+        } else if (bullet.isSpinnerBullet && enemySpinnerBulletImage && enemySpinnerBulletImage.complete) {
+            const imgWidth = bullet.width || 25;
+            const imgHeight = bullet.height || 50;
+            ctx.save();
+            ctx.translate(bullet.x, bullet.y);
+            // Rotate towards movement direction
+            if (bullet.dirX !== undefined && bullet.dirY !== undefined) {
+                const angle = Math.atan2(bullet.dirY, bullet.dirX);
+                ctx.rotate(angle + Math.PI / 2);
+            }
+            ctx.drawImage(enemySpinnerBulletImage, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
             ctx.restore();
         } else {
             // Normal enemy bullet (red circle)

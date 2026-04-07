@@ -149,7 +149,7 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode, sessionId }: In
         setInvitingStatus(prev => ({ ...prev, [friendId]: 'loading' }));
 
         try {
-            const hostName = profile.nickname || profile.username || 'Someone';
+
 
             // Insert notification with correct schema
             const { error } = await supabase
@@ -160,10 +160,6 @@ export function InviteFriendsDialog({ isOpen, onClose, roomCode, sessionId }: In
                     type: 'sessionFriend',
                     entity_type: 'session',
                     entity_id: sessionId,
-                    content: JSON.stringify({
-                        message: `${hostName} invited you to join a game!`,
-                        roomCode: roomCode,
-                    }),
                     is_read: false,
                     from_group_id: null,
                 });
