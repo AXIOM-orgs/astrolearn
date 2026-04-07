@@ -14,6 +14,8 @@ interface Player {
     hp: number;
     maxHp: number;
     tilt: number;
+    hitFlash: number;
+    upgradeFlash: number;
 }
 
 interface Bullet {
@@ -217,7 +219,10 @@ function getExplosionFromPool(): ExplosionParticle {
     if (explosionPool.pool.length > 0) {
         return explosionPool.pool.pop()!;
     }
-    return { x: 0, y: 0, scale: 0, alpha: 0, rotation: 0, age: 0 };
+    return { 
+        x: 0, y: 0, scale: 0, alpha: 0, rotation: 0, age: 0, 
+        maxAge: 30, type: 'standard' 
+    };
 }
 
 function returnExplosionToPool(particle: ExplosionParticle): void {
@@ -361,7 +366,16 @@ let muzzleFlashUntil: number = 0;
 
 // Explosion particles
 let explosionImage: HTMLImageElement | null = null;
-interface ExplosionParticle { x: number; y: number; scale: number; alpha: number; rotation: number; age: number; }
+interface ExplosionParticle { 
+    x: number; 
+    y: number; 
+    scale: number; 
+    alpha: number; 
+    rotation: number; 
+    age: number; 
+    maxAge: number;
+    type: 'standard' | 'ring' | 'core';
+}
 let explosionParticles: ExplosionParticle[] = [];
 
 // Boss Death Visuals
@@ -436,8 +450,8 @@ let bossWarningStartTime: number = 0;
 // Weapon settings (obsolete duration)
 
 // Lives system
-const PLAYER_MAX_LIVES = 10;
-const LIFE_MAX_HP = 100;
+const PLAYER_MAX_LIVES = 3;
+const LIFE_MAX_HP = 10;
 const IMMUNITY_DURATION = 3000; // 3 seconds immunity after losing a life
 let playerLives: number = 3;
 let playerLifeHP: number = 10;
@@ -520,14 +534,14 @@ type SoundType = 'spread' | 'laserBiru' | 'laserMagnet' | 'bossLaser' | 'destroy
 
 class AudioManager {
     private audioContext: AudioContext | null = null;
-    private isMuted: boolean = true; // Default muted per request
+    private isMuted: boolean = false;
     private audioBuffers: Map<string, AudioBuffer> = new Map();
     private activeSources: AudioBufferSourceNode[] = [];
     private bgmSource: AudioBufferSourceNode | null = null;
     private bgmGain: GainNode | null = null;
     private isLoaded: boolean = false;
     private masterGain: GainNode | null = null;
-    private masterVolume: number = 1.0;
+    private masterVolume: number = 0.7;
 
     constructor() {
         try {
@@ -540,6 +554,13 @@ class AudioManager {
             if (savedVolume !== null) {
                 this.masterVolume = parseFloat(savedVolume);
             }
+            
+            // Load saved mute state
+            const savedMute = localStorage.getItem('cosmicquest_muted');
+            if (savedMute !== null) {
+                this.isMuted = savedMute === 'true';
+            }
+            
             this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
         } catch (e) {
             console.log('Audio context not available');
@@ -621,7 +642,7 @@ class AudioManager {
     }
 
     startBGM(volume: number = 0.5): void {
-        if (!this.audioContext || this.isMuted || this.bgmSource) return;
+        if (!this.audioContext || this.bgmSource) return;
 
         const buffer = this.audioBuffers.get('bgm');
         if (!buffer) return;
@@ -636,10 +657,12 @@ class AudioManager {
 
         this.bgmSource.buffer = buffer;
         this.bgmSource.loop = true;
+        // BGM volume is controlled by its own gain AND masterGain
         this.bgmGain.gain.value = volume;
 
+        // Route BGM through masterGain so master volume controls it
         this.bgmSource.connect(this.bgmGain);
-        this.bgmGain.connect(this.audioContext.destination);
+        this.bgmGain.connect(this.masterGain!);
 
         this.bgmSource.start(0);
     }
@@ -673,12 +696,17 @@ class AudioManager {
 
     toggleMute(): boolean {
         this.isMuted = !this.isMuted;
+        localStorage.setItem('cosmicquest_muted', this.isMuted.toString());
 
         if (this.masterGain) {
             this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
         }
 
-        if (!this.isMuted && !this.bgmSource && this.audioContext?.state !== 'suspended') {
+        // Start BGM if unmuting and not already playing
+        if (!this.isMuted && !this.bgmSource) {
+            if (this.audioContext?.state === 'suspended') {
+                this.audioContext.resume();
+            }
             this.startBGM(0.5);
         }
 
@@ -689,14 +717,26 @@ class AudioManager {
         this.masterVolume = Math.max(0, Math.min(1, volume)); // clamp 0-1
         localStorage.setItem('cosmicquest_master_volume', this.masterVolume.toString());
         
-        if (!this.isMuted && this.masterGain) {
-            this.masterGain.gain.value = this.masterVolume;
+        // Auto-mute at 0, auto-unmute above 0
+        if (this.masterVolume === 0) {
+            this.isMuted = true;
+            localStorage.setItem('cosmicquest_muted', 'true');
+        } else if (this.isMuted && this.masterVolume > 0) {
+            this.isMuted = false;
+            localStorage.setItem('cosmicquest_muted', 'false');
         }
         
-        // Auto unmute if volume > 0 and was muted
-        if (this.isMuted && this.masterVolume > 0) {
-            this.isMuted = false;
-            if (!this.bgmSource) this.startBGM(0.5);
+        // Apply volume to masterGain
+        if (this.masterGain) {
+            this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
+        }
+        
+        // Start BGM if it wasn't playing yet
+        if (!this.isMuted && !this.bgmSource) {
+            if (this.audioContext?.state === 'suspended') {
+                this.audioContext.resume();
+            }
+            this.startBGM(0.5);
         }
     }
     
@@ -708,25 +748,31 @@ class AudioManager {
         return this.isMuted;
     }
 
+    async resumeContext(): Promise<void> {
+        if (this.audioContext && this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+    }
+
     // Legacy method for compatibility (uses oscillator fallback)
     playSoundEffect(type: 'spread' | 'laser' | 'magnetic' | 'hit' | 'powerup' | 'explosion'): void {
         // Map legacy types to new sound system
         if (type === 'spread') {
-            this.playSound('spread', 0.15); // Reduced volume
+            this.playSound('spread', 0.15);
         } else if (type === 'laser') {
-            this.playSound('laserBiru', 0.35); // Balanced with other lasers
+            this.playSound('laserBiru', 0.35);
         } else if (type === 'magnetic') {
-            this.playSound('laserMagnet', 0.35); // Balanced with other lasers
+            this.playSound('laserMagnet', 0.35);
         } else if (type === 'explosion') {
             this.playSound('destroy', 0.50);
         }
-        // hit and powerup use oscillator fallback
-        else if (this.audioContext) {
+        // hit and powerup use oscillator fallback - route through masterGain
+        else if (this.audioContext && !this.isMuted && this.masterGain) {
             const now = this.audioContext.currentTime;
             const osc = this.audioContext.createOscillator();
             const gain = this.audioContext.createGain();
             osc.connect(gain);
-            gain.connect(this.audioContext.destination);
+            gain.connect(this.masterGain); // Route through masterGain instead of destination
 
             if (type === 'hit') {
                 osc.frequency.value = 150;
@@ -915,7 +961,7 @@ export function startMiniGame(
 
     // Load meteor image
     meteorImage = new Image();
-    meteorImage.src = '/assets/meteor.png';
+    meteorImage.src = '/assets/images/hiasan/meteor.webp';
 
     // Randomly select between 3 background modes
     const bgRand = Math.floor(Math.random() * 3);
@@ -979,9 +1025,9 @@ export function startMiniGame(
     }
 
     enemySniperImage = new Image();
-    enemySniperImage.src = '/assets/sub_7_2.png'; // New Sniper Asset
+    enemySniperImage.src = '/assets/images/enemy/enemy-sniper.webp'; // New Sniper Asset
     enemySpinnerImage = new Image();
-    enemySpinnerImage.src = '/assets/enemy_small_w1_1.png'; // New Spinner (Squadron) Asset
+    enemySpinnerImage.src = '/assets/images/enemy/enemy-spiral.webp'; // New Spinner (Squadron) Asset
 
     // Load explosion image
     explosionImage = new Image();
@@ -1011,9 +1057,9 @@ export function startMiniGame(
     laserBeamImage = new Image();
     laserBeamImage.src = '/assets/laser_6.png';
     weaponPowerUpImage = new Image();
-    weaponPowerUpImage.src = '/assets/upweapnew.png';
+    weaponPowerUpImage.src = '/assets/images/hiasan/upweapon.webp';
     loveImage = new Image();
-    loveImage.src = '/assets/love.png';
+    loveImage.src = '/assets/images/hiasan/love.webp';
     // barHpImage removed - file doesn't exist and is not used in any drawImage call
     stationBulletImage = new Image();
     stationBulletImage.src = '/assets/bullet_1_1_4.png';
@@ -1022,11 +1068,11 @@ export function startMiniGame(
 
     // musuh hiasan
     spaceStation1Image = new Image();
-    spaceStation1Image.src = '/assets/spaceStation_8.1.png';
+    spaceStation1Image.src = '/assets/images/hiasan/dec_dmg.webp';
     spaceStation2Image = new Image();
     spaceStation2Image.src = '/assets/var_enemy3.png';
     rockImage = new Image();
-    rockImage.src = '/assets/batu.png';
+    rockImage.src = '/assets/images/hiasan/batu.webp';
     initScrollingDecors(canvas);
 
     // Load spaceship image
@@ -1045,7 +1091,9 @@ export function startMiniGame(
         dy: 0,
         hp: 0, // No HP with base weapon (invincible)
         maxHp: 0,
-        tilt: 0
+        tilt: 0,
+        hitFlash: 0,
+        upgradeFlash: 0
     };
 
     // Initialize crosshair and target
@@ -1068,9 +1116,11 @@ export function startMiniGame(
     resizeHandler = handleResize;
     window.addEventListener('resize', resizeHandler);
 
-    // Load sounds and start BGM
-    audioManager.loadSounds().then(() => {
-        audioManager.startBGM(0.5); // BGM louder than effects
+    // Load sounds and start BGM - resume AudioContext first (user already clicked to start game)
+    audioManager.resumeContext().then(() => {
+        return audioManager.loadSounds();
+    }).then(() => {
+        audioManager.startBGM(0.5);
     });
 
     // Start game loop
@@ -1082,6 +1132,7 @@ export function startMiniGame(
 // ============ GUI STATE ============
 let isVolumeSliderOpen = false;
 let isDraggingVolume = false;
+let volumeChangedWhileOpen = false; // Track if volume was changed while slider was open
 
 function drawMuteButton(): void {
     if (!ctx || !canvas) return;
@@ -1104,8 +1155,8 @@ function drawMuteButton(): void {
         // Background track
         ctx.fillStyle = 'rgba(0, 30, 50, 0.8)';
         ctx.beginPath();
-        // Added more padding (16px vertical, 14px horizontal)
-        ctx.roundRect(sliderX - 14, sliderY - 26, sliderWidth + 28, sliderHeight + 52, 32);
+        // Expanded vertical padding for percentage text spacing
+        ctx.roundRect(sliderX - 14, sliderY - 42, sliderWidth + 28, sliderHeight + 68, 32);
         ctx.fill();
         ctx.strokeStyle = '#4ab8c7';
         ctx.lineWidth = 1.5;
@@ -1117,14 +1168,15 @@ function drawMuteButton(): void {
         ctx.roundRect(sliderX, sliderY, sliderWidth, sliderHeight, 6);
         ctx.fill();
 
-        // Fill line based on volume
-        const fillHeight = sliderHeight * currentVol;
+        // Fill line based on volume (show actual volume even when muted)
+        const displayVol = isMuted ? 0 : currentVol;
+        const fillHeight = sliderHeight * displayVol;
         const fillY = sliderY + sliderHeight - fillHeight;
         
-        // Green/cyan fill for volume
-        const gradient = ctx.createLinearGradient(0, sliderY, 0, sliderY + sliderHeight);
+        // Gradient based on volume level
+        const gradient = ctx.createLinearGradient(0, sliderY + sliderHeight, 0, sliderY);
         gradient.addColorStop(0, '#00d4ff');
-        gradient.addColorStop(1, '#00d4ff');
+        gradient.addColorStop(1, '#00ffa3');
         ctx.fillStyle = gradient;
         
         if (fillHeight > 0) {
@@ -1141,6 +1193,12 @@ function drawMuteButton(): void {
         ctx.strokeStyle = '#4ab8c7';
         ctx.lineWidth = 2;
         ctx.stroke();
+        
+        // Volume percentage text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${Math.round(displayVol * 100)}%`, sliderX + sliderWidth / 2, sliderY - 22);
     }
 
     // Draw Button Background
@@ -1220,7 +1278,7 @@ function setupControls(): void {
         const sliderWidth = 12;
         const sliderHeight = 100;
         const sliderX = btnX - sliderWidth / 2;
-        const sliderY = btnY - btnRadius - 30 - sliderHeight; // Match the visual drawing
+        const sliderY = btnY - btnRadius - 40 - sliderHeight; // Match the visual drawing
         
         // Check if inside slider bounding box + margin
         if (clickX > sliderX - 25 && clickX < sliderX + sliderWidth + 25 &&
@@ -1284,12 +1342,13 @@ function setupControls(): void {
 
         // Check Mute Button Click First
         if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 5) {
-            isVolumeSliderOpen = !isVolumeSliderOpen;
-            if (!isVolumeSliderOpen) {
-                // If closing, toggle mute as a quick action (only if volume isn't changed)
-                // wait, if we open and close randomly it might be annoying.
-                // Let's make it so clicking speaker always toggles slider, double clicking or dragging changes volume.
-                // Actually, if slider is closed, clicking it opens slider AND toggles mute if it was 0.
+            if (isVolumeSliderOpen) {
+                // If slider is open, clicking speaker toggles mute
+                audioManager.toggleMute();
+            } else {
+                // If slider is closed, open the slider
+                isVolumeSliderOpen = true;
+                volumeChangedWhileOpen = false;
             }
             return;
         }
@@ -1298,10 +1357,12 @@ function setupControls(): void {
         if (isVolumeSliderOpen) {
             if (handleDragVolume(clickX, clickY)) {
                 isDraggingVolume = true;
+                volumeChangedWhileOpen = true;
                 return;
             } else {
                 // Clicked outside slider - close it
                 isVolumeSliderOpen = false;
+                volumeChangedWhileOpen = false;
             }
         }
 
@@ -1329,17 +1390,26 @@ function setupControls(): void {
             const btnX = canvas.width - btnRadius - padding;
             const btnY = canvas.height - btnRadius - padding;
 
-            if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 10) { // +10 hit area
-                isVolumeSliderOpen = !isVolumeSliderOpen;
+            if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 10) {
+                if (isVolumeSliderOpen) {
+                    // If slider is open, tapping speaker toggles mute
+                    audioManager.toggleMute();
+                } else {
+                    // If slider is closed, open the slider
+                    isVolumeSliderOpen = true;
+                    volumeChangedWhileOpen = false;
+                }
                 return;
             }
             
             if (isVolumeSliderOpen) {
                 if (handleDragVolume(clickX, clickY)) {
                     isDraggingVolume = true;
+                    volumeChangedWhileOpen = true;
                     return; // Prevent firing while dragging slider
                 } else {
                     isVolumeSliderOpen = false;
+                    volumeChangedWhileOpen = false;
                 }
             }
         }
@@ -1420,6 +1490,10 @@ function update(): void {
     const targetTilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, moveDirection * 3));
     player.tilt += (targetTilt - player.tilt) * 0.15;
     lastPlayerX = player.x;
+
+    // Update flash effects
+    if (player.hitFlash > 0) player.hitFlash -= 1;
+    if (player.upgradeFlash > 0) player.upgradeFlash -= 1;
 
     // Spawn power-ups after dodge phase (Periodic every 6 seconds)
     if (!isInDodgePhase) {
@@ -1544,6 +1618,10 @@ function applyDamage(amount: number): void {
 
     // Reduce HP
     playerLifeHP -= amount;
+    if (player) {
+        player.hitFlash = 40; // 40 frames = 4 phases of 10 frames (2 blinks)
+        spawnExplosion(player.x, player.y, 0.5);
+    }
     audioManager.playSoundEffect('hit');
 
     // Weapon levels no longer decrement on regular hits
@@ -1970,50 +2048,95 @@ function spawnExplosion(x: number, y: number, size: number = 1): void {
         triggerScreenShake(5, 150); // Medium shake
     }
 
-    // Spawn multiple explosion particles for a more dramatic effect
-    // Reduce particle count on mobile using particleMultiplier
-    const baseParticleCount = 3 + Math.floor(Math.random() * 3);
-    const particleCount = Math.max(1, Math.floor(baseParticleCount * particleMultiplier));
-    for (let i = 0; i < particleCount; i++) {
-        // Use object pool instead of creating new object
-        const particle = getExplosionFromPool();
-        particle.x = x + (Math.random() - 0.5) * 30 * size;
-        particle.y = y + (Math.random() - 0.5) * 30 * size;
-        particle.scale = (0.5 + Math.random() * 0.8) * size;
-        particle.alpha = 1;
-        particle.rotation = Math.random() * Math.PI * 2;
-        particle.age = 0;
-        explosionParticles.push(particle);
+    if (size >= 1) {
+        // --- DESTRUCTION EXPLOSION ---
+        // 1. Core Explosion
+        const core = getExplosionFromPool();
+        core.x = x;
+        core.y = y;
+        core.type = 'core';
+        core.scale = size * 0.8;
+        core.alpha = 1;
+        core.age = 0;
+        core.maxAge = 40;
+        explosionParticles.push(core);
+
+        // 2. Fire Ring
+        const ring = getExplosionFromPool();
+        ring.x = x;
+        ring.y = y;
+        ring.type = 'ring';
+        ring.scale = 0.1; // Starts small
+        ring.alpha = 1;
+        ring.age = 0;
+        ring.maxAge = 35;
+        explosionParticles.push(ring);
+    } else {
+        // --- HIT SPARKLES ---
+        const particleCount = Math.max(1, Math.floor((2 + Math.random() * 2) * particleMultiplier));
+        for (let i = 0; i < particleCount; i++) {
+            const particle = getExplosionFromPool();
+            particle.x = x + (Math.random() - 0.5) * 15 * size;
+            particle.y = y + (Math.random() - 0.5) * 15 * size;
+            particle.type = 'standard';
+            particle.scale = (0.3 + Math.random() * 0.5) * size;
+            particle.alpha = 1;
+            particle.rotation = Math.random() * Math.PI * 2;
+            particle.age = 0;
+            particle.maxAge = 20;
+            explosionParticles.push(particle);
+        }
     }
 }
 
 function updateExplosionParticles(): void {
-    if (!ctx || !explosionImage || !explosionImage.complete) return;
+    if (!ctx) return;
 
-    ctx.save();
     for (let i = explosionParticles.length - 1; i >= 0; i--) {
-        const particle = explosionParticles[i];
+        const p = explosionParticles[i];
+        p.age++;
 
-        particle.age++;
-        particle.alpha -= 0.03;
-        particle.scale += 0.02;
-        particle.rotation += 0.05;
+        // Determine which image to use
+        let img = explosionImage;
+        if (p.type === 'ring') img = fireRingImage;
+        else if (p.type === 'core') img = bossExplosionImage;
 
-        if (particle.alpha <= 0) {
-            // Return particle to pool for reuse
-            returnExplosionToPool(explosionParticles.splice(i, 1)[0]);
+        // Skip if image not loaded yet
+        if (!img || !img.complete) {
+            if (p.age > p.maxAge) {
+                explosionParticles.splice(i, 1);
+                returnExplosionToPool(p);
+            }
             continue;
         }
 
-        const drawSize = 80 * particle.scale;
+        // Update properties based on type
+        if (p.type === 'ring') {
+            p.scale += 0.05 * p.scale; // Grow faster as it gets larger
+            p.alpha = 1 - (p.age / p.maxAge);
+        } else if (p.type === 'core') {
+            p.scale += 0.01; // Slight grow
+            p.alpha = 1 - (p.age / p.maxAge);
+        } else {
+            // Standard hit particle
+            p.alpha -= 0.035;
+            p.scale -= 0.01; // Shrink as it fades
+        }
+
+        const drawSize = 100 * p.scale;
         ctx.save();
-        ctx.translate(particle.x, particle.y);
-        ctx.rotate(particle.rotation);
-        ctx.globalAlpha = particle.alpha;
-        ctx.drawImage(explosionImage, -drawSize / 2, -drawSize / 2, drawSize, drawSize);
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.drawImage(img, -drawSize / 2, -drawSize / 2, drawSize, drawSize);
         ctx.restore();
+
+        // Remove if dead
+        if (p.age > p.maxAge || p.alpha <= 0) {
+            explosionParticles.splice(i, 1);
+            returnExplosionToPool(p);
+        }
     }
-    ctx.restore();
 
     // Limit particle count
     if (explosionParticles.length > 50) {
@@ -3250,7 +3373,7 @@ function drawEnemyRocketAtPosition(enemy: any, angle: number): void {
     if (img && img.complete) {
         if (enableShadows) {
             ctx.shadowBlur = 15;
-            ctx.shadowColor = enemy.type === 'spinner' ? '#00ff00' : (enemy.type === 'sniper' ? '#ff8800' : '#ff0000');
+            ctx.shadowColor = enemy.type === 'spinner' ? '#ff8800' : (enemy.type === 'sniper' ? '#00ff00' : '#ff0000');
         }
         ctx.drawImage(img, -w / 2, -h / 2, w, h);
     } else {
@@ -3442,7 +3565,7 @@ function drawEnemyRocket(enemy: EnemyRocket, pos: { x: number; y: number; scale:
 
     if (img && img.complete) {
         ctx.shadowBlur = 10;
-        ctx.shadowColor = enemy.type === 'sniper' ? '#ff0000' : (enemy.type === 'spinner' ? '#00ff00' : '#ff4444');
+        ctx.shadowColor = enemy.type === 'sniper' ? '#00ff00' : (enemy.type === 'spinner' ? '#ff8800' : '#ff4444');
 
         ctx.drawImage(img, -w / 2, -h / 2, w, h);
     } else {
@@ -3919,6 +4042,7 @@ function updateBullets(): void {
                     if (dist < asteroid.baseSize) {
                         asteroid.hp -= bullet.damage;
                         asteroid.hitFlash = 10;
+                        spawnExplosion(bullet.x, bullet.y, 0.3);
                         gameStats.hits++;
                         if (hasWeapon) gameStats.score += 100;
                         updateUI();
@@ -3940,6 +4064,7 @@ function updateBullets(): void {
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     if (dist < enemy.width) {
                         enemy.hp -= bullet.damage;
+                        spawnExplosion(bullet.x, bullet.y, 0.4);
                         gameStats.hits++;
                         if (hasWeapon) gameStats.score += 150;
                         updateUI();
@@ -3966,6 +4091,7 @@ function updateBullets(): void {
                     if (dist < 50 * decor.scale) {
                         decor.hp -= bullet.damage;
                         decor.hitFlash = 1.0;
+                        spawnExplosion(bullet.x, bullet.y, 0.3);
                         bulletHit = true;
                         gameStats.hits++;
                         break;
@@ -3984,6 +4110,7 @@ function updateBullets(): void {
 
                 if (dist < minion.width / 2) {
                     minion.hp -= bullet.damage;
+                    spawnExplosion(bullet.x, bullet.y, 0.4);
                     gameStats.hits++;
                     gameStats.score += 50;
 
@@ -4169,8 +4296,31 @@ function drawPlayer(): void {
         ctx.rotate(player.tilt * Math.PI / 180);
 
         if (!isImmune && enableShadows) {
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = hasWeapon && weaponConfig ? weaponConfig.color : '#00d4ff';
+            // Default: No shadow
+            let sBlur = 0;
+            let sColor = 'transparent';
+
+            // 1. Hit Flash Priority (Red - 2 blinks)
+            if (player.hitFlash > 0) {
+                // Blink pattern: ON (40-31), OFF (30-21), ON (20-11), OFF (10-0)
+                const isBlinkOn = Math.floor(player.hitFlash / 10) % 2 === 1;
+                if (isBlinkOn) {
+                    sColor = '#ff4444';
+                    sBlur = 45;
+                }
+            } 
+            // 2. Continuous Upgrade Flash (Yellow)
+            else if (playerWeaponLevel > 1) {
+                // Blink pattern: 250ms periodic
+                const isBlinkOn = Math.floor(Date.now() / 250) % 2 === 0;
+                if (isBlinkOn) {
+                    sColor = '#ffff00';
+                    sBlur = 45;
+                }
+            }
+
+            ctx.shadowBlur = sBlur;
+            ctx.shadowColor = sColor;
         }
 
         ctx.drawImage(

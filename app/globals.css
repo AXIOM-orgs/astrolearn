@@ -9541,3 +9541,46 @@ input[type="text"]:focus {
 .statistics-btn {
   right: 30px;
 }
+
+/* ===== ROCKET SPRITE SYSTEM ===== */
+.rocket-sprite {
+  display: inline-block;
+  width: 100px;
+  height: 100px;
+  background-image: url('/assets/images/characters/roket/sprites_roket.png');
+  background-repeat: no-repeat;
+}
+
+/* Base positions (100x100 frame) */
+.bg-roket-1 { background-position: -6px -6px; }
+.bg-roket-2 { background-position: -118px -6px; }
+.bg-roket-3 { background-position: -6px -118px; }
+.bg-roket-4 { background-position: -118px -118px; }
+.bg-roket-5 { background-position: -230px -6px; }
+.bg-roket-6 { background-position: -230px -118px; }
+
+/* Small variant — 40x40px (ratio 0.4) */
+.rocket-sprite.rocket-sm {
+  width: 40px;
+  height: 40px;
+  background-size: 134.4px 89.6px;
+}
+.rocket-sprite.rocket-sm.bg-roket-1 { background-position: -2.4px -2.4px; }
+.rocket-sprite.rocket-sm.bg-roket-2 { background-position: -47.2px -2.4px; }
+.rocket-sprite.rocket-sm.bg-roket-3 { background-position: -2.4px -47.2px; }
+.rocket-sprite.rocket-sm.bg-roket-4 { background-position: -47.2px -47.2px; }
+.rocket-sprite.rocket-sm.bg-roket-5 { background-position: -92px -2.4px; }
+.rocket-sprite.rocket-sm.bg-roket-6 { background-position: -92px -47.2px; }
+
+/* Medium variant — 60x60px (ratio 0.6) */
+.rocket-sprite.rocket-md {
+  width: 60px;
+  height: 60px;
+  background-size: 201.6px 134.4px;
+}
+.rocket-sprite.rocket-md.bg-roket-1 { background-position: -3.6px -3.6px; }
+.rocket-sprite.rocket-md.bg-roket-2 { background-position: -70.8px -3.6px; }
+.rocket-sprite.rocket-md.bg-roket-3 { background-position: -3.6px -70.8px; }
+.rocket-sprite.rocket-md.bg-roket-4 { background-position: -70.8px -70.8px; }
+.rocket-sprite.rocket-md.bg-roket-5 { background-position: -138px -3.6px; }
+.rocket-sprite.rocket-md.bg-roket-6 { background-position: -138px -70.8px; }

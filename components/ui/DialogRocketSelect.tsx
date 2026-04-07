@@ -64,7 +64,11 @@ export function DialogRocketSelect({
                             onClick={() => handleSelect(ship)}
                         >
                             <div className="rocket-image-container">
-                                <img src={ship.image} alt={ship.name} className="rocket-image" />
+                                <div
+                                    className={`rocket-sprite ${ship.spriteClass}`}
+                                    role="img"
+                                    aria-label={ship.name}
+                                />
                             </div>
                             <div className="rocket-info">
                                 <span className="rocket-name" style={{ color: ship.color }}>{ship.name}</span>

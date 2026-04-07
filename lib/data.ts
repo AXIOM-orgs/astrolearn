@@ -29,6 +29,7 @@ export interface Spaceship {
     color: string;
     emoji: string;
     image: string;
+    spriteClass: string;
 }
 
 // Weapon Configuration
@@ -462,7 +463,8 @@ export const spaceships: Spaceship[] = [
         speed: 9,
         color: "#ff9e00",
         emoji: "🚀",
-        image: "/assets/images/characters/roket/roket-1.webp"
+        image: "/assets/images/characters/roket/roket-1.webp",
+        spriteClass: "bg-roket-1"
     },
     {
         id: 2,
@@ -471,7 +473,8 @@ export const spaceships: Spaceship[] = [
         speed: 7,
         color: "#ff9e00",
         emoji: "🛸",
-        image: "/assets/images/characters/roket/roket-2.webp"
+        image: "/assets/images/characters/roket/roket-2.webp",
+        spriteClass: "bg-roket-2"
     },
     {
         id: 3,
@@ -480,7 +483,8 @@ export const spaceships: Spaceship[] = [
         speed: 6,
         color: "#ff9e00",
         emoji: "🛰️",
-        image: "/assets/images/characters/roket/roket-3.webp"
+        image: "/assets/images/characters/roket/roket-3.webp",
+        spriteClass: "bg-roket-3"
     },
     {
         id: 4,
@@ -489,7 +493,8 @@ export const spaceships: Spaceship[] = [
         speed: 8,
         color: "#ff9e00",
         emoji: "✨",
-        image: "/assets/images/characters/roket/roket-4.webp"
+        image: "/assets/images/characters/roket/roket-4.webp",
+        spriteClass: "bg-roket-4"
     },
     {
         id: 5,
@@ -498,7 +503,8 @@ export const spaceships: Spaceship[] = [
         speed: 10,
         color: "#ff9e00",
         emoji: "🌟",
-        image: "/assets/images/characters/roket/roket-5.webp"
+        image: "/assets/images/characters/roket/roket-5.webp",
+        spriteClass: "bg-roket-5"
     },
     {
         id: 6,
@@ -507,7 +513,8 @@ export const spaceships: Spaceship[] = [
         speed: 5,
         color: "#ff9e00",
         emoji: "🌠",
-        image: "/assets/images/characters/roket/roket-6.webp"
+        image: "/assets/images/characters/roket/roket-6.webp",
+        spriteClass: "bg-roket-6"
     }
 ];
 
@@ -516,4 +523,16 @@ export const getSpacecraftImage = (filename: string | null): string => {
     const baseName = filename.split('/').pop() || '';
     const ship = spaceships.find(s => s.image.endsWith(baseName));
     return ship ? ship.image : spaceships[0].image;
+};
+
+// Convert database filename to CSS sprite class
+export const getSpacecraftSpriteClass = (filename: string | null): string => {
+    if (!filename) return 'bg-roket-1';
+    // Match "roket-1.webp" or "roket-1" → "bg-roket-1"
+    const match = filename.match(/roket-(\d+)/);
+    if (match) return `bg-roket-${match[1]}`;
+    // Fallback: search spaceships array
+    const baseName = filename.split('/').pop() || '';
+    const ship = spaceships.find(s => s.image.endsWith(baseName));
+    return ship?.spriteClass || 'bg-roket-1';
 };
