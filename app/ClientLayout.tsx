@@ -60,7 +60,14 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
         sfxAudio.click.volume = 0.5;
         
         // Track state locally to avoid rapid localStorage reads and sync with CustomEvents
-        let isSfxEnabled = localStorage.getItem('cosmicquest_sfx_enabled') !== 'false';
+        let isSfxEnabled = true; // Default
+        const savedSfx = localStorage.getItem('cosmicquest_sfx_enabled');
+        if (savedSfx !== null) {
+            isSfxEnabled = savedSfx === 'true';
+        } else {
+            // New user - default to ON for host, OFF for players
+            isSfxEnabled = pathname.startsWith('/host');
+        }
 
         const handleSoundChange = (e: Event) => {
             const customEvent = e as CustomEvent;

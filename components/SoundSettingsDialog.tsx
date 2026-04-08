@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -10,8 +11,10 @@ interface SoundSettingsDialogProps {
 }
 
 export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogProps): React.JSX.Element | null {
-    const [bgmEnabled, setBgmEnabled] = useState(true);
-    const [sfxEnabled, setSfxEnabled] = useState(true);
+    const pathname = usePathname();
+    const isHost = pathname.startsWith('/host');
+    const [bgmEnabled, setBgmEnabled] = useState(isHost);
+    const [sfxEnabled, setSfxEnabled] = useState(isHost);
     const t = useTranslations('SoundSettings');
     const tc = useTranslations('Common');
     
@@ -25,8 +28,17 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
             const savedBgm = localStorage.getItem('cosmicquest_bgm_enabled');
             const savedSfx = localStorage.getItem('cosmicquest_sfx_enabled');
             
-            if (savedBgm !== null) setBgmEnabled(savedBgm === 'true');
-            if (savedSfx !== null) setSfxEnabled(savedSfx === 'true');
+            if (savedBgm !== null) {
+                setBgmEnabled(savedBgm === 'true');
+            } else {
+                setBgmEnabled(isHost);
+            }
+            
+            if (savedSfx !== null) {
+                setSfxEnabled(savedSfx === 'true');
+            } else {
+                setSfxEnabled(isHost);
+            }
         }
 
         const handleSoundChange = (e: any) => {
