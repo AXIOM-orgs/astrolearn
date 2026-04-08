@@ -536,7 +536,7 @@ type SoundType = 'spread' | 'laserBiru' | 'laserMagnet' | 'bossLaser' | 'destroy
 
 class AudioManager {
     private audioContext: AudioContext | null = null;
-    private isMuted: boolean = false;
+    private isMuted: boolean = true;
     private audioBuffers: Map<string, AudioBuffer> = new Map();
     private activeSources: AudioBufferSourceNode[] = [];
     private bgmSource: AudioBufferSourceNode | null = null;
@@ -551,19 +551,31 @@ class AudioManager {
             this.masterGain = this.audioContext.createGain();
             this.masterGain.connect(this.audioContext.destination);
             
+            // Role detection: Player vs General
+            const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+            const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
+            
+            const muteKey = isPlayerPath ? 'cosmicquest_player_muted' : 'cosmicquest_muted';
+            const volKey = isPlayerPath ? 'cosmicquest_player_master_volume' : 'cosmicquest_master_volume';
+
             // Load saved volume
-            const savedVolume = localStorage.getItem('cosmicquest_master_volume');
+            const savedVolume = localStorage.getItem(volKey);
             if (savedVolume !== null) {
                 this.masterVolume = parseFloat(savedVolume);
             }
             
             // Load saved mute state
-            const savedMute = localStorage.getItem('cosmicquest_muted');
+            const savedMute = localStorage.getItem(muteKey);
             if (savedMute !== null) {
                 this.isMuted = savedMute === 'true';
+            } else {
+                // New user - default: Player side = muted, General side = unmuted
+                this.isMuted = isPlayerPath;
             }
             
-            this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
+            if (this.masterGain) {
+                this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
+            }
         } catch (e) {
             console.log('Audio context not available');
         }
@@ -698,7 +710,10 @@ class AudioManager {
 
     toggleMute(): boolean {
         this.isMuted = !this.isMuted;
-        localStorage.setItem('cosmicquest_muted', this.isMuted.toString());
+        const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+        const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
+        const muteKey = isPlayerPath ? 'cosmicquest_player_muted' : 'cosmicquest_muted';
+        localStorage.setItem(muteKey, this.isMuted.toString());
 
         if (this.masterGain) {
             this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
@@ -717,15 +732,21 @@ class AudioManager {
 
     setMasterVolume(volume: number): void {
         this.masterVolume = Math.max(0, Math.min(1, volume)); // clamp 0-1
-        localStorage.setItem('cosmicquest_master_volume', this.masterVolume.toString());
+        const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+        const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
+        
+        const muteKey = isPlayerPath ? 'cosmicquest_player_muted' : 'cosmicquest_muted';
+        const volKey = isPlayerPath ? 'cosmicquest_player_master_volume' : 'cosmicquest_master_volume';
+        
+        localStorage.setItem(volKey, this.masterVolume.toString());
         
         // Auto-mute at 0, auto-unmute above 0
         if (this.masterVolume === 0) {
             this.isMuted = true;
-            localStorage.setItem('cosmicquest_muted', 'true');
+            localStorage.setItem(muteKey, 'true');
         } else if (this.isMuted && this.masterVolume > 0) {
             this.isMuted = false;
-            localStorage.setItem('cosmicquest_muted', 'false');
+            localStorage.setItem(muteKey, 'false');
         }
         
         // Apply volume to masterGain

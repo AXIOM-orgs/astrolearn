@@ -6,19 +6,22 @@ import { usePathname } from 'next/navigation';
 export function BackgroundMusic(): React.JSX.Element | null {
     const pathname = usePathname();
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    const isHost = pathname.startsWith('/host');
-    const [isEnabled, setIsEnabled] = useState(isHost); // Default to true if host, else false
+    const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
+    const [isEnabled, setIsEnabled] = useState(!isPlayerPath); // Default to OFF for player/join, else ON
     const [hasInteracted, setHasInteracted] = useState(false);
     const [isCountdownActive, setIsCountdownActive] = useState(false);
+    const isHost = pathname.startsWith('/host'); // Used for monitor detection if needed elsewhere
 
     // Initial load of settings
     useEffect(() => {
-        const savedBgm = localStorage.getItem('cosmicquest_bgm_enabled');
+        const storageKey = isPlayerPath ? 'cosmicquest_player_bgm_enabled' : 'cosmicquest_bgm_enabled';
+        const savedBgm = localStorage.getItem(storageKey);
+        
         if (savedBgm !== null) {
             setIsEnabled(savedBgm === 'true');
         } else {
-            // New user - default stays as is (isHost)
-            setIsEnabled(isHost);
+            // New user - default: Player/Join = OFF, Others = ON
+            setIsEnabled(!isPlayerPath);
         }
 
         const handleSettingsChange = (e: any) => {
