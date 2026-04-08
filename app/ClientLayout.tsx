@@ -61,12 +61,15 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
         
         // Track state locally to avoid rapid localStorage reads and sync with CustomEvents
         let isSfxEnabled = true; // Default
-        const savedSfx = localStorage.getItem('cosmicquest_sfx_enabled');
+        const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
+        const storageKey = isPlayerPath ? 'cosmicquest_player_sfx_enabled' : 'cosmicquest_sfx_enabled';
+        
+        const savedSfx = localStorage.getItem(storageKey);
         if (savedSfx !== null) {
             isSfxEnabled = savedSfx === 'true';
         } else {
-            // New user - default to ON for host, OFF for players
-            isSfxEnabled = pathname.startsWith('/host');
+            // New user - default: Player/Join = OFF, Others = ON
+            isSfxEnabled = !isPlayerPath;
         }
 
         const handleSoundChange = (e: Event) => {
