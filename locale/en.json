@@ -202,6 +202,7 @@
     "bossLabel": "BOSS",
     "victory": "VICTORY!",
     "gameOver": "GAME OVER",
+    "tryAgain": "TRY AGAIN",
     "continuing": "Continuing..."
   },
   "QuizDetail": {

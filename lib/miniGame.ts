@@ -469,9 +469,9 @@ const MOVING_ASTEROID_COUNT = {
 
 // ============ WAVE CONFIGURATION ============
 const WAVE_CONFIGS = {
-    easy: { spinner: 6, sniper: 2, basic: 0 },
+    easy: { spinner: 3, sniper: 2, basic: 0 },
     medium: { basic: 9, sniper: 3, spinner: 3 },
-    hard: { basic: 15, sniper: 5, spinner: 5 }
+    hard: { basic: 10, sniper: 5, spinner: 5 }
 };
 
 let enemySpawnQueue: string[] = []; // Current wave queue
@@ -944,7 +944,9 @@ export function startMiniGame(
     shakeY = 0;
 
     // Initialize lives system
-    playerLives = (initialLives !== undefined) ? initialLives : PLAYER_MAX_LIVES;
+    const livesPerDifficulty = { easy: 3, medium: 3, hard: 5 };
+    const defaultLives = livesPerDifficulty[difficulty] || 3;
+    playerLives = (initialLives !== undefined) ? initialLives : defaultLives;
     playerLifeHP = (initialHP !== undefined) ? initialHP : LIFE_MAX_HP;
     isImmune = false;
     immuneEndTime = 0;
@@ -999,7 +1001,7 @@ export function startMiniGame(
     }
 
     // Set difficulty-based scroll speed
-    const scrollSpeeds = { easy: 3, medium: 5, hard: 7 };
+    const scrollSpeeds = { easy: 3, medium: 3, hard: 3 };
     backgroundScrollSpeed = scrollSpeeds[difficulty];
 
     // Load smoke texture
@@ -1082,7 +1084,7 @@ export function startMiniGame(
     // Load spaceship image
     const spaceshipImg = new Image();
     spaceshipImg.src = spaceship.image;
-    const playerSpeeds: Record<string, number> = { easy: 2, medium: 4, hard: 6 };
+    const playerSpeeds: Record<string, number> = { easy: 3, medium: 3, hard: 3 };
 
     // Initialize player at bottom center (no HP with base weapon)
     player = {
@@ -1586,7 +1588,7 @@ function update(): void {
     // Check if player is out of lives
     if (playerLives <= 0) {
         gameStats.success = false;
-        gameStats.isEliminated = true;
+        gameStats.isEliminated = false; // No longer eliminated on life-loss
         endGame();
         return;
     }
@@ -1707,10 +1709,16 @@ function drawBoosterDecors(): void {
 
 function initScrollingDecors(canvasRef: HTMLCanvasElement): void {
     scrollingDecors = [];
-    const counts = { easy: 7, medium: 9, hard: 11 };
+    const counts = { easy: 5, medium: 7, hard: 8 }; 
     const baseCount = counts[currentDifficulty || 'easy'];
     const count = baseCount + Math.floor(Math.random() * 2);
-    const types: ('station1' | 'station2' | 'rock')[] = ['station1', 'station2', 'rock'];
+
+    let types: ('station1' | 'station2' | 'rock')[] = ['station1', 'station2', 'rock'];
+    
+    // Probability adjustment for Hard difficulty (Less Kamikazes)
+    if (currentDifficulty === 'hard') {
+        types = ['station1', 'station1', 'station2', 'rock', 'rock', 'rock']; // station2 probability reduced from 33% to 16%
+    }
 
     // Difficulty based fire rates for station1 (shooter)
     const fireRates = { easy: 5000, medium: 4000, hard: 3000 };
@@ -4479,9 +4487,13 @@ function endGame(): void {
     if (gameStats.success) {
         ctx.fillStyle = '#06ffa5';
         ctx.fillText(gameTranslations?.victory || 'VICTORY!', canvas.width / 2, canvas.height / 2 - 55);
-    } else {
+    } else if (gameStats.isEliminated) {
         ctx.fillStyle = '#ff006e';
         ctx.fillText(gameTranslations?.gameOver || 'GAME OVER', canvas.width / 2, canvas.height / 2 - 55);
+    } else {
+        // Player failed but not eliminated (life loss retry)
+        ctx.fillStyle = '#ffa500'; // Orange for retry
+        ctx.fillText(gameTranslations?.tryAgain || 'TRY AGAIN', canvas.width / 2, canvas.height / 2 - 55);
     }
 
     /* // HIDE STATS ON END SCREEN PER REQUEST

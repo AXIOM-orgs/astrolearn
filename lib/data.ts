@@ -119,7 +119,7 @@ export const difficultyConfigs: Record<DifficultyLevel, DifficultyConfig> = {
         asteroidSize: { min: 25, max: 40 },
         asteroidSpeed: { min: 2.5, max: 4.5 },
         asteroidSpawnRate: 500,
-        totalAsteroids: 35,
+        totalAsteroids: 25,
         hasBoss: true,
         bossHP: 85000,
         bossSize: 140,

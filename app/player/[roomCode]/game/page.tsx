@@ -24,6 +24,7 @@ export default function GamePage(): React.JSX.Element {
     const { gameState, setGameState, showLoading, hideLoading } = useGame();
     const [isInitializing, setIsInitializing] = useState(true);
     const [isGameOver, setIsGameOver] = useState(false);
+    const [retryCount, setRetryCount] = useState(0);
     const hasInitialized = useRef(false);
 
     // Bootstrap data if needed
@@ -148,6 +149,19 @@ export default function GamePage(): React.JSX.Element {
             }
         }
 
+        if (!stats.success && !stats.isEliminated) {
+            // RETRY LOGIC: Reset lives/HP for the next attempt
+            localStorage.removeItem('cosmicquest_lives');
+            localStorage.removeItem('cosmicquest_hp');
+            
+            setTimeout(() => {
+                setRetryCount(prev => prev + 1);
+                setIsGameOver(false);
+                hideLoading();
+            }, 3500); // Give enough time for the "TRY AGAIN" text to be seen
+            return;
+        }
+
         setTimeout(() => {
             // Navigation Logic
             if (stats.isEliminated) {
@@ -220,6 +234,7 @@ export default function GamePage(): React.JSX.Element {
                     bossLabel: t('bossLabel'),
                     victory: t('victory'),
                     gameOver: t('gameOver'),
+                    tryAgain: t('tryAgain'),
                     continuing: t('continuing')
                 };
 
@@ -240,7 +255,7 @@ export default function GamePage(): React.JSX.Element {
             clearTimeout(initTimeout);
             cleanupMiniGame();
         };
-    }, [isInitializing, gameState.selectedSpaceship, gameState.selectedDifficulty, handleGameComplete, t]);
+    }, [isInitializing, gameState.selectedSpaceship, gameState.selectedDifficulty, handleGameComplete, t, retryCount]);
 
     if (isInitializing) {
         return (

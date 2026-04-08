@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 export function BackgroundMusic(): React.JSX.Element | null {
     const pathname = usePathname();
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    const [isEnabled, setIsEnabled] = useState(true);
+    const isHost = pathname.startsWith('/host');
+    const [isEnabled, setIsEnabled] = useState(isHost); // Default to true if host, else false
     const [hasInteracted, setHasInteracted] = useState(false);
     const [isCountdownActive, setIsCountdownActive] = useState(false);
 
@@ -15,6 +16,9 @@ export function BackgroundMusic(): React.JSX.Element | null {
         const savedBgm = localStorage.getItem('cosmicquest_bgm_enabled');
         if (savedBgm !== null) {
             setIsEnabled(savedBgm === 'true');
+        } else {
+            // New user - default stays as is (isHost)
+            setIsEnabled(isHost);
         }
 
         const handleSettingsChange = (e: any) => {
