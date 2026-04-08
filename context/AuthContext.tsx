@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
+import { supabase, syncSessionCookie, getRefreshTokenFromCookie } from "@/lib/supabase"
 
 interface Profile {
     id: string
@@ -101,6 +101,29 @@ async function ensureProfileWithRetry(
     return attempt()
 }
 
+// Helper: fetch profile lalu set state
+async function loadProfile(
+    currentUser: any,
+    setProfile: (p: Profile | null) => void,
+    setIsProfileFetching: (v: boolean) => void,
+    setLoading?: (v: boolean) => void
+) {
+    setIsProfileFetching(true)
+    await ensureProfileWithRetry(
+        currentUser,
+        (profile) => {
+            setProfile(profile)
+            setIsProfileFetching(false)
+            if (setLoading) setLoading(false)
+        },
+        (fallbackProfile) => {
+            setProfile(fallbackProfile)
+            setIsProfileFetching(false)
+            if (setLoading) setLoading(false)
+        }
+    )
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<any>(null)
     const [profile, setProfile] = useState<Profile | null>(null)
@@ -110,27 +133,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const getUser = async () => {
             try {
-                const { data: { session } } = await supabase.auth.getSession()
+                let { data: { session } } = await supabase.auth.getSession()
+
+                if (!session) {
+                    const cookieRT = getRefreshTokenFromCookie()
+                    if (cookieRT) {
+                        console.log('[SSO] Mencoba pulihkan sesi dari shared cookie...')
+                        const { data, error } = await supabase.auth.refreshSession({
+                            refresh_token: cookieRT
+                        })
+                        if (!error && data.session) {
+                            session = data.session
+                            console.log('[SSO] Sesi berhasil dipulihkan!')
+                        } else {
+                            // Refresh token sudah expired/invalid, hapus cookie
+                            console.warn('[SSO] Refresh token expired, menghapus cookie')
+                            syncSessionCookie(null)
+                        }
+                    }
+                }
+
                 const currentUser = session?.user ?? null
                 setUser(currentUser)
 
                 if (currentUser) {
-                    setIsProfileFetching(true)
-                    await ensureProfileWithRetry(
-                        currentUser,
-                        (profile) => {
-                            setProfile(profile)
-                            setIsProfileFetching(false)
-                        },
-                        (fallbackProfile) => {
-                            setProfile(fallbackProfile)
-                            setIsProfileFetching(false)
-                        }
-                    )
+                    // Sync refresh token ke shared cookie
+                    syncSessionCookie(session?.refresh_token ?? null)
+                    await loadProfile(currentUser, setProfile, setIsProfileFetching, setLoading)
                 } else {
                     setProfile(null)
+                    setLoading(false)
                 }
-                setLoading(false)
             } catch (error) {
                 console.error('Session error:', error)
                 setUser(null)
@@ -146,20 +179,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(currentUser)
 
                 if (event === 'SIGNED_IN' && currentUser) {
-                    // Fire-and-forget retry logic di background
-                    setIsProfileFetching(true)
-                    ensureProfileWithRetry(
-                        currentUser,
-                        (profile) => {
-                            setProfile(profile)
-                            setIsProfileFetching(false)
-                        },
-                        (fallbackProfile) => {
-                            setProfile(fallbackProfile)
-                            setIsProfileFetching(false)
-                        }
-                    ).catch(console.error) // Catch any unhandled errors
+                    // Sync refresh token ke shared cookie saat login berhasil
+                    syncSessionCookie(session?.refresh_token ?? null)
+                    loadProfile(currentUser, setProfile, setIsProfileFetching).catch(console.error)
+                } else if (event === 'TOKEN_REFRESHED' && session) {
+                    // Update cookie saat token di-refresh
+                    syncSessionCookie(session.refresh_token ?? null)
                 } else if (!currentUser) {
+                    // Hapus shared cookie saat logout
+                    syncSessionCookie(null)
                     setProfile(null)
                     setIsProfileFetching(false)
                 }
