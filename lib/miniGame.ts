@@ -396,6 +396,7 @@ let bulletLaserImage: HTMLImageElement | null = null;    // bullet_68.png
 
 // Boss rocket image
 let bossRocketImage: HTMLImageElement | null = null;
+let bossMinionImage: HTMLImageElement | null = null; // anakan-bos.webp
 let bossBulletImage: HTMLImageElement | null = null; // bullet_4_2_0.png
 let laserBeamImage: HTMLImageElement | null = null; // laser_6.png
 let weaponPowerUpImage: HTMLImageElement | null = null;
@@ -1077,6 +1078,8 @@ export function startMiniGame(
     // Load boss rocket image
     bossRocketImage = new Image();
     bossRocketImage.src = '/assets/bos.png';
+    bossMinionImage = new Image();
+    bossMinionImage.src = '/assets/images/enemy/anakan-bos.webp';
     bossBulletImage = new Image();
     bossBulletImage.src = '/assets/bullet_4_2_0.png';
     laserBeamImage = new Image();
@@ -1543,8 +1546,10 @@ function update(): void {
     updatePowerUps();
 
     // Firing - bullets go STRAIGHT UP
-    // Can only fire if NOT immune
-    if (hasWeapon && weaponConfig && isFiring && !isImmune && now - lastFireTime >= weaponConfig.fireRate) {
+    // Can only fire if NOT immune. Respects isAutoFire from weapon config if present.
+    const canFire = hasWeapon && weaponConfig && (weaponConfig.isAutoFire || isFiring) && !isImmune;
+    
+    if (canFire && now - lastFireTime >= weaponConfig.fireRate) {
         fireBullets();
         lastFireTime = now;
     }
@@ -2774,9 +2779,10 @@ function drawBossRocket(): void {
     if (bossRocket.phase === 2) {
         for (const minion of bossRocket.minions) {
             // Draw minion (No connection line)
+            let mImg = bossMinionImage || enemyRocketImage;
 
-            if (enemyRocketImage && enemyRocketImage.complete) {
-                ctx.drawImage(enemyRocketImage, minion.x - minion.width / 2, minion.y - minion.height / 2, minion.width, minion.height);
+            if (mImg && mImg.complete) {
+                ctx.drawImage(mImg, minion.x - minion.width / 2, minion.y - minion.height / 2, minion.width, minion.height);
             } else {
                 ctx.fillStyle = '#aa3333';
                 ctx.fillRect(minion.x - minion.width / 2, minion.y - minion.height / 2, minion.width, minion.height);

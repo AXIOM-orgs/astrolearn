@@ -362,35 +362,34 @@ export default function JoinQuizPage(): React.JSX.Element | null {
             }));
         }
 
-        // Submit to Supabase
-        await submitAnswerToSupabase(selectedIndex, isCorrect);
+        // Submit to Supabase AND wait for 1.5s visual feedback concurrently
+        await Promise.all([
+            submitAnswerToSupabase(selectedIndex, isCorrect),
+            new Promise(resolve => setTimeout(resolve, 1500))
+        ]);
 
-        // Delay for visual feedback
-        setTimeout(() => {
-            const nextIndex = gameState.currentQuestionIndex + 1;
+        const nextIndex = gameState.currentQuestionIndex + 1;
 
+        if (nextIndex >= gameState.selectedQuestions) {
+            // Game Finished
+            setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
+            finishGame();
+        } else if (nextIndex % 3 === 0) {
             // MiniGame Check: Every 3 questions, but not after the last one
-            if (nextIndex % 3 === 0 && nextIndex < gameState.selectedQuestions) {
-                showMiniGame(nextIndex);
-            }
-            if (nextIndex >= gameState.selectedQuestions) {
-                // Game Finished
-                setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
-                finishGame();
-            } else {
-                // Next Question
-                setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
-                setAnsweredIndex(null);
-                setCorrectIndex(null);
-                setButtonsDisabled(false);
-            }
-        }, 1500);
+            showMiniGame(nextIndex);
+        } else {
+            // Next Question
+            setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
+            setAnsweredIndex(null);
+            setCorrectIndex(null);
+            setButtonsDisabled(false);
+        }
     };
 
     const showMiniGame = async (nextIndex: number): Promise<void> => {
-        // Countdown 3-2-1 di-comment sementara agar tidak bentrok dengan countdown 10 detik
-        // setShowCountdown(true);
-        // setCountdownNumber(3);
+        // Hide UI immediately to prevent flashing and subjective freezing 
+        setLoading(true);
+        showLoading();
 
         const participantId = localStorage.getItem('cosmicquest_participant_id');
         if (participantId) {
@@ -405,14 +404,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
 
         // Langsung navigate ke game tanpa countdown 3-2-1
-        showLoading();
         router.push(`/player/${roomCode}/game`);
-
-        // === COMMENTED OUT: countdown 3-2-1 ===
-        // // Silence BGM during countdown
-        // window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
-        //     detail: { active: true } 
-        // }));
         //
         // let count = 3;
         // const countdownInterval = setInterval(() => {
@@ -461,6 +453,10 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     }
 
     if (!currentQuestion) {
+        // Prevent showing "no questions found" if the game is finishing/finished
+        if (sessionData?.status === 'finished' || gameState.currentQuestionIndex >= gameState.selectedQuestions) {
+            return null;
+        }
         return (
             <div className="flex items-center justify-center h-screen bg-[#0a0e27] text-white">
                 <p>{t('noQuestionsFound')}</p>
