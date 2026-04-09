@@ -1162,13 +1162,33 @@ let isVolumeSliderOpen = false;
 let isDraggingVolume = false;
 let volumeChangedWhileOpen = false; // Track if volume was changed while slider was open
 
+/**
+ * Common metrics for the mute button and volume slider.
+ * Ensures hit detection and drawing match perfectly.
+ */
+function getMuteButtonMetrics() {
+    // Gunakan isMobile global untuk konsistensi deteksi di semua bagian game
+    const currentIsMobile = isMobile || (canvas ? canvas.width < 768 : false);
+    const btnRadius = 22; // Ukuran dikembalikan ke awal sesuai permintaan
+    
+    // paddingX diatur kecil (25px) agar tetap di pojok (corner)
+    const paddingX = 18; 
+    // paddingY ditingkatkan di mobile (85px) agar naik ke atas menghindari nav bar HP
+    const paddingY = currentIsMobile ? 70 : 25; 
+    
+    return {
+        radius: btnRadius,
+        paddingX: paddingX,
+        paddingY: paddingY,
+        x: canvas ? canvas.width - btnRadius - paddingX : 0,
+        y: canvas ? canvas.height - btnRadius - paddingY : 0
+    };
+}
+
 function drawMuteButton(): void {
     if (!ctx || !canvas) return;
 
-    const btnRadius = 22;
-    const padding = 25;
-    const btnX = canvas.width - btnRadius - padding;
-    const btnY = canvas.height - btnRadius - padding;
+    const { radius: btnRadius, x: btnX, y: btnY } = getMuteButtonMetrics();
 
     const isMuted = audioManager.getMuted();
     const currentVol = audioManager.getMasterVolume();
@@ -1298,10 +1318,7 @@ function setupControls(): void {
     const handleDragVolume = (clickX: number, clickY: number): boolean => {
         if (!isVolumeSliderOpen || !canvas) return false;
         
-        const btnRadius = 22;
-        const padding = 25;
-        const btnX = canvas.width - btnRadius - padding;
-        const btnY = canvas.height - btnRadius - padding;
+        const { radius: btnRadius, x: btnX, y: btnY } = getMuteButtonMetrics();
         
         const sliderWidth = 12;
         const sliderHeight = 100;
@@ -1363,10 +1380,7 @@ function setupControls(): void {
         const clickX = e.clientX - rect.left;
         const clickY = e.clientY - rect.top;
 
-        const btnRadius = 22;
-        const padding = 25;
-        const btnX = canvas.width - btnRadius - padding;
-        const btnY = canvas.height - btnRadius - padding;
+        const { radius: btnRadius, x: btnX, y: btnY } = getMuteButtonMetrics();
 
         // Check Mute Button Click First
         if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 5) {
@@ -1413,10 +1427,7 @@ function setupControls(): void {
             const clickX = e.touches[0].clientX - rect.left;
             const clickY = e.touches[0].clientY - rect.top;
 
-            const btnRadius = 22;
-            const padding = 25;
-            const btnX = canvas.width - btnRadius - padding;
-            const btnY = canvas.height - btnRadius - padding;
+            const { radius: btnRadius, x: btnX, y: btnY } = getMuteButtonMetrics();
 
             if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 10) {
                 if (isVolumeSliderOpen) {
