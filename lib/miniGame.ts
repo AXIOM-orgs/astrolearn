@@ -1549,7 +1549,7 @@ function update(): void {
     // Can only fire if NOT immune. Respects isAutoFire from weapon config if present.
     const canFire = hasWeapon && weaponConfig && (weaponConfig.isAutoFire || isFiring) && !isImmune;
     
-    if (canFire && now - lastFireTime >= weaponConfig.fireRate) {
+    if (canFire && now - lastFireTime >= (weaponConfig?.fireRate || 200)) {
         fireBullets();
         lastFireTime = now;
     }
