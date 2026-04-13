@@ -165,6 +165,8 @@ let enemyBullets: Bullet[] = [];
 let bossRocket: BossRocket | null = null;
 let powerUps: PowerUp[] = [];
 let isGameRunning: boolean = false;
+let dtMultiplier: number = 1;
+let lastTimeObj: number = 0;
 let gameLoop: ReturnType<typeof requestAnimationFrame> | null = null;
 let playerSpaceship: Spaceship | null = null;
 let handleStateChange: StateChangeCallback | null = null;
@@ -1510,21 +1512,21 @@ function update(): void {
 
     // Handle keyboard movement
     if (keys['arrowleft'] || keys['a']) {
-        targetX = Math.max(player.width / 2, targetX - player.speed);
+        targetX = Math.max(player.width / 2, targetX - player.speed * dtMultiplier);
     }
     if (keys['arrowright'] || keys['d']) {
-        targetX = Math.min(canvas.width - player.width / 2, targetX + player.speed);
+        targetX = Math.min(canvas.width - player.width / 2, targetX + player.speed * dtMultiplier);
     }
     if (keys['arrowup'] || keys['w']) {
-        targetY = Math.max(player.height / 2, targetY - player.speed);
+        targetY = Math.max(player.height / 2, targetY - player.speed * dtMultiplier);
     }
     if (keys['arrowdown'] || keys['s']) {
-        targetY = Math.min(canvas.height - player.height / 2, targetY + player.speed);
+        targetY = Math.min(canvas.height - player.height / 2, targetY + player.speed * dtMultiplier);
     }
 
     // Smooth follow movement
-    player.x += (targetX - player.x) * LERP_SPEED;
-    player.y += (targetY - player.y) * LERP_SPEED;
+    player.x += (targetX - player.x) * LERP_SPEED * dtMultiplier;
+    player.y += (targetY - player.y) * LERP_SPEED * dtMultiplier;
 
     // Calculate swing/tilt animation
     const moveDirection = player.x - lastPlayerX;
@@ -1716,7 +1718,7 @@ function updateBoosterDecors(): void {
     if (!canvas) return;
 
     for (const booster of boosterDecors) {
-        booster.y += backgroundScrollSpeed * 0.8;
+        booster.y += backgroundScrollSpeed * 0.8 * dtMultiplier;
         booster.rotation += booster.rotationSpeed;
 
         // Reset to top when scrolled past bottom
@@ -1831,7 +1833,7 @@ function updateScrollingDecors(): void {
         if (decor.hitFlash && decor.hitFlash > 0) decor.hitFlash -= 0.1;
 
         // Base scrolling
-        decor.y += backgroundScrollSpeed * 0.6;
+        decor.y += backgroundScrollSpeed * 0.6 * dtMultiplier;
         decor.rotation += decor.rotationSpeed;
 
         // Death Logic
@@ -1853,8 +1855,8 @@ function updateScrollingDecors(): void {
             const dy = player.y - decor.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist > 0) {
-                decor.x += (dx / dist) * chaseSpeed;
-                decor.y += (dy / dist) * chaseSpeed;
+                decor.x += (dx / dist) * chaseSpeed * dtMultiplier;
+                decor.y += (dy / dist) * chaseSpeed * dtMultiplier;
             }
 
             // Check Collision
@@ -1962,8 +1964,8 @@ function updateSmokeParticles(): void {
     for (let i = smokeParticles.length - 1; i >= 0; i--) {
         const particle = smokeParticles[i];
 
-        particle.x += particle.vx;
-        particle.y += particle.vy;
+        particle.x += particle.vx * dtMultiplier;
+        particle.y += particle.vy * dtMultiplier;
         particle.alpha -= 0.015;
         particle.scale += 0.008;
 
@@ -2479,7 +2481,7 @@ function updateBossRocket(now: number): void {
     const bobAmount = bossRocket.phase === 3 ? Math.sin(now / 300) * 5 : 0;
 
     if (bossRocket.y < targetY) {
-        bossRocket.y += bossRocket.speed;
+        bossRocket.y += bossRocket.speed * dtMultiplier;
     } else {
         bossRocket.y = targetY + bobAmount;
 
@@ -2501,9 +2503,9 @@ function updateBossRocket(now: number): void {
 
         if (Math.abs(bossRocket.x - playerCenterX) > 5) {
             if (bossRocket.x < playerCenterX) {
-                bossRocket.x += bossFollowSpeed;
+                bossRocket.x += bossFollowSpeed * dtMultiplier;
             } else {
-                bossRocket.x -= bossFollowSpeed;
+                bossRocket.x -= bossFollowSpeed * dtMultiplier;
             }
         }
 
@@ -2978,7 +2980,7 @@ function updateMovingAsteroids(): void {
         const asteroid = movingAsteroids[i];
 
         // Simple straight-down movement
-        asteroid.y += asteroid.speed;
+        asteroid.y += asteroid.speed * dtMultiplier;
         asteroid.rotation += asteroid.rotationSpeed;
         if (asteroid.hitFlash > 0) asteroid.hitFlash--;
 
@@ -3275,7 +3277,7 @@ function updateEnemyRockets(now: number): void {
             if (enemy.state === 'moving') {
                 // Move down to target Y
                 if (enemy.y < (enemy.targetY || 200)) {
-                    enemy.y += enemy.speed;
+                    enemy.y += enemy.speed * dtMultiplier;
                 } else {
                     enemy.state = 'aiming';
                     enemy.stateTimer = now + 1000; // Aim for 1s
@@ -3313,7 +3315,7 @@ function updateEnemyRockets(now: number): void {
 
             if (enemy.pathType.startsWith('sine')) {
                 // SINE WAVE: Move down, oscillate X
-                enemy.y += baseSpeed;
+                enemy.y += baseSpeed * dtMultiplier;;
 
                 const frequency = 0.005;
                 const amplitude = canvas.width * 0.25;
@@ -3328,13 +3330,13 @@ function updateEnemyRockets(now: number): void {
 
             } else if (enemy.pathType.startsWith('cross')) {
                 // CROSS: Move down + Move towards opposite side
-                enemy.y += baseSpeed;
+                enemy.y += baseSpeed * dtMultiplier;;
                 const crossSpeed = baseSpeed * 1.2;
 
                 if (enemy.pathType === 'cross_left') {
-                    enemy.x += crossSpeed; // Left -> Right
+                    enemy.x += crossSpeed * dtMultiplier; // Left -> Right
                 } else {
-                    enemy.x -= crossSpeed; // Right -> Left
+                    enemy.x -= crossSpeed * dtMultiplier; // Right -> Left
                 }
 
             } else if (enemy.pathType.startsWith('u_turn')) {
@@ -3343,19 +3345,19 @@ function updateEnemyRockets(now: number): void {
 
                 if (enemy.y < turnStartHeight && enemy.speedY >= 0) {
                     // Phase 1: Dive
-                    enemy.y += baseSpeed * 1.5;
+                    enemy.y += baseSpeed * 1.5 * dtMultiplier;
                     enemy.speedY = baseSpeed * 1.5; // Track speed
                 } else {
                     // Phase 2: Turn and Fly Up
                     // Simulating turn physics by modifying velocity
-                    enemy.speedY -= 0.15 * speedScale; // Accelerate upwards (gravity reverse)
-                    enemy.y += enemy.speedY; // Apply speed
+                    enemy.speedY -= 0.15 * speedScale * dtMultiplier; // Accelerate upwards (gravity reverse)
+                    enemy.y += enemy.speedY * dtMultiplier; // Apply speed
 
                     const turnOutSpeed = 2 * speedScale;
                     if (enemy.pathType === 'u_turn_left') {
-                        enemy.x -= turnOutSpeed; // Curve Left (Out)
+                        enemy.x -= turnOutSpeed * dtMultiplier; // Curve Left (Out)
                     } else {
-                        enemy.x += turnOutSpeed; // Curve Right (Out)
+                        enemy.x += turnOutSpeed * dtMultiplier; // Curve Right (Out)
                     }
                 }
             }
@@ -3387,8 +3389,8 @@ function updateEnemyRockets(now: number): void {
             const isHard = currentDifficulty === 'hard';
             const chaseSpeed = isHard ? 1.0 : 1.5;
             if (dist > 0) {
-                enemy.x += (dx / dist) * chaseSpeed;
-                enemy.y += (dy / dist) * chaseSpeed;
+                enemy.x += (dx / dist) * chaseSpeed * dtMultiplier;
+                enemy.y += (dy / dist) * chaseSpeed * dtMultiplier;
             }
 
             // Shoot at player
@@ -3538,11 +3540,11 @@ function updateEnemyBullets(): void {
 
         // Move STRAIGHT in the direction set at spawn (not homing)
         if (bullet.dirX !== undefined && bullet.dirY !== undefined) {
-            bullet.x += bullet.dirX * bullet.speed;
-            bullet.y += bullet.dirY * bullet.speed;
+            bullet.x += bullet.dirX * bullet.speed * dtMultiplier;
+            bullet.y += bullet.dirY * bullet.speed * dtMultiplier;
         } else {
             // Fallback: move straight down
-            bullet.y += bullet.speed;
+            bullet.y += bullet.speed * dtMultiplier;
         }
 
         // Check hit player
@@ -3789,7 +3791,7 @@ function updatePowerUps(): void {
         powerUp.rotation += 0.03;
 
         // Fall from top to bottom (natural drop)
-        powerUp.y += 3; // Fall speed
+        powerUp.y += 3 * dtMultiplier; // Fall speed
 
         const dist = Math.sqrt(
             Math.pow(player.x - powerUp.x, 2) +
@@ -4054,8 +4056,8 @@ function updateBullets(): void {
             // Apply movement based on current angle
             if (bullet.angle === undefined) bullet.angle = -Math.PI / 2;
 
-            bullet.x += Math.cos(bullet.angle) * bullet.speed;
-            bullet.y += Math.sin(bullet.angle) * bullet.speed;
+            bullet.x += Math.cos(bullet.angle) * bullet.speed * dtMultiplier;;
+            bullet.y += Math.sin(bullet.angle) * bullet.speed * dtMultiplier;;
 
             // Homing Logic
             let target: { x: number, y: number, hp: number } | null = bullet.targetAsteroid || null;
@@ -4106,9 +4108,9 @@ function updateBullets(): void {
                 }
             }
         } else {
-            bullet.y -= bullet.speed;
+            bullet.y -= bullet.speed * dtMultiplier;
             if (bullet.type === 'spread' && bullet.angle !== undefined) {
-                bullet.x += Math.sin(bullet.angle) * bullet.speed * 0.4;
+                bullet.x += Math.sin(bullet.angle) * bullet.speed * 0.4 * dtMultiplier;
             }
         }
 
