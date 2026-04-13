@@ -18,6 +18,7 @@ interface AuthContextType {
     user: any | null
     profile: Profile | null
     loading: boolean
+    isRestoringSession: boolean
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -129,6 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [profile, setProfile] = useState<Profile | null>(null)
     const [loading, setLoading] = useState(true)
     const [isProfileFetching, setIsProfileFetching] = useState(false) // Track fetch state
+    const [isRestoringSession, setIsRestoringSession] = useState(true)
 
     useEffect(() => {
         const getUser = async () => {
@@ -177,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setProfile(null)
                 setLoading(false)
             }
+            setIsRestoringSession(false)
         }
         getUser()
 
@@ -228,7 +231,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // Kita belum login tapi cookie ada → login sync
                 console.log('[SSO] Login terdeteksi di app lain, sinkronisasi...')
                 await supabase.auth.setSession(cookieSession)
-                window.location.reload()
             } else if (localSession.access_token !== cookieSession.access_token) {
                 // Token berbeda → update tanpa reload
                 console.log('[SSO] Token baru terdeteksi, mengupdate session lokal...')
@@ -251,7 +253,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     return (
-        <AuthContext.Provider value={{ user, profile, loading }}>
+        <AuthContext.Provider value={{ user, profile, loading, isRestoringSession }}>
             {children}
         </AuthContext.Provider>
     )
