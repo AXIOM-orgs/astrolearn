@@ -171,7 +171,7 @@ export default function JoinResultsPage(): React.JSX.Element {
 
     const handleRestart = (): void => {
         clearCurrentPlayer();
-        localStorage.removeItem('cosmicquest_joined_game_code');
+        localStorage.removeItem('joined_game_code');
         resetGame();
         showLoading();
         setTimeout(() => {

@@ -14,7 +14,7 @@ export function BackgroundMusic(): React.JSX.Element | null {
 
     // Initial load of settings
     useEffect(() => {
-        const storageKey = isPlayerPath ? 'cosmicquest_player_bgm_enabled' : 'cosmicquest_bgm_enabled';
+        const storageKey = isPlayerPath ? 'player_bgm_enabled' : 'bgm_enabled';
         const savedBgm = localStorage.getItem(storageKey);
         
         if (savedBgm !== null) {
@@ -34,8 +34,8 @@ export function BackgroundMusic(): React.JSX.Element | null {
             setIsCountdownActive(!!e.detail?.active);
         };
 
-        window.addEventListener('cosmicquest_sound_settings_changed', handleSettingsChange as EventListener);
-        window.addEventListener('cosmicquest_countdown_active', handleCountdownChange as EventListener);
+        window.addEventListener('sound_settings_changed', handleSettingsChange as EventListener);
+        window.addEventListener('countdown_active', handleCountdownChange as EventListener);
         
         // Interaction listener to overcome autoplay policy
         const handleFirstInteraction = () => {
@@ -48,8 +48,8 @@ export function BackgroundMusic(): React.JSX.Element | null {
         window.addEventListener('keydown', handleFirstInteraction);
 
         return () => {
-            window.removeEventListener('cosmicquest_sound_settings_changed', handleSettingsChange as EventListener);
-            window.removeEventListener('cosmicquest_countdown_active', handleCountdownChange as EventListener);
+            window.removeEventListener('sound_settings_changed', handleSettingsChange as EventListener);
+            window.removeEventListener('countdown_active', handleCountdownChange as EventListener);
             window.removeEventListener('click', handleFirstInteraction);
             window.removeEventListener('keydown', handleFirstInteraction);
         };

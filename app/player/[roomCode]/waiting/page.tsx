@@ -119,13 +119,13 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             setTotalCount(count || 0);
 
             // Find current player from localStorage
-            const myParticipantId = localStorage.getItem('cosmicquest_participant_id') || '';
+            const myParticipantId = localStorage.getItem('participant_id') || '';
             const me = (fetchedParticipants || []).find((p) => p.id === myParticipantId);
 
             if (!me) {
                 console.warn('Participant not found in session');
-                localStorage.removeItem('cosmicquest_participant_id');
-                localStorage.removeItem('cosmicquest_session_id');
+                localStorage.removeItem('participant_id');
+                localStorage.removeItem('session_id');
                 router.replace('/');
                 return;
             }
@@ -217,15 +217,15 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                         setTotalCount(prev => Math.max(0, prev - 1));
 
                         // If current player was kicked
-                        const myId = localStorage.getItem('cosmicquest_participant_id');
+                        const myId = localStorage.getItem('participant_id');
                         if (deletedId === myId) {
                             console.warn('You have been kicked from the session');
                             showLoading();
 
                             // Clear local storage immediately
-                            localStorage.removeItem('cosmicquest_participant_id');
-                            localStorage.removeItem('cosmicquest_session_id');
-                            localStorage.removeItem('cosmicquest_spacecraft');
+                            localStorage.removeItem('participant_id');
+                            localStorage.removeItem('session_id');
+                            localStorage.removeItem('spacecraft');
 
                             // Delay redirection for visual "loading" effect as requested
                             setTimeout(() => {
@@ -257,9 +257,9 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             console.error('Error exiting session:', error);
         }
 
-        localStorage.removeItem('cosmicquest_participant_id');
-        localStorage.removeItem('cosmicquest_session_id');
-        localStorage.removeItem('cosmicquest_spacecraft');
+        localStorage.removeItem('participant_id');
+        localStorage.removeItem('session_id');
+        localStorage.removeItem('spacecraft');
         router.push('/');
         hideLoading();
         setShowExitDialog(false);

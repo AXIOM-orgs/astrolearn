@@ -558,8 +558,8 @@ class AudioManager {
             const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
             const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
             
-            const muteKey = isPlayerPath ? 'cosmicquest_player_muted' : 'cosmicquest_muted';
-            const volKey = isPlayerPath ? 'cosmicquest_player_master_volume' : 'cosmicquest_master_volume';
+            const muteKey = isPlayerPath ? 'player_muted' : 'muted';
+            const volKey = isPlayerPath ? 'player_master_volume' : 'master_volume';
 
             // Load saved volume
             const savedVolume = localStorage.getItem(volKey);
@@ -715,7 +715,7 @@ class AudioManager {
         this.isMuted = !this.isMuted;
         const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
         const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
-        const muteKey = isPlayerPath ? 'cosmicquest_player_muted' : 'cosmicquest_muted';
+        const muteKey = isPlayerPath ? 'player_muted' : 'muted';
         localStorage.setItem(muteKey, this.isMuted.toString());
 
         if (this.masterGain) {
@@ -738,8 +738,8 @@ class AudioManager {
         const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
         const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
         
-        const muteKey = isPlayerPath ? 'cosmicquest_player_muted' : 'cosmicquest_muted';
-        const volKey = isPlayerPath ? 'cosmicquest_player_master_volume' : 'cosmicquest_master_volume';
+        const muteKey = isPlayerPath ? 'player_muted' : 'muted';
+        const volKey = isPlayerPath ? 'player_master_volume' : 'master_volume';
         
         localStorage.setItem(volKey, this.masterVolume.toString());
         

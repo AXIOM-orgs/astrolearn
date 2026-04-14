@@ -68,7 +68,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         const bootstrap = async () => {
             try {
                 setLoading(true);
-                const participantId = localStorage.getItem('cosmicquest_participant_id');
+                const participantId = localStorage.getItem('participant_id');
 
                 if (!participantId) {
                     router.replace('/');
@@ -202,7 +202,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     }, [roomCode, router, setGameState, hideLoading]);
 
     const finishGame = useCallback(async (): Promise<void> => {
-        const participantId = localStorage.getItem('cosmicquest_participant_id');
+        const participantId = localStorage.getItem('participant_id');
         if (participantId) {
             // Mark as finished
             await supabaseGame
@@ -236,7 +236,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
 
             timerInterval = setInterval(() => {
                 const now = getSyncedServerTime();
-                const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+                const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
 
                 setTimeLeft(remaining);
 
@@ -248,7 +248,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
 
             // Initial update
             const now = getSyncedServerTime();
-            const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+            const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
             setTimeLeft(remaining);
 
             if (remaining <= 0) {
@@ -289,7 +289,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     }, [currentQuestion]);
 
     const submitAnswerToSupabase = async (selectedIndex: number, isCorrect: boolean) => {
-        const participantId = localStorage.getItem('cosmicquest_participant_id');
+        const participantId = localStorage.getItem('participant_id');
         if (!participantId || !currentQuestion || !currentQuestion.answers) return;
 
         try {
@@ -403,7 +403,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         setLoading(true);
         showLoading();
 
-        const participantId = localStorage.getItem('cosmicquest_participant_id');
+        const participantId = localStorage.getItem('participant_id');
         if (participantId) {
             // Validate and set minigame status to true in DB
             await supabaseGame
@@ -429,7 +429,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         //         setIsFreezing(true);
         //
         //         // Ensure BGM is notified that countdown is over
-        //         window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
+        //         window.dispatchEvent(new CustomEvent('countdown_active', { 
         //             detail: { active: false } 
         //         }));
         //

@@ -25,8 +25,8 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
     // Load initial state and add event listeners
     useEffect(() => {
         if (open) {
-            const bgmKey = isPlayerPath ? 'cosmicquest_player_bgm_enabled' : 'cosmicquest_bgm_enabled';
-            const sfxKey = isPlayerPath ? 'cosmicquest_player_sfx_enabled' : 'cosmicquest_sfx_enabled';
+            const bgmKey = isPlayerPath ? 'player_bgm_enabled' : 'bgm_enabled';
+            const sfxKey = isPlayerPath ? 'player_sfx_enabled' : 'sfx_enabled';
             
             const savedBgm = localStorage.getItem(bgmKey);
             const savedSfx = localStorage.getItem(sfxKey);
@@ -53,8 +53,8 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
         };
 
         const handleStorageChange = (e: StorageEvent) => {
-            const bgmKey = isPlayerPath ? 'cosmicquest_player_bgm_enabled' : 'cosmicquest_bgm_enabled';
-            const sfxKey = isPlayerPath ? 'cosmicquest_player_sfx_enabled' : 'cosmicquest_sfx_enabled';
+            const bgmKey = isPlayerPath ? 'player_bgm_enabled' : 'bgm_enabled';
+            const sfxKey = isPlayerPath ? 'player_sfx_enabled' : 'sfx_enabled';
             
             if (e.key === bgmKey) {
                 setBgmEnabled(e.newValue === 'true');
@@ -63,11 +63,11 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
             }
         };
 
-        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+        window.addEventListener('sound_settings_changed', handleSoundChange);
         window.addEventListener('storage', handleStorageChange);
 
         return () => {
-            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            window.removeEventListener('sound_settings_changed', handleSoundChange);
             window.removeEventListener('storage', handleStorageChange);
         };
     }, [open]);
@@ -91,20 +91,20 @@ export function SoundSettingsDialog({ open, onOpenChange }: SoundSettingsDialogP
 
     const handleToggleBgm = () => {
         const newValue = !bgmEnabled;
-        const bgmKey = isPlayerPath ? 'cosmicquest_player_bgm_enabled' : 'cosmicquest_bgm_enabled';
+        const bgmKey = isPlayerPath ? 'player_bgm_enabled' : 'bgm_enabled';
         setBgmEnabled(newValue);
         localStorage.setItem(bgmKey, newValue.toString());
-        window.dispatchEvent(new CustomEvent('cosmicquest_sound_settings_changed', { 
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', { 
             detail: { type: 'bgm', enabled: newValue }
         }));
     };
 
     const handleToggleSfx = () => {
         const newValue = !sfxEnabled;
-        const sfxKey = isPlayerPath ? 'cosmicquest_player_sfx_enabled' : 'cosmicquest_sfx_enabled';
+        const sfxKey = isPlayerPath ? 'player_sfx_enabled' : 'sfx_enabled';
         setSfxEnabled(newValue);
         localStorage.setItem(sfxKey, newValue.toString());
-        window.dispatchEvent(new CustomEvent('cosmicquest_sound_settings_changed', { 
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', { 
             detail: { type: 'sfx', enabled: newValue }
         }));
     };

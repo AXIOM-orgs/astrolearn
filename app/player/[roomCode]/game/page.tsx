@@ -64,7 +64,7 @@ export default function GamePage(): React.JSX.Element {
 
             try {
                 showLoading();
-                const participantId = localStorage.getItem('cosmicquest_participant_id');
+                const participantId = localStorage.getItem('participant_id');
 
                 if (!participantId || !roomCode) {
                     throw new Error('Missing ID or RoomCode');
@@ -146,13 +146,13 @@ export default function GamePage(): React.JSX.Element {
 
             timerInterval = setInterval(() => {
                 const now = getSyncedServerTime();
-                const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+                const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
                 setTimeLeft(remaining);
             }, 1000);
 
             // Initial update
             const now = getSyncedServerTime();
-            const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+            const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
             setTimeLeft(remaining);
         };
 
@@ -172,11 +172,11 @@ export default function GamePage(): React.JSX.Element {
 
 
     const handleGameComplete = useCallback(async (stats: GameStats): Promise<void> => {
-        const participantId = localStorage.getItem('cosmicquest_participant_id');
+        const participantId = localStorage.getItem('participant_id');
 
         // Clear persisted game state on completion
-        localStorage.removeItem('cosmicquest_lives');
-        localStorage.removeItem('cosmicquest_hp');
+        localStorage.removeItem('lives');
+        localStorage.removeItem('hp');
 
         // Optimistic Update
         setGameState(prev => ({
@@ -217,8 +217,8 @@ export default function GamePage(): React.JSX.Element {
 
         if (!stats.success && !stats.isEliminated) {
             // RETRY LOGIC: Reset lives/HP for the next attempt
-            localStorage.removeItem('cosmicquest_lives');
-            localStorage.removeItem('cosmicquest_hp');
+            localStorage.removeItem('lives');
+            localStorage.removeItem('hp');
             
             setTimeout(() => {
                 setRetryCount(prev => prev + 1);
@@ -256,8 +256,8 @@ export default function GamePage(): React.JSX.Element {
                         // Stop any running game loops
                         cleanupMiniGame();
                         // Clear state on abrupt end
-                        localStorage.removeItem('cosmicquest_lives');
-                        localStorage.removeItem('cosmicquest_hp');
+                        localStorage.removeItem('lives');
+                        localStorage.removeItem('hp');
                         router.replace(`/player/${roomCode}/result`);
                     }
                 }
@@ -279,15 +279,15 @@ export default function GamePage(): React.JSX.Element {
         }
 
         // Restore persisted state
-        const savedLives = localStorage.getItem('cosmicquest_lives');
-        const savedHP = localStorage.getItem('cosmicquest_hp');
+        const savedLives = localStorage.getItem('lives');
+        const savedHP = localStorage.getItem('hp');
 
         const initialLives = savedLives ? parseInt(savedLives) : undefined;
         const initialHP = savedHP ? parseInt(savedHP) : undefined;
 
         const handleStateChange = (lives: number, hp: number) => {
-            localStorage.setItem('cosmicquest_lives', lives.toString());
-            localStorage.setItem('cosmicquest_hp', hp.toString());
+            localStorage.setItem('lives', lives.toString());
+            localStorage.setItem('hp', hp.toString());
         };
 
         const initTimeout = setTimeout(() => {
