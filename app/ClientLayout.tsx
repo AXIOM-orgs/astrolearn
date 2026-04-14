@@ -62,7 +62,7 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
         // Track state locally to avoid rapid localStorage reads and sync with CustomEvents
         let isSfxEnabled = true; // Default
         const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
-        const storageKey = isPlayerPath ? 'cosmicquest_player_sfx_enabled' : 'cosmicquest_sfx_enabled';
+        const storageKey = isPlayerPath ? 'player_sfx_enabled' : 'sfx_enabled';
         
         const savedSfx = localStorage.getItem(storageKey);
         if (savedSfx !== null) {
@@ -78,7 +78,7 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
                 isSfxEnabled = customEvent.detail.enabled;
             }
         };
-        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+        window.addEventListener('sound_settings_changed', handleSoundChange);
 
         const playGlobalSound = (e: MouseEvent) => {
             if (!isSfxEnabled) return;
@@ -96,7 +96,7 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
             clearInterval(asteroidInterval);
             fallingAsteroidsContainer.remove();
             document.removeEventListener('click', playGlobalSound, { capture: true });
-            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            window.removeEventListener('sound_settings_changed', handleSoundChange);
         };
     }, []);
 

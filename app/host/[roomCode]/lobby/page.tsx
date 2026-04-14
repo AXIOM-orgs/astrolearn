@@ -72,7 +72,7 @@ export default function HostLobbyPage(): React.JSX.Element {
         setJoinUrl(`${window.location.origin}/join/${roomCode}`);
 
         // Load sound preference
-        const savedSound = localStorage.getItem('cosmicquest_bgm_enabled');
+        const savedSound = localStorage.getItem('bgm_enabled');
         if (savedSound !== null) {
             setSoundEnabled(savedSound === 'true');
         }
@@ -84,12 +84,12 @@ export default function HostLobbyPage(): React.JSX.Element {
         };
 
         const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'cosmicquest_bgm_enabled') {
+            if (e.key === 'bgm_enabled') {
                 setSoundEnabled(e.newValue === 'true');
             }
         };
 
-        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+        window.addEventListener('sound_settings_changed', handleSoundChange);
         window.addEventListener('storage', handleStorageChange);
 
         // Handle fullscreen changes
@@ -109,7 +109,7 @@ export default function HostLobbyPage(): React.JSX.Element {
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
             document.removeEventListener('mousedown', handleClickOutside);
-            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            window.removeEventListener('sound_settings_changed', handleSoundChange);
             window.removeEventListener('storage', handleStorageChange);
         };
     }, [roomCode]);
@@ -415,9 +415,9 @@ export default function HostLobbyPage(): React.JSX.Element {
     const toggleSound = () => {
         const newValue = !soundEnabled;
         setSoundEnabled(newValue);
-        localStorage.setItem('cosmicquest_bgm_enabled', String(newValue));
+        localStorage.setItem('bgm_enabled', String(newValue));
         // Dispatch event for BackgroundMusic component
-        window.dispatchEvent(new CustomEvent('cosmicquest_sound_settings_changed', {
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
             detail: { type: 'bgm', enabled: newValue }
         }));
     };

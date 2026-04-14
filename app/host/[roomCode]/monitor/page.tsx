@@ -67,7 +67,7 @@ export default function HostMonitorPage(): React.JSX.Element {
 
     useEffect(() => {
         // Load sound preference from localStorage
-        const savedSound = localStorage.getItem('cosmicquest_bgm_enabled');
+        const savedSound = localStorage.getItem('bgm_enabled');
         if (savedSound !== null) {
             setSoundEnabled(savedSound === 'true');
         }
@@ -79,16 +79,16 @@ export default function HostMonitorPage(): React.JSX.Element {
         };
 
         const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'cosmicquest_bgm_enabled') {
+            if (e.key === 'bgm_enabled') {
                 setSoundEnabled(e.newValue === 'true');
             }
         };
 
-        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+        window.addEventListener('sound_settings_changed', handleSoundChange);
         window.addEventListener('storage', handleStorageChange);
 
         return () => {
-            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            window.removeEventListener('sound_settings_changed', handleSoundChange);
             window.removeEventListener('storage', handleStorageChange);
         };
     }, []);
@@ -96,8 +96,8 @@ export default function HostMonitorPage(): React.JSX.Element {
     const handleToggleSound = () => {
         const newValue = !soundEnabled;
         setSoundEnabled(newValue);
-        localStorage.setItem('cosmicquest_bgm_enabled', String(newValue));
-        window.dispatchEvent(new CustomEvent('cosmicquest_sound_settings_changed', {
+        localStorage.setItem('bgm_enabled', String(newValue));
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
             detail: { type: 'bgm', enabled: newValue }
         }));
     };

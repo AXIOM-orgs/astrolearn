@@ -137,11 +137,11 @@ export default function AutoJoinPage() {
 
                 // Success! Save data and redirect to lobby
                 // Keep global loading visible during navigation!
-                localStorage.setItem("cosmicquest_player_name", data.nickname);
-                localStorage.setItem("cosmicquest_participant_id", data.participant_id);
-                localStorage.setItem("cosmicquest_joined_game_code", roomCode);
-                localStorage.setItem('cosmicquest_session_id', data.session_id);
-                localStorage.setItem('cosmicquest_spacecraft', spacecraftFilename);
+                localStorage.setItem("player_name", data.nickname);
+                localStorage.setItem("participant_id", data.participant_id);
+                localStorage.setItem("joined_game_code", roomCode);
+                localStorage.setItem('session_id', data.session_id);
+                localStorage.setItem('spacecraft', spacecraftFilename);
                 localStorage.removeItem("pendingRoomCode");
 
                 // Navigate to waiting room (lobby)

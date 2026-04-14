@@ -7,8 +7,8 @@
 import { Spaceship } from './data';
 
 // Session storage keys
-const SESSION_KEY = 'cosmicquest_game_session';
-const PLAYERS_KEY = 'cosmicquest_session_players';
+const SESSION_KEY = 'game_session';
+const PLAYERS_KEY = 'session_players';
 
 export interface GamePlayer {
     id: string;
@@ -218,7 +218,7 @@ export function hasGameFinished(): boolean {
 
 // Get current player from localStorage
 export function getCurrentPlayer(): GamePlayer | null {
-    const playerData = localStorage.getItem('cosmicquest_current_player');
+    const playerData = localStorage.getItem('current_player');
     if (!playerData) return null;
     try {
         return JSON.parse(playerData);
@@ -229,10 +229,10 @@ export function getCurrentPlayer(): GamePlayer | null {
 
 // Set current player
 export function setCurrentPlayer(player: GamePlayer): void {
-    localStorage.setItem('cosmicquest_current_player', JSON.stringify(player));
+    localStorage.setItem('current_player', JSON.stringify(player));
 }
 
 // Clear current player
 export function clearCurrentPlayer(): void {
-    localStorage.removeItem('cosmicquest_current_player');
+    localStorage.removeItem('current_player');
 }
