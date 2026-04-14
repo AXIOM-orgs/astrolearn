@@ -9,6 +9,7 @@ import { Spaceship, spaceships, DifficultyLevel } from '@/lib/data';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
+import { syncServerTime, getSyncedServerTime } from '@/lib/serverTime';
 
 // Helper: find Spaceship object from filename (replicated from waiting page)
 const findSpaceshipByFilename = (filename: string | null): Spaceship | null => {
@@ -27,12 +28,33 @@ export default function GamePage(): React.JSX.Element {
     const [retryCount, setRetryCount] = useState(0);
     const hasInitialized = useRef(false);
 
+    // Session Timer State
+    const [timeLeft, setTimeLeft] = useState<number | null>(null);
+    const [sessionEndTime, setSessionEndTime] = useState<number | null>(null);
+
     // Bootstrap data if needed
     useEffect(() => {
         if (hasInitialized.current) return;
         hasInitialized.current = true;
 
         const bootstrapRequest = async () => {
+            // Always fetch session time data for the timer
+            try {
+                const { data: sessionTimeData } = await supabaseGame
+                    .from('sessions')
+                    .select('started_at, total_time_minutes')
+                    .eq('game_pin', roomCode)
+                    .single();
+
+                if (sessionTimeData?.started_at && sessionTimeData?.total_time_minutes) {
+                    const start = new Date(sessionTimeData.started_at).getTime();
+                    const end = start + sessionTimeData.total_time_minutes * 60 * 1000;
+                    setSessionEndTime(end);
+                }
+            } catch (e) {
+                console.log('Could not fetch session time:', e);
+            }
+
             // If we have state, just verify valid spaceship
             if (gameState.selectedSpaceship && gameState.selectedDifficulty) {
                 setIsInitializing(false);
@@ -52,7 +74,7 @@ export default function GamePage(): React.JSX.Element {
                 const [sessionRes, participantRes] = await Promise.all([
                     supabaseGame
                         .from('sessions')
-                        .select('difficulty')
+                        .select('difficulty, started_at, total_time_minutes')
                         .eq('game_pin', roomCode)
                         .single(),
                     supabaseGame
@@ -67,7 +89,15 @@ export default function GamePage(): React.JSX.Element {
                 }
 
                 const difficulty = (sessionRes.data.difficulty || 'easy') as DifficultyLevel;
+                const session = sessionRes.data;
                 const participant = participantRes.data;
+
+                // Calculate session end time for timer
+                if (session.started_at && session.total_time_minutes) {
+                    const start = new Date(session.started_at).getTime();
+                    const end = start + session.total_time_minutes * 60 * 1000;
+                    setSessionEndTime(end);
+                }
 
                 // Check if player is eliminated
                 if (participant.eliminated) {
@@ -103,6 +133,42 @@ export default function GamePage(): React.JSX.Element {
 
         bootstrapRequest();
     }, [gameState.selectedSpaceship, gameState.selectedDifficulty, roomCode, router, setGameState, showLoading, hideLoading]);
+
+    // Session Timer Countdown
+    useEffect(() => {
+        if (!sessionEndTime) return;
+
+        let timerInterval: ReturnType<typeof setInterval>;
+
+        const startTimer = async () => {
+            // Sync time with server for accurate countdown
+            await syncServerTime();
+
+            timerInterval = setInterval(() => {
+                const now = getSyncedServerTime();
+                const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+                setTimeLeft(remaining);
+            }, 1000);
+
+            // Initial update
+            const now = getSyncedServerTime();
+            const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+            setTimeLeft(remaining);
+        };
+
+        startTimer();
+
+        return () => {
+            if (timerInterval) clearInterval(timerInterval);
+        };
+    }, [sessionEndTime]);
+
+    // Format time as mm:ss
+    const formatTime = (seconds: number): string => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
 
 
     const handleGameComplete = useCallback(async (stats: GameStats): Promise<void> => {
@@ -283,6 +349,18 @@ export default function GamePage(): React.JSX.Element {
                         </Link>
                     </div>
                 </header>
+            )}
+            {/* Session Timer Overlay */}
+            {timeLeft !== null && !isGameOver && (
+                <div className="game-timer-overlay">
+                    <div className={`game-timer-pill ${timeLeft < 10 ? 'urgent' : ''}`}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>{formatTime(timeLeft)}</span>
+                    </div>
+                </div>
             )}
             <canvas id="minigame-canvas"></canvas>
         </section>
