@@ -147,9 +147,10 @@ export default function HostMonitorPage(): React.JSX.Element {
 
             const interval = setInterval(() => {
                 const start = new Date(session.started_at).getTime();
+                const totalSeconds = session.total_time_minutes * 60;
+                const sessionEndTime = start + (totalSeconds * 1000);
                 const now = getSyncedServerTime();
-                const elapsedSeconds = Math.floor((now - start) / 1000);
-                const remaining = Math.max(0, session.total_time_minutes * 60 - elapsedSeconds);
+                const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
                 setTimeRemaining(remaining);
 
                 // Auto end jika waktu habis

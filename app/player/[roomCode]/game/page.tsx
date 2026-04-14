@@ -146,13 +146,13 @@ export default function GamePage(): React.JSX.Element {
 
             timerInterval = setInterval(() => {
                 const now = getSyncedServerTime();
-                const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+                const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
                 setTimeLeft(remaining);
             }, 1000);
 
             // Initial update
             const now = getSyncedServerTime();
-            const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+            const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
             setTimeLeft(remaining);
         };
 
