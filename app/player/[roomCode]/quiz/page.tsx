@@ -236,7 +236,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
 
             timerInterval = setInterval(() => {
                 const now = getSyncedServerTime();
-                const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+                const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
 
                 setTimeLeft(remaining);
 
@@ -248,7 +248,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
 
             // Initial update
             const now = getSyncedServerTime();
-            const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+            const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
             setTimeLeft(remaining);
 
             if (remaining <= 0) {
