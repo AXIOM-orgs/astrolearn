@@ -29,4 +29,4 @@ deploy_to_aapanel:
         echo 'Aplikasi berhasil di-build dan di-reload!'
       "
   only:
-    - main
+    - master
