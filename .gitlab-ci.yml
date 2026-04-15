@@ -23,7 +23,10 @@ deploy_to_aapanel:
     - ssh -o StrictHostKeyChecking=no root@192.168.1.157 "
         cd /www/wwwroot/astrolearn && 
         npm install && 
-        pm2 startOrReload ecosystem.config.js && echo 'Aplikasi berhasil di-update dan di-reload!'
+        npm run build && 
+        pm2 startOrReload ecosystem.config.js --update-env && 
+        pm2 flush Admin &&
+        echo 'Aplikasi berhasil di-build dan di-reload!'
       "
   only:
     - main
