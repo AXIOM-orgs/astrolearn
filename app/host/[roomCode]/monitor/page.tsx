@@ -63,32 +63,32 @@ export default function HostMonitorPage(): React.JSX.Element {
     const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isScrolled, setIsScrolled] = useState(false);
-    const [soundEnabled, setSoundEnabled] = useState(true);
+    const [soundEnabled, setSoundEnabled] = useState(false);
 
     useEffect(() => {
         // Load sound preference from localStorage
-        const savedSound = localStorage.getItem('cosmicquest_bgm_enabled');
+        const savedSound = localStorage.getItem('bgm_enabled');
         if (savedSound !== null) {
             setSoundEnabled(savedSound === 'true');
         }
 
         const handleSoundChange = (e: any) => {
-            if (e.detail?.type === 'bgm') {
+            if (e.detail?.type === 'bgm' || e.detail?.type === 'sfx') {
                 setSoundEnabled(e.detail.enabled);
             }
         };
 
         const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'cosmicquest_bgm_enabled') {
+            if (e.key === 'bgm_enabled' || e.key === 'sfx_enabled') {
                 setSoundEnabled(e.newValue === 'true');
             }
         };
 
-        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+        window.addEventListener('sound_settings_changed', handleSoundChange);
         window.addEventListener('storage', handleStorageChange);
 
         return () => {
-            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            window.removeEventListener('sound_settings_changed', handleSoundChange);
             window.removeEventListener('storage', handleStorageChange);
         };
     }, []);
@@ -96,9 +96,14 @@ export default function HostMonitorPage(): React.JSX.Element {
     const handleToggleSound = () => {
         const newValue = !soundEnabled;
         setSoundEnabled(newValue);
-        localStorage.setItem('cosmicquest_bgm_enabled', String(newValue));
-        window.dispatchEvent(new CustomEvent('cosmicquest_sound_settings_changed', {
+        localStorage.setItem('bgm_enabled', String(newValue));
+        localStorage.setItem('sfx_enabled', String(newValue));
+        
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
             detail: { type: 'bgm', enabled: newValue }
+        }));
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
+            detail: { type: 'sfx', enabled: newValue }
         }));
     };
 
@@ -147,9 +152,10 @@ export default function HostMonitorPage(): React.JSX.Element {
 
             const interval = setInterval(() => {
                 const start = new Date(session.started_at).getTime();
+                const totalSeconds = session.total_time_minutes * 60;
+                const sessionEndTime = start + (totalSeconds * 1000);
                 const now = getSyncedServerTime();
-                const elapsedSeconds = Math.floor((now - start) / 1000);
-                const remaining = Math.max(0, session.total_time_minutes * 60 - elapsedSeconds);
+                const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
                 setTimeRemaining(remaining);
 
                 // Auto end jika waktu habis

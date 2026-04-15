@@ -11,6 +11,7 @@ import { QuizQuestion } from '@/lib/data';
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
+import { syncServerTime, getSyncedServerTime } from '@/lib/serverTime';
 
 interface AnswerEntry {
     id: string;
@@ -67,7 +68,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         const bootstrap = async () => {
             try {
                 setLoading(true);
-                const participantId = localStorage.getItem('cosmicquest_participant_id');
+                const participantId = localStorage.getItem('participant_id');
 
                 if (!participantId) {
                     router.replace('/');
@@ -201,7 +202,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     }, [roomCode, router, setGameState, hideLoading]);
 
     const finishGame = useCallback(async (): Promise<void> => {
-        const participantId = localStorage.getItem('cosmicquest_participant_id');
+        const participantId = localStorage.getItem('participant_id');
         if (participantId) {
             // Mark as finished
             await supabaseGame
@@ -211,7 +212,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         }
 
         // Calculate duration if start time is known
-        const endTs = Date.now();
+        const endTs = getSyncedServerTime();
         const durationSec = startTime ? Math.floor((endTs - startTime) / 1000) : null;
 
         setGameState(prev => ({
@@ -227,28 +228,39 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     useEffect(() => {
         if (!sessionEndTime) return;
 
-        const timerInterval = setInterval(() => {
-            const now = Date.now();
-            const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+        let timerInterval: ReturnType<typeof setInterval>;
 
+        const startTimer = async () => {
+            // Re-sync server offset just in case before starting the exact timer
+            await syncServerTime();
+
+            timerInterval = setInterval(() => {
+                const now = getSyncedServerTime();
+                const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
+
+                setTimeLeft(remaining);
+
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    finishGame();
+                }
+            }, 1000);
+
+            // Initial update
+            const now = getSyncedServerTime();
+            const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
             setTimeLeft(remaining);
 
             if (remaining <= 0) {
-                clearInterval(timerInterval);
                 finishGame();
             }
-        }, 1000);
+        };
 
-        // Initial update
-        const now = Date.now();
-        const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
-        setTimeLeft(remaining);
+        startTimer();
 
-        if (remaining <= 0) {
-            finishGame();
-        }
-
-        return () => clearInterval(timerInterval);
+        return () => {
+            if (timerInterval) clearInterval(timerInterval);
+        };
     }, [sessionEndTime, finishGame]);
 
 
@@ -277,7 +289,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     }, [currentQuestion]);
 
     const submitAnswerToSupabase = async (selectedIndex: number, isCorrect: boolean) => {
-        const participantId = localStorage.getItem('cosmicquest_participant_id');
+        const participantId = localStorage.getItem('participant_id');
         if (!participantId || !currentQuestion || !currentQuestion.answers) return;
 
         try {
@@ -391,7 +403,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         setLoading(true);
         showLoading();
 
-        const participantId = localStorage.getItem('cosmicquest_participant_id');
+        const participantId = localStorage.getItem('participant_id');
         if (participantId) {
             // Validate and set minigame status to true in DB
             await supabaseGame
@@ -417,7 +429,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         //         setIsFreezing(true);
         //
         //         // Ensure BGM is notified that countdown is over
-        //         window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
+        //         window.dispatchEvent(new CustomEvent('countdown_active', { 
         //             detail: { active: false } 
         //         }));
         //

@@ -60,16 +60,10 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
         sfxAudio.click.volume = 0.5;
         
         // Track state locally to avoid rapid localStorage reads and sync with CustomEvents
-        let isSfxEnabled = true; // Default
-        const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
-        const storageKey = isPlayerPath ? 'cosmicquest_player_sfx_enabled' : 'cosmicquest_sfx_enabled';
-        
-        const savedSfx = localStorage.getItem(storageKey);
+        let isSfxEnabled = false; // Default
+        const savedSfx = localStorage.getItem('sfx_enabled');
         if (savedSfx !== null) {
             isSfxEnabled = savedSfx === 'true';
-        } else {
-            // New user - default: Player/Join = OFF, Others = ON
-            isSfxEnabled = !isPlayerPath;
         }
 
         const handleSoundChange = (e: Event) => {
@@ -78,7 +72,15 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
                 isSfxEnabled = customEvent.detail.enabled;
             }
         };
-        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'sfx_enabled') {
+                isSfxEnabled = e.newValue === 'true';
+            }
+        };
+
+        window.addEventListener('sound_settings_changed', handleSoundChange);
+        window.addEventListener('storage', handleStorageChange);
 
         const playGlobalSound = (e: MouseEvent) => {
             if (!isSfxEnabled) return;
@@ -96,7 +98,7 @@ export function ClientLayout({ children }: ClientLayoutProps): React.JSX.Element
             clearInterval(asteroidInterval);
             fallingAsteroidsContainer.remove();
             document.removeEventListener('click', playGlobalSound, { capture: true });
-            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            window.removeEventListener('sound_settings_changed', handleSoundChange);
         };
     }, []);
 

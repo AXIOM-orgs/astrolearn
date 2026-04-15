@@ -50,7 +50,7 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
     const [saving, setSaving] = useState(false);
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [soundEnabled, setSoundEnabled] = useState(true);
+    const [soundEnabled, setSoundEnabled] = useState(false);
     const [isDurationOpen, setIsDurationOpen] = useState(false);
     const [isQuestionsOpen, setIsQuestionsOpen] = useState(false);
     const [isDifficultyOpen, setIsDifficultyOpen] = useState(false);
@@ -66,28 +66,28 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
         }
 
         // Load sync sound preference
-        const savedBgm = localStorage.getItem('cosmicquest_bgm_enabled');
+        const savedBgm = localStorage.getItem('bgm_enabled');
         if (savedBgm !== null) {
             setSoundEnabled(savedBgm === 'true');
         }
 
         const handleSoundChange = (e: any) => {
-            if (e.detail?.type === 'bgm') {
+            if (e.detail?.type === 'bgm' || e.detail?.type === 'sfx') {
                 setSoundEnabled(e.detail.enabled);
             }
         };
 
         const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'cosmicquest_bgm_enabled') {
+            if (e.key === 'bgm_enabled' || e.key === 'sfx_enabled') {
                 setSoundEnabled(e.newValue === 'true');
             }
         };
 
-        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+        window.addEventListener('sound_settings_changed', handleSoundChange);
         window.addEventListener('storage', handleStorageChange);
 
         return () => {
-            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            window.removeEventListener('sound_settings_changed', handleSoundChange);
             window.removeEventListener('storage', handleStorageChange);
         };
     }, [initialData.error, initialData.session, router, hideLoading]);
@@ -95,10 +95,15 @@ export default function SettingsForm({ roomCode, initialData }: Props) {
     const toggleSound = () => {
         const newValue = !soundEnabled;
         setSoundEnabled(newValue);
-        localStorage.setItem('cosmicquest_bgm_enabled', String(newValue));
-        // Dispatch event for BackgroundMusic component
-        window.dispatchEvent(new CustomEvent('cosmicquest_sound_settings_changed', {
+        localStorage.setItem('bgm_enabled', String(newValue));
+        localStorage.setItem('sfx_enabled', String(newValue));
+        
+        // Dispatch event for BackgroundMusic and ClientLayout components
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
             detail: { type: 'bgm', enabled: newValue }
+        }));
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
+            detail: { type: 'sfx', enabled: newValue }
         }));
     };
 

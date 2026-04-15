@@ -55,14 +55,14 @@ export function CountdownOverlay({ isActive, onComplete, targetDate, max }: Coun
         const timer = setInterval(calculateTimeLeft, 100);
 
         // Notify BGM that countdown is active
-        window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
+        window.dispatchEvent(new CustomEvent('countdown_active', { 
             detail: { active: true } 
         }));
 
         return () => {
             clearInterval(timer);
             // Notify BGM that countdown is finished
-            window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
+            window.dispatchEvent(new CustomEvent('countdown_active', { 
                 detail: { active: false } 
             }));
         };

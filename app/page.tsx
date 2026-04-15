@@ -14,8 +14,8 @@ import { supabaseGame } from '@/lib/supabase';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTranslations, useLocale } from 'next-intl';
 
-const PLAYER_NAME_KEY = 'cosmicquest_player_name';
-const GAME_CODE_KEY = 'cosmicquest_joined_game_code';
+const PLAYER_NAME_KEY = 'player_name';
+const GAME_CODE_KEY = 'joined_game_code';
 
 export default function LandingPage(): React.JSX.Element {
     const router = useRouter();
@@ -118,9 +118,9 @@ export default function LandingPage(): React.JSX.Element {
             // Success - save to localStorage and navigate
             localStorage.setItem(PLAYER_NAME_KEY, name);
             localStorage.setItem(GAME_CODE_KEY, code);
-            localStorage.setItem('cosmicquest_participant_id', data.participant_id);
-            localStorage.setItem('cosmicquest_session_id', data.session_id);
-            localStorage.setItem('cosmicquest_spacecraft', data.spacecraft || '');
+            localStorage.setItem('participant_id', data.participant_id);
+            localStorage.setItem('session_id', data.session_id);
+            localStorage.setItem('spacecraft', data.spacecraft || '');
 
             // Clean up pending code
             localStorage.removeItem('pendingRoomCode');
