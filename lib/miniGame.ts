@@ -554,31 +554,55 @@ class AudioManager {
             this.masterGain = this.audioContext.createGain();
             this.masterGain.connect(this.audioContext.destination);
             
-            // Role detection: Player vs General
-            const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-            const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
+            // Unify with global sound settings
+            const savedBgm = localStorage.getItem('bgm_enabled');
+            const savedSfx = localStorage.getItem('sfx_enabled');
             
-            const muteKey = isPlayerPath ? 'player_muted' : 'muted';
-            const volKey = isPlayerPath ? 'player_master_volume' : 'master_volume';
+            // If either is true, we consider sound enabled, but we follow the "unified" approach
+            this.isMuted = savedBgm === 'false' || (savedBgm === null && savedSfx === 'false');
+            
+            // To be more robust: explicitly OFF if either says false, default OFF
+            if (savedBgm === null && savedSfx === null) {
+                this.isMuted = true; // Default OFF
+            } else {
+                this.isMuted = savedBgm !== 'true';
+            }
 
-            // Load saved volume
-            const savedVolume = localStorage.getItem(volKey);
+            const savedVolume = localStorage.getItem('master_volume');
             if (savedVolume !== null) {
                 this.masterVolume = parseFloat(savedVolume);
-            }
-            
-            // Load saved mute state
-            const savedMute = localStorage.getItem(muteKey);
-            if (savedMute !== null) {
-                this.isMuted = savedMute === 'true';
-            } else {
-                // New user - default: Player side = muted, General side = unmuted
-                this.isMuted = isPlayerPath;
             }
             
             if (this.masterGain) {
                 this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
             }
+
+            // Sync with global events
+            const updateMuteState = (enabled: boolean) => {
+                this.isMuted = !enabled;
+                if (this.masterGain) {
+                    this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
+                }
+                
+                if (this.isMuted) {
+                    this.stopBGM();
+                    this.stopAllSounds();
+                } else if (!this.bgmSource && isGameRunning) {
+                    this.startBGM(0.5);
+                }
+            };
+
+            window.addEventListener('sound_settings_changed', (e: any) => {
+                // Since they are unified, we can react to either
+                updateMuteState(e.detail.enabled);
+            });
+
+            window.addEventListener('storage', (e: StorageEvent) => {
+                if (e.key === 'bgm_enabled' || e.key === 'sfx_enabled') {
+                    updateMuteState(e.newValue === 'true');
+                }
+            });
+
         } catch (e) {
             console.log('Audio context not available');
         }
@@ -713,14 +737,22 @@ class AudioManager {
 
     toggleMute(): boolean {
         this.isMuted = !this.isMuted;
-        const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-        const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
-        const muteKey = isPlayerPath ? 'player_muted' : 'muted';
-        localStorage.setItem(muteKey, this.isMuted.toString());
+        const newValue = !this.isMuted;
+        
+        localStorage.setItem('bgm_enabled', newValue.toString());
+        localStorage.setItem('sfx_enabled', newValue.toString());
 
         if (this.masterGain) {
             this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
         }
+
+        // Notify other components
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', { 
+            detail: { type: 'bgm', enabled: newValue }
+        }));
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', { 
+            detail: { type: 'sfx', enabled: newValue }
+        }));
 
         // Start BGM if unmuting and not already playing
         if (!this.isMuted && !this.bgmSource) {
@@ -735,21 +767,17 @@ class AudioManager {
 
     setMasterVolume(volume: number): void {
         this.masterVolume = Math.max(0, Math.min(1, volume)); // clamp 0-1
-        const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
-        const isPlayerPath = pathname.startsWith('/player') || pathname.startsWith('/join');
-        
-        const muteKey = isPlayerPath ? 'player_muted' : 'muted';
-        const volKey = isPlayerPath ? 'player_master_volume' : 'master_volume';
-        
-        localStorage.setItem(volKey, this.masterVolume.toString());
+        localStorage.setItem('master_volume', this.masterVolume.toString());
         
         // Auto-mute at 0, auto-unmute above 0
         if (this.masterVolume === 0) {
             this.isMuted = true;
-            localStorage.setItem(muteKey, 'true');
+            localStorage.setItem('bgm_enabled', 'false');
+            localStorage.setItem('sfx_enabled', 'false');
         } else if (this.isMuted && this.masterVolume > 0) {
             this.isMuted = false;
-            localStorage.setItem(muteKey, 'false');
+            localStorage.setItem('bgm_enabled', 'true');
+            localStorage.setItem('sfx_enabled', 'true');
         }
         
         // Apply volume to masterGain

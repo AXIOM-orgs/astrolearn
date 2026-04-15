@@ -57,7 +57,7 @@ export default function HostLobbyPage(): React.JSX.Element {
     const [showInviteGroupsDialog, setShowInviteGroupsDialog] = useState<boolean>(false);
     const [showInviteFriendsDialog, setShowInviteFriendsDialog] = useState<boolean>(false);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-    const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+    const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
     const settingsRef = useRef<HTMLDivElement>(null);
 
     const prevPlayerCount = useRef<number>(0);
@@ -78,13 +78,13 @@ export default function HostLobbyPage(): React.JSX.Element {
         }
 
         const handleSoundChange = (e: any) => {
-            if (e.detail?.type === 'bgm') {
+            if (e.detail?.type === 'bgm' || e.detail?.type === 'sfx') {
                 setSoundEnabled(e.detail.enabled);
             }
         };
 
         const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'bgm_enabled') {
+            if (e.key === 'bgm_enabled' || e.key === 'sfx_enabled') {
                 setSoundEnabled(e.newValue === 'true');
             }
         };
@@ -416,9 +416,14 @@ export default function HostLobbyPage(): React.JSX.Element {
         const newValue = !soundEnabled;
         setSoundEnabled(newValue);
         localStorage.setItem('bgm_enabled', String(newValue));
-        // Dispatch event for BackgroundMusic component
+        localStorage.setItem('sfx_enabled', String(newValue));
+        
+        // Dispatch event for BackgroundMusic and ClientLayout components
         window.dispatchEvent(new CustomEvent('sound_settings_changed', {
             detail: { type: 'bgm', enabled: newValue }
+        }));
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
+            detail: { type: 'sfx', enabled: newValue }
         }));
     };
 
