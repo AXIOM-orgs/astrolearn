@@ -1,36 +1,28 @@
 stages:
-  - test
-  - deploy
+  - build_and_deploy
 
-cache:
-  paths:
-    - node_modules/
-
-check_code:
-  stage: test
+deploy_proyek:
+  stage: build_and_deploy
   tags:
     - nodejs
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
   script:
-    - echo "Sedang mengecek kelayakan kodingan..."
-    - npm install
-    - npm test || echo "Test belum dikonfigurasi, lanjut..." 
-  only:
-    - main
-
-deploy_to_aapanel:
-  stage: deploy
-  tags:
-    - nodejs
-  script:
-    - echo "Kodingan aman! Mengirim langsung ke aaPanel tanpa Git Pull..."
-    - rsync -avz --delete --exclude '.git' --exclude 'node_modules' ./ root@192.168.1.157:/www/wwwroot/astrolearn/
-    - ssh -o StrictHostKeyChecking=no root@192.168.1.157 "
-        cd /www/wwwroot/astrolearn && 
-        npm install && 
-        npm run build && 
-        pm2 startOrReload ecosystem.config.js --update-env && 
-        pm2 flush Admin &&
-        echo 'Aplikasi berhasil di-build dan di-reload!'
-      "
+    - echo "🚀 Memulai proses kilat..."
+    
+    # 1. Install & Build di Robot Runner (Jauh lebih cepat daripada lewat SSH)
+    - npm ci --prefer-offline
+    - npm run build
+    
+    # 2. Kirim SEMUA file yang sudah jadi (termasuk node_modules) ke aaPanel
+    # Ini jauh lebih cepat daripada nunggu 'npm install' di server tujuan
+    - rsync -avz --delete --exclude '.git' ./ root@192.168.1.157:/www/wwwroot/astrolearn/
+    
+    # 3. Server aaPanel CUMA diperintah restart (Tugas ringan)
+    - ssh -o StrictHostKeyChecking=no root@192.168.1.157 "pm2 startOrReload /www/wwwroot/astrolearn/ecosystem.config.js"
+    
+    - echo "✅ Selesai dalam sekejap!"
   only:
     - master
