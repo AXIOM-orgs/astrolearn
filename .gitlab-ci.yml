@@ -19,7 +19,7 @@ deploy_to_aapanel:
     - nodejs
   script:
     - echo "Kodingan aman! Mengirim langsung ke aaPanel tanpa Git Pull..."
-    - rsync -avz --delete --exclude '.git' --exclude 'node_modules' ./ root@192.168.1.157:/www/wwwroot/GameForSmartLandingPage/
+    - rsync -avz --delete --exclude '.git' --exclude 'node_modules' ./ root@192.168.1.157:/www/wwwroot/astrolearn/
     - ssh -o StrictHostKeyChecking=no root@192.168.1.157 "
         cd /www/wwwroot/astrolearn && 
         npm install && 
