@@ -63,7 +63,7 @@ export default function HostMonitorPage(): React.JSX.Element {
     const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isScrolled, setIsScrolled] = useState(false);
-    const [soundEnabled, setSoundEnabled] = useState(true);
+    const [soundEnabled, setSoundEnabled] = useState(false);
 
     useEffect(() => {
         // Load sound preference from localStorage
@@ -73,13 +73,13 @@ export default function HostMonitorPage(): React.JSX.Element {
         }
 
         const handleSoundChange = (e: any) => {
-            if (e.detail?.type === 'bgm') {
+            if (e.detail?.type === 'bgm' || e.detail?.type === 'sfx') {
                 setSoundEnabled(e.detail.enabled);
             }
         };
 
         const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'bgm_enabled') {
+            if (e.key === 'bgm_enabled' || e.key === 'sfx_enabled') {
                 setSoundEnabled(e.newValue === 'true');
             }
         };
@@ -97,8 +97,13 @@ export default function HostMonitorPage(): React.JSX.Element {
         const newValue = !soundEnabled;
         setSoundEnabled(newValue);
         localStorage.setItem('bgm_enabled', String(newValue));
+        localStorage.setItem('sfx_enabled', String(newValue));
+        
         window.dispatchEvent(new CustomEvent('sound_settings_changed', {
             detail: { type: 'bgm', enabled: newValue }
+        }));
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
+            detail: { type: 'sfx', enabled: newValue }
         }));
     };
 

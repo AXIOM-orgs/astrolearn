@@ -14,14 +14,12 @@ export function BackgroundMusic(): React.JSX.Element | null {
 
     // Initial load of settings
     useEffect(() => {
-        const storageKey = isPlayerPath ? 'player_bgm_enabled' : 'bgm_enabled';
-        const savedBgm = localStorage.getItem(storageKey);
-        
+        const savedBgm = localStorage.getItem('bgm_enabled');
         if (savedBgm !== null) {
             setIsEnabled(savedBgm === 'true');
         } else {
-            // New user - default: Player/Join = OFF, Others = ON
-            setIsEnabled(!isPlayerPath);
+            // New user - default: OFF everywhere
+            setIsEnabled(false);
         }
 
         const handleSettingsChange = (e: any) => {
@@ -34,8 +32,15 @@ export function BackgroundMusic(): React.JSX.Element | null {
             setIsCountdownActive(!!e.detail?.active);
         };
 
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'bgm_enabled') {
+                setIsEnabled(e.newValue === 'true');
+            }
+        };
+
         window.addEventListener('sound_settings_changed', handleSettingsChange as EventListener);
         window.addEventListener('countdown_active', handleCountdownChange as EventListener);
+        window.addEventListener('storage', handleStorageChange);
         
         // Interaction listener to overcome autoplay policy
         const handleFirstInteraction = () => {
@@ -50,6 +55,7 @@ export function BackgroundMusic(): React.JSX.Element | null {
         return () => {
             window.removeEventListener('sound_settings_changed', handleSettingsChange as EventListener);
             window.removeEventListener('countdown_active', handleCountdownChange as EventListener);
+            window.removeEventListener('storage', handleStorageChange);
             window.removeEventListener('click', handleFirstInteraction);
             window.removeEventListener('keydown', handleFirstInteraction);
         };
@@ -90,7 +96,9 @@ export function BackgroundMusic(): React.JSX.Element | null {
         const currentAudio = audioRef.current;
         const isPlaying = !currentAudio.paused;
 
-        if (isPlaying && currentAudio.src !== currentSrc) {
+        // Compare the attribute to avoid absolute vs relative URL mismatch
+        const currentAudioSrc = currentAudio.getAttribute('src');
+        if (isPlaying && currentAudioSrc !== currentSrc) {
             currentAudio.load();
             if (shouldPlay && hasInteracted) {
                 currentAudio.play().catch(() => {});
