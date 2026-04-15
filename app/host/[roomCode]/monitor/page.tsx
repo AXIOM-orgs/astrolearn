@@ -229,6 +229,22 @@ export default function HostMonitorPage(): React.JSX.Element {
         };
 
         init();
+
+        // Polling fallback every 5 seconds
+        const pollInterval = setInterval(init, 5000);
+
+        // Visibility re-sync
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                init();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(pollInterval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, [gamePin, router, hideLoading]);
 
     // Handle Countdown to Active Transition (server-synced)
@@ -246,23 +262,27 @@ export default function HostMonitorPage(): React.JSX.Element {
 
                 if (diff > 0) {
                     timer = setTimeout(async () => {
-                        // Activate Game
-                        try {
-                            const { error } = await supabaseGame
-                                .from('sessions')
-                                .update({
-                                    status: 'active',
-                                    started_at: new Date().toISOString()
-                                })
-                                .eq('id', session.id);
+                        // Double check status before update
+                        const { data } = await supabaseGame.from('sessions').select('status').eq('id', session.id).single();
+                        if (data?.status === 'waiting') {
+                            // Activate Game
+                            try {
+                                const { error } = await supabaseGame
+                                    .from('sessions')
+                                    .update({
+                                        status: 'active',
+                                        started_at: new Date().toISOString()
+                                    })
+                                    .eq('id', session.id);
 
-                            if (error) console.error("Failed to activate session:", error);
-                        } catch (e) {
-                            console.error("Error activating session:", e);
+                                if (error) console.error("Failed to activate session:", error);
+                            } catch (e) {
+                                console.error("Error activating session:", e);
+                            }
                         }
                     }, diff);
                 } else {
-                    // If time already passed, activate immediately
+                    // If time already passed, check and activate immediately
                     const { data } = await supabaseGame.from('sessions').select('status').eq('id', session.id).single();
                     if (data?.status === 'waiting') {
                         await supabaseGame
@@ -280,7 +300,7 @@ export default function HostMonitorPage(): React.JSX.Element {
 
             return () => { if (timer) clearTimeout(timer); };
         }
-    }, [session]);
+    }, [session?.id, session?.status, session?.countdown_started_at]);
 
     // Realtime session
     useEffect(() => {
