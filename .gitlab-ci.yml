@@ -17,9 +17,16 @@ deploy_proyek:
     - ssh -o StrictHostKeyChecking=no root@192.168.1.157 "
         chown -R www:www /www/wwwroot/astrolearn && 
         cd /www/wwwroot/astrolearn && 
+        
         sudo -u www npm install --production --no-audit && 
-        sudo -u www pm2 startOrReload ecosystem.config.js --update-env &&
-        echo '✅ Deploy Berhasil via User www!'
+        
+        sudo -u www pm2 delete Axiom || true && 
+        
+        sudo -u www pm2 start ecosystem.config.js --update-env &&
+        
+        sudo -u www pm2 save &&
+        
+        echo '✅ Deploy Bersih & Tidak Double!'
       "
   only:
     - master
