@@ -78,8 +78,6 @@ export default function PlayerWaitingPage(): React.JSX.Element {
         let sessionChannel: ReturnType<typeof supabaseGame.channel> | null = null;
 
         const bootstrap = async () => {
-            setLoading(true);
-
             // Fetch session
             const { data: fetchedSession, error: sessionErr } = await supabaseGame
                 .from('sessions')
@@ -173,10 +171,39 @@ export default function PlayerWaitingPage(): React.JSX.Element {
 
         bootstrap();
 
+        // Fallback polling for session status change
+        const pollInterval = setInterval(async () => {
+             const { data } = await supabaseGame
+                .from('sessions')
+                .select('status, countdown_started_at')
+                .eq('game_pin', roomCode)
+                .single();
+            
+            if (data) {
+                if (data.status === 'active' && !isRedirecting.current) {
+                    isRedirecting.current = true;
+                    showLoading();
+                    router.replace(`/player/${roomCode}/game`);
+                } else {
+                    setSession(prev => prev ? { ...prev, ...data } : null);
+                }
+            }
+        }, 5000);
+
+        // Visibility re-sync
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                bootstrap();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
         return () => {
             if (sessionChannel) {
                 supabaseGame.removeChannel(sessionChannel);
             }
+            clearInterval(pollInterval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [roomCode, router, showLoading, hideLoading]);
 
