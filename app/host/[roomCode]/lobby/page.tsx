@@ -106,9 +106,20 @@ export default function HostLobbyPage(): React.JSX.Element {
         };
         document.addEventListener('mousedown', handleClickOutside);
 
+        // Re-sync when page becomes visible
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                console.log('Tab became visible, triggers re-sync...');
+                // We'll rely on the manual fetch function
+                window.dispatchEvent(new CustomEvent('revalidate_participants'));
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
             document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('sound_settings_changed', handleSoundChange);
             window.removeEventListener('storage', handleStorageChange);
         };
@@ -196,10 +207,19 @@ export default function HostLobbyPage(): React.JSX.Element {
 
         fetchSessionAndParticipants();
 
+        // Listen for manual revalidation events
+        const handleRevalidate = () => fetchSessionAndParticipants();
+        window.addEventListener('revalidate_participants', handleRevalidate);
+
+        // Fallback Polling every 10 seconds
+        const pollInterval = setInterval(fetchSessionAndParticipants, 10000);
+
         return () => {
             if (sessionSubscription) {
                 supabaseGame.removeChannel(sessionSubscription);
             }
+            window.removeEventListener('revalidate_participants', handleRevalidate);
+            clearInterval(pollInterval);
         };
     }, [roomCode, router, hideLoading]);
 
