@@ -251,11 +251,16 @@ async function preloadImageChunks(urls: string[], chunkSize: number = 5): Promis
 export async function preloadPhase1(): Promise<void> {
     if (_phase1Done || _phase1Running) return;
     _phase1Running = true;
-    console.log('[Preload] Phase 1 starting (backgrounds)...');
-    await preloadImageChunks(PHASE1_URLS);
-    _phase1Done = true;
-    _phase1Running = false;
-    console.log('[Preload] Phase 1 complete');
+    try {
+        console.log('[Preload] Phase 1 starting (backgrounds)...');
+        await preloadImageChunks(PHASE1_URLS);
+        _phase1Done = true;
+        console.log('[Preload] Phase 1 complete');
+    } catch (err) {
+        console.error('[Preload] Phase 1 failed:', err);
+    } finally {
+        _phase1Running = false;
+    }
 }
 
 /**
@@ -267,14 +272,19 @@ export async function preloadPhase2(): Promise<void> {
     if (_phase2Done || _phase2Running) return;
     // Ensure Phase 1 is done first (fallback if player skipped waiting room)
     if (!_phase1Done && !_phase1Running) {
-        await preloadPhase1();
+        preloadPhase1(); // trigger it, don't necessarily need to block here if chunking handles it
     }
     _phase2Running = true;
-    console.log('[Preload] Phase 2 starting (enemies/bullets)...');
-    await preloadImageChunks(PHASE2_URLS);
-    _phase2Done = true;
-    _phase2Running = false;
-    console.log('[Preload] Phase 2 complete');
+    try {
+        console.log('[Preload] Phase 2 starting (enemies/bullets)...');
+        await preloadImageChunks(PHASE2_URLS);
+        _phase2Done = true;
+        console.log('[Preload] Phase 2 complete');
+    } catch (err) {
+        console.error('[Preload] Phase 2 failed:', err);
+    } finally {
+        _phase2Running = false;
+    }
 }
 
 /**
@@ -288,24 +298,43 @@ export async function preloadPhase3(spaceshipImageUrl: string): Promise<void> {
     if (!_phase1Done && !_phase1Running) preloadPhase1();
     if (!_phase2Done && !_phase2Running) preloadPhase2();
     _phase3Running = true;
-    console.log('[Preload] Phase 3 starting (spaceship + audio)...');
-    // Load spaceship image
-    await preloadImageChunks([spaceshipImageUrl]);
-    // Load audio
-    await audioManager.resumeContext();
-    await audioManager.loadSounds();
-    _phase3Done = true;
-    _phase3Running = false;
-    console.log('[Preload] Phase 3 complete');
-    // Wait for any still-running earlier phases
-    while (_phase1Running || _phase2Running) {
-        await new Promise(r => setTimeout(r, 50));
+    try {
+        console.log('[Preload] Phase 3 starting (spaceship + audio)...');
+        // Load spaceship image
+        await preloadImageChunks([spaceshipImageUrl]);
+        // Load audio
+        await audioManager.resumeContext();
+        await audioManager.loadSounds();
+        _phase3Done = true;
+        console.log('[Preload] Phase 3 complete');
+    } catch (err) {
+        console.error('[Preload] Phase 3 failed:', err);
+    } finally {
+        _phase3Running = false;
     }
+
+    // Wait for any still-running earlier phases to ensure complete experience
+    // We do this outside try block to not block Phase 3's own status
+    let waitCount = 0;
+    while ((_phase1Running || _phase2Running) && waitCount < 100) { // max 5s safety timeout
+        await new Promise(r => setTimeout(r, 50));
+        waitCount++;
+    }
+    if (waitCount >= 100) console.warn('[Preload] Phase 3 timed out waiting for Phases 1/2');
 }
 
 /** Check if all preload phases are complete */
 export function isAllPreloaded(): boolean {
     return _phase1Done && _phase2Done && _phase3Done;
+}
+
+/**
+ * Pre-cache a specific spaceship image without re-running full Phase 3.
+ * Call this when the player changes their spaceship in the waiting room
+ * so the new image is ready before the game starts.
+ */
+export async function preloadSpaceshipImage(spaceshipImageUrl: string): Promise<void> {
+    await preloadImageChunks([spaceshipImageUrl]);
 }
 
 function getCachedImage(src: string): HTMLImageElement {
@@ -770,7 +799,7 @@ class AudioManager {
             'laserMagnet': '/assets/audio/game/magnetic_laser.mp3',
             'bossLaser': '/assets/audio/game/big_laser_beam.mp3',
             'destroy': '/assets/audio/game/explosion.mp3',
-            'bgm': '/assets/audio/game/game_bgm.mp3',
+            'bgm': '/assets/audio/game/game_bgm.ogg',
             'bossDead': '/assets/audio/game/boss_dead.mp3'
         };
 

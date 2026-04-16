@@ -68,11 +68,11 @@ export function BackgroundMusic(): React.JSX.Element | null {
 
         // Routes for Quiz BGM
         if (lowerParts.includes('quiz') || lowerParts.includes('monitor')) {
-            return "/assets/audio/web/bgm_quiz_monitor.mp3";
+            return "/assets/audio/web/bgm_quiz_monitor.ogg";
         }
 
         // Default Homepage BGM
-        return "/assets/audio/web/bgm_hmpage.wav";
+        return "/assets/audio/web/bgm_hmpage.ogg";
     };
 
     const isAllowedRoute = (): boolean => {

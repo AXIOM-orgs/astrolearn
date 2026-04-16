@@ -11,7 +11,7 @@ import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import { Spaceship, spaceships, getSpacecraftSpriteClass } from '@/lib/data';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
-import { preloadPhase1 } from '@/lib/miniGame';
+import { preloadPhase1, preloadPhase2, preloadPhase3, preloadSpaceshipImage } from '@/lib/miniGame';
 
 interface Participant {
     id: string;
@@ -71,11 +71,27 @@ export default function PlayerWaitingPage(): React.JSX.Element {
     const hasBootstrapped = useRef(false);
     const isRedirecting = useRef(false);
 
-    // Phase 1 Background Preload
+    // Phase 1 Background Preload (immediately on mount)
     useEffect(() => {
         // Fire and forget (runs async in background without blocking UI)
         preloadPhase1().catch(err => console.warn('Preload Phase 1 error:', err));
     }, []);
+
+    // Phase 2 & 3 Preload: triggered 2s after player successfully joined
+    // This pre-caches all game assets (enemies, bullets, audio ~5MB BGM) while player waits
+    // so the minigame page loads instantly instead of downloading everything on the spot.
+    useEffect(() => {
+        if (loading || !currentPlayer.id || !currentSpaceship) return;
+
+        const timer = setTimeout(() => {
+            console.log('[Preload] Starting Phase 2 & 3 from waiting room...');
+            preloadPhase2().catch(err => console.warn('Preload Phase 2 error:', err));
+            preloadPhase3(currentSpaceship.image).catch(err => console.warn('Preload Phase 3 error:', err));
+        }, 2000);
+
+        return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading, currentPlayer.id]);
 
     // Bootstrap: Fetch session & participants, setup realtime
     useEffect(() => {
@@ -312,6 +328,9 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             prev.map(p => p.id === currentPlayer.id ? { ...p, spacecraft: spacecraftFilename } : p)
         );
         setShowRefitDialog(false);
+
+        // Pre-cache the new spaceship image in the background
+        preloadSpaceshipImage(ship.image).catch(err => console.warn('Spaceship preload error:', err));
 
         // Update in database
         const { error } = await supabaseGame
