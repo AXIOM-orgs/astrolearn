@@ -12,6 +12,7 @@ import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { syncServerTime, getSyncedServerTime } from '@/lib/serverTime';
+import { preloadPhase2 } from '@/lib/miniGame';
 
 interface AnswerEntry {
     id: string;
@@ -59,6 +60,12 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     }, [sessionData?.status, router, roomCode]);
 
     const hasBootstrapped = useRef(false);
+
+    // Phase 2 Preload (Enemies, Bullets)
+    useEffect(() => {
+        // First triggers Phase 1 fallback if not done, then runs Phase 2
+        preloadPhase2().catch(err => console.warn('Preload Phase 2 error:', err));
+    }, []);
 
     // Bootstrap: Fetch session & restore state
     useEffect(() => {

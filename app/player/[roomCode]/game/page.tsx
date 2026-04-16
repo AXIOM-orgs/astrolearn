@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useGame } from '@/context/GameContext';
-import { startMiniGame, cleanupMiniGame, GameStats } from '@/lib/miniGame';
+import { startMiniGame, cleanupMiniGame, GameStats, preloadPhase3 } from '@/lib/miniGame';
 import { supabaseGame } from '@/lib/supabase';
 import { Spaceship, spaceships, DifficultyLevel } from '@/lib/data';
 import { useTranslations } from 'next-intl';
@@ -24,6 +24,7 @@ export default function GamePage(): React.JSX.Element {
     const roomCode = params.roomCode as string;
     const { gameState, setGameState, showLoading, hideLoading } = useGame();
     const [isInitializing, setIsInitializing] = useState(true);
+    const [isPreloading, setIsPreloading] = useState(true);
     const [isGameOver, setIsGameOver] = useState(false);
     const [retryCount, setRetryCount] = useState(0);
     const hasInitialized = useRef(false);
@@ -292,28 +293,38 @@ export default function GamePage(): React.JSX.Element {
 
         const initTimeout = setTimeout(() => {
             if (gameState.selectedSpaceship) {
-                const translations = {
-                    mobileControls: t('mobileControls'),
-                    desktopControls: t('desktopControls'),
-                    bossWarning: t('bossWarning'),
-                    bossApproaching: t('bossApproaching'),
-                    bossLabel: t('bossLabel'),
-                    victory: t('victory'),
-                    gameOver: t('gameOver'),
-                    tryAgain: t('tryAgain'),
-                    continuing: t('continuing')
-                };
+                // Preload Phase 3: Spaceship image + Audio
+                preloadPhase3(gameState.selectedSpaceship.image).then(() => {
+                    if (!gameState.selectedSpaceship) return; // double check after async
+                    
+                    setIsPreloading(false); // Remove loading spinner
 
-                startMiniGame(
-                    gameState.selectedSpaceship,
-                    gameState.selectedDifficulty || 'easy',
-                    handleGameComplete,
-                    initialLives,
-                    initialHP,
-                    handleStateChange,
-                    translations,
-                    () => setIsGameOver(true)
-                );
+                    const translations = {
+                        mobileControls: t('mobileControls'),
+                        desktopControls: t('desktopControls'),
+                        bossWarning: t('bossWarning'),
+                        bossApproaching: t('bossApproaching'),
+                        bossLabel: t('bossLabel'),
+                        victory: t('victory'),
+                        gameOver: t('gameOver'),
+                        tryAgain: t('tryAgain'),
+                        continuing: t('continuing')
+                    };
+
+                    startMiniGame(
+                        gameState.selectedSpaceship,
+                        gameState.selectedDifficulty || 'easy',
+                        handleGameComplete,
+                        initialLives,
+                        initialHP,
+                        handleStateChange,
+                        translations,
+                        () => setIsGameOver(true)
+                    );
+                }).catch(err => {
+                    console.error('Phase 3 preload failed:', err);
+                    setIsPreloading(false); // Proceed anyway on fail
+                });
             }
         }, 600);
 
@@ -323,7 +334,7 @@ export default function GamePage(): React.JSX.Element {
         };
     }, [isInitializing, gameState.selectedSpaceship, gameState.selectedDifficulty, handleGameComplete, t, retryCount]);
 
-    if (isInitializing) {
+    if (isInitializing || isPreloading) {
         return (
             <div className="flex items-center justify-center h-screen bg-[#0a0e27]">
                 <div className="loading-spinner text-primary" />
