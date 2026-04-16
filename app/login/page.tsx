@@ -346,7 +346,7 @@ export default function LoginPage() {
                     }}>
                         Don't have an account?{' '}
                         <a
-                            href="https://gameforsmart2026.vercel.app"
+                            href="https://app.gameforsmart.com/register"
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{

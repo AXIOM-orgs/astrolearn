@@ -11,6 +11,7 @@ import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import { Spaceship, spaceships, getSpacecraftSpriteClass } from '@/lib/data';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
+import { preloadPhase1 } from '@/lib/miniGame';
 
 interface Participant {
     id: string;
@@ -70,6 +71,12 @@ export default function PlayerWaitingPage(): React.JSX.Element {
     const hasBootstrapped = useRef(false);
     const isRedirecting = useRef(false);
 
+    // Phase 1 Background Preload
+    useEffect(() => {
+        // Fire and forget (runs async in background without blocking UI)
+        preloadPhase1().catch(err => console.warn('Preload Phase 1 error:', err));
+    }, []);
+
     // Bootstrap: Fetch session & participants, setup realtime
     useEffect(() => {
         if (hasBootstrapped.current || !roomCode) return;
@@ -78,8 +85,6 @@ export default function PlayerWaitingPage(): React.JSX.Element {
         let sessionChannel: ReturnType<typeof supabaseGame.channel> | null = null;
 
         const bootstrap = async () => {
-            setLoading(true);
-
             // Fetch session
             const { data: fetchedSession, error: sessionErr } = await supabaseGame
                 .from('sessions')
@@ -119,13 +124,13 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             setTotalCount(count || 0);
 
             // Find current player from localStorage
-            const myParticipantId = localStorage.getItem('cosmicquest_participant_id') || '';
+            const myParticipantId = localStorage.getItem('participant_id') || '';
             const me = (fetchedParticipants || []).find((p) => p.id === myParticipantId);
 
             if (!me) {
                 console.warn('Participant not found in session');
-                localStorage.removeItem('cosmicquest_participant_id');
-                localStorage.removeItem('cosmicquest_session_id');
+                localStorage.removeItem('participant_id');
+                localStorage.removeItem('session_id');
                 router.replace('/');
                 return;
             }
@@ -173,10 +178,39 @@ export default function PlayerWaitingPage(): React.JSX.Element {
 
         bootstrap();
 
+        // Fallback polling for session status change
+        const pollInterval = setInterval(async () => {
+             const { data } = await supabaseGame
+                .from('sessions')
+                .select('status, countdown_started_at')
+                .eq('game_pin', roomCode)
+                .single();
+            
+            if (data) {
+                if (data.status === 'active' && !isRedirecting.current) {
+                    isRedirecting.current = true;
+                    showLoading();
+                    router.replace(`/player/${roomCode}/game`);
+                } else {
+                    setSession(prev => prev ? { ...prev, ...data } : null);
+                }
+            }
+        }, 5000);
+
+        // Visibility re-sync
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                bootstrap();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
         return () => {
             if (sessionChannel) {
                 supabaseGame.removeChannel(sessionChannel);
             }
+            clearInterval(pollInterval);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [roomCode, router, showLoading, hideLoading]);
 
@@ -217,15 +251,15 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                         setTotalCount(prev => Math.max(0, prev - 1));
 
                         // If current player was kicked
-                        const myId = localStorage.getItem('cosmicquest_participant_id');
+                        const myId = localStorage.getItem('participant_id');
                         if (deletedId === myId) {
                             console.warn('You have been kicked from the session');
                             showLoading();
 
                             // Clear local storage immediately
-                            localStorage.removeItem('cosmicquest_participant_id');
-                            localStorage.removeItem('cosmicquest_session_id');
-                            localStorage.removeItem('cosmicquest_spacecraft');
+                            localStorage.removeItem('participant_id');
+                            localStorage.removeItem('session_id');
+                            localStorage.removeItem('spacecraft');
 
                             // Delay redirection for visual "loading" effect as requested
                             setTimeout(() => {
@@ -257,9 +291,9 @@ export default function PlayerWaitingPage(): React.JSX.Element {
             console.error('Error exiting session:', error);
         }
 
-        localStorage.removeItem('cosmicquest_participant_id');
-        localStorage.removeItem('cosmicquest_session_id');
-        localStorage.removeItem('cosmicquest_spacecraft');
+        localStorage.removeItem('participant_id');
+        localStorage.removeItem('session_id');
+        localStorage.removeItem('spacecraft');
         router.push('/');
         hideLoading();
         setShowExitDialog(false);

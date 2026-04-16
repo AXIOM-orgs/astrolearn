@@ -11,6 +11,8 @@ import { QuizQuestion } from '@/lib/data';
 import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
+import { syncServerTime, getSyncedServerTime } from '@/lib/serverTime';
+import { preloadPhase2 } from '@/lib/miniGame';
 
 interface AnswerEntry {
     id: string;
@@ -59,6 +61,12 @@ export default function JoinQuizPage(): React.JSX.Element | null {
 
     const hasBootstrapped = useRef(false);
 
+    // Phase 2 Preload (Enemies, Bullets)
+    useEffect(() => {
+        // First triggers Phase 1 fallback if not done, then runs Phase 2
+        preloadPhase2().catch(err => console.warn('Preload Phase 2 error:', err));
+    }, []);
+
     // Bootstrap: Fetch session & restore state
     useEffect(() => {
         if (hasBootstrapped.current || !roomCode) return;
@@ -67,7 +75,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         const bootstrap = async () => {
             try {
                 setLoading(true);
-                const participantId = localStorage.getItem('cosmicquest_participant_id');
+                const participantId = localStorage.getItem('participant_id');
 
                 if (!participantId) {
                     router.replace('/');
@@ -201,7 +209,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     }, [roomCode, router, setGameState, hideLoading]);
 
     const finishGame = useCallback(async (): Promise<void> => {
-        const participantId = localStorage.getItem('cosmicquest_participant_id');
+        const participantId = localStorage.getItem('participant_id');
         if (participantId) {
             // Mark as finished
             await supabaseGame
@@ -211,7 +219,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         }
 
         // Calculate duration if start time is known
-        const endTs = Date.now();
+        const endTs = getSyncedServerTime();
         const durationSec = startTime ? Math.floor((endTs - startTime) / 1000) : null;
 
         setGameState(prev => ({
@@ -227,28 +235,39 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     useEffect(() => {
         if (!sessionEndTime) return;
 
-        const timerInterval = setInterval(() => {
-            const now = Date.now();
-            const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
+        let timerInterval: ReturnType<typeof setInterval>;
 
+        const startTimer = async () => {
+            // Re-sync server offset just in case before starting the exact timer
+            await syncServerTime();
+
+            timerInterval = setInterval(() => {
+                const now = getSyncedServerTime();
+                const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
+
+                setTimeLeft(remaining);
+
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    finishGame();
+                }
+            }, 1000);
+
+            // Initial update
+            const now = getSyncedServerTime();
+            const remaining = Math.max(0, Math.ceil((sessionEndTime - now) / 1000));
             setTimeLeft(remaining);
 
             if (remaining <= 0) {
-                clearInterval(timerInterval);
                 finishGame();
             }
-        }, 1000);
+        };
 
-        // Initial update
-        const now = Date.now();
-        const remaining = Math.max(0, Math.floor((sessionEndTime - now) / 1000));
-        setTimeLeft(remaining);
+        startTimer();
 
-        if (remaining <= 0) {
-            finishGame();
-        }
-
-        return () => clearInterval(timerInterval);
+        return () => {
+            if (timerInterval) clearInterval(timerInterval);
+        };
     }, [sessionEndTime, finishGame]);
 
 
@@ -277,7 +296,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     }, [currentQuestion]);
 
     const submitAnswerToSupabase = async (selectedIndex: number, isCorrect: boolean) => {
-        const participantId = localStorage.getItem('cosmicquest_participant_id');
+        const participantId = localStorage.getItem('participant_id');
         if (!participantId || !currentQuestion || !currentQuestion.answers) return;
 
         try {
@@ -362,37 +381,36 @@ export default function JoinQuizPage(): React.JSX.Element | null {
             }));
         }
 
-        // Submit to Supabase
-        await submitAnswerToSupabase(selectedIndex, isCorrect);
+        // Submit to Supabase AND wait for 1.5s visual feedback concurrently
+        await Promise.all([
+            submitAnswerToSupabase(selectedIndex, isCorrect),
+            new Promise(resolve => setTimeout(resolve, 1500))
+        ]);
 
-        // Delay for visual feedback
-        setTimeout(() => {
-            const nextIndex = gameState.currentQuestionIndex + 1;
+        const nextIndex = gameState.currentQuestionIndex + 1;
 
+        if (nextIndex >= gameState.selectedQuestions) {
+            // Game Finished
+            setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
+            finishGame();
+        } else if (nextIndex % 3 === 0) {
             // MiniGame Check: Every 3 questions, but not after the last one
-            if (nextIndex % 3 === 0 && nextIndex < gameState.selectedQuestions) {
-                showMiniGame(nextIndex);
-            }
-            if (nextIndex >= gameState.selectedQuestions) {
-                // Game Finished
-                setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
-                finishGame();
-            } else {
-                // Next Question
-                setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
-                setAnsweredIndex(null);
-                setCorrectIndex(null);
-                setButtonsDisabled(false);
-            }
-        }, 1500);
+            showMiniGame(nextIndex);
+        } else {
+            // Next Question
+            setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
+            setAnsweredIndex(null);
+            setCorrectIndex(null);
+            setButtonsDisabled(false);
+        }
     };
 
     const showMiniGame = async (nextIndex: number): Promise<void> => {
-        // Countdown 3-2-1 di-comment sementara agar tidak bentrok dengan countdown 10 detik
-        // setShowCountdown(true);
-        // setCountdownNumber(3);
+        // Hide UI immediately to prevent flashing and subjective freezing 
+        setLoading(true);
+        showLoading();
 
-        const participantId = localStorage.getItem('cosmicquest_participant_id');
+        const participantId = localStorage.getItem('participant_id');
         if (participantId) {
             // Validate and set minigame status to true in DB
             await supabaseGame
@@ -405,14 +423,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         setGameState(prev => ({ ...prev, currentQuestionIndex: nextIndex }));
 
         // Langsung navigate ke game tanpa countdown 3-2-1
-        showLoading();
         router.push(`/player/${roomCode}/game`);
-
-        // === COMMENTED OUT: countdown 3-2-1 ===
-        // // Silence BGM during countdown
-        // window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
-        //     detail: { active: true } 
-        // }));
         //
         // let count = 3;
         // const countdownInterval = setInterval(() => {
@@ -425,7 +436,7 @@ export default function JoinQuizPage(): React.JSX.Element | null {
         //         setIsFreezing(true);
         //
         //         // Ensure BGM is notified that countdown is over
-        //         window.dispatchEvent(new CustomEvent('cosmicquest_countdown_active', { 
+        //         window.dispatchEvent(new CustomEvent('countdown_active', { 
         //             detail: { active: false } 
         //         }));
         //
@@ -461,6 +472,10 @@ export default function JoinQuizPage(): React.JSX.Element | null {
     }
 
     if (!currentQuestion) {
+        // Prevent showing "no questions found" if the game is finishing/finished
+        if (sessionData?.status === 'finished' || gameState.currentQuestionIndex >= gameState.selectedQuestions) {
+            return null;
+        }
         return (
             <div className="flex items-center justify-center h-screen bg-[#0a0e27] text-white">
                 <p>{t('noQuestionsFound')}</p>

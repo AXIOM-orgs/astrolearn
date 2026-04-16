@@ -57,7 +57,7 @@ export default function HostLobbyPage(): React.JSX.Element {
     const [showInviteGroupsDialog, setShowInviteGroupsDialog] = useState<boolean>(false);
     const [showInviteFriendsDialog, setShowInviteFriendsDialog] = useState<boolean>(false);
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-    const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+    const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
     const settingsRef = useRef<HTMLDivElement>(null);
 
     const prevPlayerCount = useRef<number>(0);
@@ -72,24 +72,24 @@ export default function HostLobbyPage(): React.JSX.Element {
         setJoinUrl(`${window.location.origin}/join/${roomCode}`);
 
         // Load sound preference
-        const savedSound = localStorage.getItem('cosmicquest_bgm_enabled');
+        const savedSound = localStorage.getItem('bgm_enabled');
         if (savedSound !== null) {
             setSoundEnabled(savedSound === 'true');
         }
 
         const handleSoundChange = (e: any) => {
-            if (e.detail?.type === 'bgm') {
+            if (e.detail?.type === 'bgm' || e.detail?.type === 'sfx') {
                 setSoundEnabled(e.detail.enabled);
             }
         };
 
         const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === 'cosmicquest_bgm_enabled') {
+            if (e.key === 'bgm_enabled' || e.key === 'sfx_enabled') {
                 setSoundEnabled(e.newValue === 'true');
             }
         };
 
-        window.addEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+        window.addEventListener('sound_settings_changed', handleSoundChange);
         window.addEventListener('storage', handleStorageChange);
 
         // Handle fullscreen changes
@@ -106,10 +106,21 @@ export default function HostLobbyPage(): React.JSX.Element {
         };
         document.addEventListener('mousedown', handleClickOutside);
 
+        // Re-sync when page becomes visible
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                console.log('Tab became visible, triggers re-sync...');
+                // We'll rely on the manual fetch function
+                window.dispatchEvent(new CustomEvent('revalidate_participants'));
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
             document.removeEventListener('mousedown', handleClickOutside);
-            window.removeEventListener('cosmicquest_sound_settings_changed', handleSoundChange);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('sound_settings_changed', handleSoundChange);
             window.removeEventListener('storage', handleStorageChange);
         };
     }, [roomCode]);
@@ -196,10 +207,19 @@ export default function HostLobbyPage(): React.JSX.Element {
 
         fetchSessionAndParticipants();
 
+        // Listen for manual revalidation events
+        const handleRevalidate = () => fetchSessionAndParticipants();
+        window.addEventListener('revalidate_participants', handleRevalidate);
+
+        // Fallback Polling every 10 seconds
+        const pollInterval = setInterval(fetchSessionAndParticipants, 10000);
+
         return () => {
             if (sessionSubscription) {
                 supabaseGame.removeChannel(sessionSubscription);
             }
+            window.removeEventListener('revalidate_participants', handleRevalidate);
+            clearInterval(pollInterval);
         };
     }, [roomCode, router, hideLoading]);
 
@@ -415,10 +435,15 @@ export default function HostLobbyPage(): React.JSX.Element {
     const toggleSound = () => {
         const newValue = !soundEnabled;
         setSoundEnabled(newValue);
-        localStorage.setItem('cosmicquest_bgm_enabled', String(newValue));
-        // Dispatch event for BackgroundMusic component
-        window.dispatchEvent(new CustomEvent('cosmicquest_sound_settings_changed', {
+        localStorage.setItem('bgm_enabled', String(newValue));
+        localStorage.setItem('sfx_enabled', String(newValue));
+        
+        // Dispatch event for BackgroundMusic and ClientLayout components
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
             detail: { type: 'bgm', enabled: newValue }
+        }));
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
+            detail: { type: 'sfx', enabled: newValue }
         }));
     };
 

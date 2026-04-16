@@ -165,6 +165,161 @@ let enemyBullets: Bullet[] = [];
 let bossRocket: BossRocket | null = null;
 let powerUps: PowerUp[] = [];
 let isGameRunning: boolean = false;
+let isLoadingAssets: boolean = false;
+const imageCache: Map<string, HTMLImageElement> = new Map();
+
+// ============ PHASED PRELOAD SYSTEM ============
+// Assets are split into 3 phases to spread download across pages:
+// Phase 1 (waiting room): backgrounds, meteor, smoke — biggest files
+// Phase 2 (quiz page): enemies, bullets, boss, decorations
+// Phase 3 (game page): player spaceship + audio
+
+let _phase1Done = false;
+let _phase1Running = false;
+let _phase2Done = false;
+let _phase2Running = false;
+let _phase3Done = false;
+let _phase3Running = false;
+
+const PHASE1_URLS = [
+    '/assets/images/backgrounds/background_5.jpg',
+    '/assets/images/backgrounds/background_1.jpg',
+    '/assets/images/backgrounds/background_4.jpg',
+    '/assets/images/backgrounds/background_2.jpg',
+    '/assets/images/backgrounds/background_3.png',
+    '/assets/images/hiasan/meteor.webp',
+    '/assets/Smoke Texture.png',
+];
+
+const PHASE2_URLS = [
+    '/assets/roket_musuh.png',
+    '/assets/var_enemy1.png',
+    '/assets/var_enemy2.png',
+    '/assets/var_enemy4.png',
+    '/assets/var_enemy5.png',
+    '/assets/images/enemy/enemy-sniper.webp',
+    '/assets/images/enemy/enemy-spiral.webp',
+    '/assets/bullet_16.png',
+    '/assets/explosion02.png',
+    '/assets/fire_ring.png',
+    '/assets/bullet_25.png',
+    '/assets/bullet_73_5.png',
+    '/assets/bullet_68.png',
+    '/assets/bos.png',
+    '/assets/images/enemy/anakan-bos.webp',
+    '/assets/bullet_4_2_0.png',
+    '/assets/laser_6.png',
+    '/assets/images/hiasan/upweapon.webp',
+    '/assets/images/hiasan/love.webp',
+    '/assets/bullet_1_1_4.png',
+    '/assets/bullet_2_3_2.png',
+    '/assets/images/peluru/orange.webp',
+    '/assets/images/hiasan/dec_dmg.webp',
+    '/assets/var_enemy3.png',
+    '/assets/images/hiasan/batu.webp',
+];
+
+/** Helper: preload a list of image URLs in chunks */
+async function preloadImageChunks(urls: string[], chunkSize: number = 5): Promise<void> {
+    for (let i = 0; i < urls.length; i += chunkSize) {
+        const chunk = urls.slice(i, i + chunkSize);
+        const promises = chunk.map(url => new Promise<void>((resolve) => {
+            if (imageCache.has(url)) {
+                resolve();
+                return;
+            }
+            const img = new Image();
+            img.onload = () => {
+                imageCache.set(url, img);
+                resolve();
+            };
+            img.onerror = () => {
+                console.warn(`[Preload] Failed to load: ${url}`);
+                resolve(); // Don't block on failed images
+            };
+            img.src = url;
+        }));
+        await Promise.all(promises);
+    }
+}
+
+/**
+ * Phase 1: Background images, meteor, smoke texture.
+ * Call from waiting room page for early download of largest assets.
+ * Idempotent — safe to call multiple times.
+ */
+export async function preloadPhase1(): Promise<void> {
+    if (_phase1Done || _phase1Running) return;
+    _phase1Running = true;
+    console.log('[Preload] Phase 1 starting (backgrounds)...');
+    await preloadImageChunks(PHASE1_URLS);
+    _phase1Done = true;
+    _phase1Running = false;
+    console.log('[Preload] Phase 1 complete');
+}
+
+/**
+ * Phase 2: Enemy images, bullet images, boss, decorations.
+ * Call from quiz page. Also triggers Phase 1 as fallback.
+ * Idempotent — safe to call multiple times.
+ */
+export async function preloadPhase2(): Promise<void> {
+    if (_phase2Done || _phase2Running) return;
+    // Ensure Phase 1 is done first (fallback if player skipped waiting room)
+    if (!_phase1Done && !_phase1Running) {
+        await preloadPhase1();
+    }
+    _phase2Running = true;
+    console.log('[Preload] Phase 2 starting (enemies/bullets)...');
+    await preloadImageChunks(PHASE2_URLS);
+    _phase2Done = true;
+    _phase2Running = false;
+    console.log('[Preload] Phase 2 complete');
+}
+
+/**
+ * Phase 3: Player spaceship + audio.
+ * Call from game page right before starting the game.
+ * Triggers Phase 1+2 as fallback if not yet done.
+ */
+export async function preloadPhase3(spaceshipImageUrl: string): Promise<void> {
+    if (_phase3Done || _phase3Running) return;
+    // Ensure earlier phases started
+    if (!_phase1Done && !_phase1Running) preloadPhase1();
+    if (!_phase2Done && !_phase2Running) preloadPhase2();
+    _phase3Running = true;
+    console.log('[Preload] Phase 3 starting (spaceship + audio)...');
+    // Load spaceship image
+    await preloadImageChunks([spaceshipImageUrl]);
+    // Load audio
+    await audioManager.resumeContext();
+    await audioManager.loadSounds();
+    _phase3Done = true;
+    _phase3Running = false;
+    console.log('[Preload] Phase 3 complete');
+    // Wait for any still-running earlier phases
+    while (_phase1Running || _phase2Running) {
+        await new Promise(r => setTimeout(r, 50));
+    }
+}
+
+/** Check if all preload phases are complete */
+export function isAllPreloaded(): boolean {
+    return _phase1Done && _phase2Done && _phase3Done;
+}
+
+function getCachedImage(src: string): HTMLImageElement {
+    let img = imageCache.get(src);
+    if (!img) {
+        img = new Image();
+        img.src = src;
+        imageCache.set(src, img);
+    }
+    return img;
+}
+
+let dtMultiplier: number = 1;
+let lastTimeObj: number = 0;
 let gameLoop: ReturnType<typeof requestAnimationFrame> | null = null;
 let playerSpaceship: Spaceship | null = null;
 let handleStateChange: StateChangeCallback | null = null;
@@ -396,6 +551,7 @@ let bulletLaserImage: HTMLImageElement | null = null;    // bullet_68.png
 
 // Boss rocket image
 let bossRocketImage: HTMLImageElement | null = null;
+let bossMinionImage: HTMLImageElement | null = null; // anakan-bos.webp
 let bossBulletImage: HTMLImageElement | null = null; // bullet_4_2_0.png
 let laserBeamImage: HTMLImageElement | null = null; // laser_6.png
 let weaponPowerUpImage: HTMLImageElement | null = null;
@@ -536,7 +692,7 @@ type SoundType = 'spread' | 'laserBiru' | 'laserMagnet' | 'bossLaser' | 'destroy
 
 class AudioManager {
     private audioContext: AudioContext | null = null;
-    private isMuted: boolean = false;
+    private isMuted: boolean = true;
     private audioBuffers: Map<string, AudioBuffer> = new Map();
     private activeSources: AudioBufferSourceNode[] = [];
     private bgmSource: AudioBufferSourceNode | null = null;
@@ -551,19 +707,55 @@ class AudioManager {
             this.masterGain = this.audioContext.createGain();
             this.masterGain.connect(this.audioContext.destination);
             
-            // Load saved volume
-            const savedVolume = localStorage.getItem('cosmicquest_master_volume');
+            // Unify with global sound settings
+            const savedBgm = localStorage.getItem('bgm_enabled');
+            const savedSfx = localStorage.getItem('sfx_enabled');
+            
+            // If either is true, we consider sound enabled, but we follow the "unified" approach
+            this.isMuted = savedBgm === 'false' || (savedBgm === null && savedSfx === 'false');
+            
+            // To be more robust: explicitly OFF if either says false, default OFF
+            if (savedBgm === null && savedSfx === null) {
+                this.isMuted = true; // Default OFF
+            } else {
+                this.isMuted = savedBgm !== 'true';
+            }
+
+            const savedVolume = localStorage.getItem('master_volume');
             if (savedVolume !== null) {
                 this.masterVolume = parseFloat(savedVolume);
             }
             
-            // Load saved mute state
-            const savedMute = localStorage.getItem('cosmicquest_muted');
-            if (savedMute !== null) {
-                this.isMuted = savedMute === 'true';
+            if (this.masterGain) {
+                this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
             }
-            
-            this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
+
+            // Sync with global events
+            const updateMuteState = (enabled: boolean) => {
+                this.isMuted = !enabled;
+                if (this.masterGain) {
+                    this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
+                }
+                
+                if (this.isMuted) {
+                    this.stopBGM();
+                    this.stopAllSounds();
+                } else if (!this.bgmSource && isGameRunning) {
+                    this.startBGM(0.5);
+                }
+            };
+
+            window.addEventListener('sound_settings_changed', (e: any) => {
+                // Since they are unified, we can react to either
+                updateMuteState(e.detail.enabled);
+            });
+
+            window.addEventListener('storage', (e: StorageEvent) => {
+                if (e.key === 'bgm_enabled' || e.key === 'sfx_enabled') {
+                    updateMuteState(e.newValue === 'true');
+                }
+            });
+
         } catch (e) {
             console.log('Audio context not available');
         }
@@ -698,11 +890,22 @@ class AudioManager {
 
     toggleMute(): boolean {
         this.isMuted = !this.isMuted;
-        localStorage.setItem('cosmicquest_muted', this.isMuted.toString());
+        const newValue = !this.isMuted;
+        
+        localStorage.setItem('bgm_enabled', newValue.toString());
+        localStorage.setItem('sfx_enabled', newValue.toString());
 
         if (this.masterGain) {
             this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
         }
+
+        // Notify other components
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', { 
+            detail: { type: 'bgm', enabled: newValue }
+        }));
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', { 
+            detail: { type: 'sfx', enabled: newValue }
+        }));
 
         // Start BGM if unmuting and not already playing
         if (!this.isMuted && !this.bgmSource) {
@@ -717,15 +920,17 @@ class AudioManager {
 
     setMasterVolume(volume: number): void {
         this.masterVolume = Math.max(0, Math.min(1, volume)); // clamp 0-1
-        localStorage.setItem('cosmicquest_master_volume', this.masterVolume.toString());
+        localStorage.setItem('master_volume', this.masterVolume.toString());
         
         // Auto-mute at 0, auto-unmute above 0
         if (this.masterVolume === 0) {
             this.isMuted = true;
-            localStorage.setItem('cosmicquest_muted', 'true');
+            localStorage.setItem('bgm_enabled', 'false');
+            localStorage.setItem('sfx_enabled', 'false');
         } else if (this.isMuted && this.masterVolume > 0) {
             this.isMuted = false;
-            localStorage.setItem('cosmicquest_muted', 'false');
+            localStorage.setItem('bgm_enabled', 'true');
+            localStorage.setItem('sfx_enabled', 'true');
         }
         
         // Apply volume to masterGain
@@ -963,9 +1168,12 @@ export function startMiniGame(
         isEliminated: false
     };
 
+    // All assets should be pre-cached by phased preload (phases 1-3).
+    // getCachedImage() returns instantly from imageCache.
+    // No async loading needed here — game starts immediately.
+
     // Load meteor image
-    meteorImage = new Image();
-    meteorImage.src = '/assets/images/hiasan/meteor.webp';
+    meteorImage = getCachedImage('/assets/images/hiasan/meteor.webp');
 
     // Randomly select between 3 background modes
     const bgRand = Math.floor(Math.random() * 3);
@@ -975,29 +1183,23 @@ export function startMiniGame(
         currentBgMode = 'starfield';
         const src = '/assets/images/backgrounds/background_5.jpg';
         for (let i = 0; i < 4; i++) {
-            const img = new Image();
-            img.src = src;
-            backgroundImages.push(img);
+            backgroundImages.push(getCachedImage(src));
         }
         bgPanelY = [0, -canvas.height, -canvas.height * 2, -canvas.height * 3];
     } else if (bgRand === 1) {
         currentBgMode = 'rocket_seq';
         const sources = ['/assets/images/backgrounds/background_1.jpg', '/assets/images/backgrounds/background_4.jpg', '/assets/images/backgrounds/background_2.jpg'];
         for (const src of sources) {
-            const img = new Image();
-            img.src = src;
-            backgroundImages.push(img);
+            backgroundImages.push(getCachedImage(src));
         }
         bgPanelY = [0, -canvas.height, -canvas.height * 2];
     } else {
         currentBgMode = 'portrait_scene';
         const src = '/assets/images/backgrounds/background_3.png';
         for (let i = 0; i < 4; i++) {
-            const img = new Image();
-            img.src = src;
-            backgroundImages.push(img);
+            backgroundImages.push(getCachedImage(src));
         }
-        bgPanelY = [0, -canvas.height, -canvas.height * 2, -canvas.height * 3]; // Initial guess, drawBackground will adjust
+        bgPanelY = [0, -canvas.height, -canvas.height * 2, -canvas.height * 3];
     }
 
     // Set difficulty-based scroll speed
@@ -1005,14 +1207,12 @@ export function startMiniGame(
     backgroundScrollSpeed = scrollSpeeds[difficulty];
 
     // Load smoke texture
-    smokeImage = new Image();
-    smokeImage.src = '/assets/Smoke Texture.png';
+    smokeImage = getCachedImage('/assets/Smoke Texture.png');
     smokeParticles = [];
     lastSmokeSpawnTime = 0;
 
     // Load enemy rocket images
-    enemyRocketImage = new Image();
-    enemyRocketImage.src = '/assets/roket_musuh.png';
+    enemyRocketImage = getCachedImage('/assets/roket_musuh.png');
 
     // Load 4 variants for Basic Enemy
     enemyBasicImages = [];
@@ -1023,67 +1223,45 @@ export function startMiniGame(
         '/assets/var_enemy5.png'
     ];
     for (const src of basicSources) {
-        const img = new Image();
-        img.src = src;
-        enemyBasicImages.push(img);
+        enemyBasicImages.push(getCachedImage(src));
     }
 
-    enemySniperImage = new Image();
-    enemySniperImage.src = '/assets/images/enemy/enemy-sniper.webp'; // New Sniper Asset
-    enemySpinnerImage = new Image();
-    enemySpinnerImage.src = '/assets/images/enemy/enemy-spiral.webp'; // New Spinner (Squadron) Asset
+    enemySniperImage = getCachedImage('/assets/images/enemy/enemy-sniper.webp');
+    enemySpinnerImage = getCachedImage('/assets/images/enemy/enemy-spiral.webp');
 
     // Load explosion image
-    explosionImage = new Image();
-    explosionImage.src = '/assets/bullet_16.png';
+    explosionImage = getCachedImage('/assets/bullet_16.png');
     explosionParticles = [];
 
     // Load boss death visuals
-    bossExplosionImage = new Image();
-    bossExplosionImage.src = '/assets/explosion02.png';
-    fireRingImage = new Image();
-    fireRingImage.src = '/assets/fire_ring.png';
+    bossExplosionImage = getCachedImage('/assets/explosion02.png');
+    fireRingImage = getCachedImage('/assets/fire_ring.png');
     bossDeathEffect = { active: false, startTime: 0, x: 0, y: 0 };
 
     // Load bullet images
-    bulletSpreadImage = new Image();
-    bulletSpreadImage.src = '/assets/bullet_25.png';
-    bulletMagneticImage = new Image();
-    bulletMagneticImage.src = '/assets/bullet_73_5.png';
-    bulletLaserImage = new Image();
-    bulletLaserImage.src = '/assets/bullet_68.png';
+    bulletSpreadImage = getCachedImage('/assets/bullet_25.png');
+    bulletMagneticImage = getCachedImage('/assets/bullet_73_5.png');
+    bulletLaserImage = getCachedImage('/assets/bullet_68.png');
 
     // Load boss rocket image
-    bossRocketImage = new Image();
-    bossRocketImage.src = '/assets/bos.png';
-    bossBulletImage = new Image();
-    bossBulletImage.src = '/assets/bullet_4_2_0.png';
-    laserBeamImage = new Image();
-    laserBeamImage.src = '/assets/laser_6.png';
-    weaponPowerUpImage = new Image();
-    weaponPowerUpImage.src = '/assets/images/hiasan/upweapon.webp';
-    loveImage = new Image();
-    loveImage.src = '/assets/images/hiasan/love.webp';
-    // barHpImage removed - file doesn't exist and is not used in any drawImage call
-    stationBulletImage = new Image();
-    stationBulletImage.src = '/assets/bullet_1_1_4.png';
-    enemySniperBulletImage = new Image();
-    enemySniperBulletImage.src = '/assets/bullet_2_3_2.png';
-    enemySpinnerBulletImage = new Image();
-    enemySpinnerBulletImage.src = '/assets/images/peluru/orange.webp';
+    bossRocketImage = getCachedImage('/assets/bos.png');
+    bossMinionImage = getCachedImage('/assets/images/enemy/anakan-bos.webp');
+    bossBulletImage = getCachedImage('/assets/bullet_4_2_0.png');
+    laserBeamImage = getCachedImage('/assets/laser_6.png');
+    weaponPowerUpImage = getCachedImage('/assets/images/hiasan/upweapon.webp');
+    loveImage = getCachedImage('/assets/images/hiasan/love.webp');
+    stationBulletImage = getCachedImage('/assets/bullet_1_1_4.png');
+    enemySniperBulletImage = getCachedImage('/assets/bullet_2_3_2.png');
+    enemySpinnerBulletImage = getCachedImage('/assets/images/peluru/orange.webp');
 
     // musuh hiasan
-    spaceStation1Image = new Image();
-    spaceStation1Image.src = '/assets/images/hiasan/dec_dmg.webp';
-    spaceStation2Image = new Image();
-    spaceStation2Image.src = '/assets/var_enemy3.png';
-    rockImage = new Image();
-    rockImage.src = '/assets/images/hiasan/batu.webp';
+    spaceStation1Image = getCachedImage('/assets/images/hiasan/dec_dmg.webp');
+    spaceStation2Image = getCachedImage('/assets/var_enemy3.png');
+    rockImage = getCachedImage('/assets/images/hiasan/batu.webp');
     initScrollingDecors(canvas);
 
     // Load spaceship image
-    const spaceshipImg = new Image();
-    spaceshipImg.src = spaceship.image;
+    const spaceshipImg = getCachedImage(spaceship.image);
     const playerSpeeds: Record<string, number> = { easy: 3, medium: 3, hard: 3 };
 
     // Initialize player at bottom center (no HP with base weapon)
@@ -1096,7 +1274,7 @@ export function startMiniGame(
         image: spaceshipImg,
         dx: 0,
         dy: 0,
-        hp: 0, // No HP with base weapon (invincible)
+        hp: 0,
         maxHp: 0,
         tilt: 0,
         hitFlash: 0,
@@ -1116,23 +1294,18 @@ export function startMiniGame(
     // Update UI
     updateUI();
 
-    // Setup controls
+    // Setup controls and resize handler
     setupControls();
-
-    // Setup resize handler
     resizeHandler = handleResize;
     window.addEventListener('resize', resizeHandler);
 
-    // Load sounds and start BGM - resume AudioContext first (user already clicked to start game)
-    audioManager.resumeContext().then(() => {
-        return audioManager.loadSounds();
-    }).then(() => {
-        audioManager.startBGM(0.5);
-    });
-
-    // Start game loop
+    // Start BGM and game loop immediately
+    audioManager.startBGM(0.5);
+    gameStartTime = Date.now();
     gameLoop = requestAnimationFrame(update);
 }
+
+
 
 
 
@@ -1141,13 +1314,33 @@ let isVolumeSliderOpen = false;
 let isDraggingVolume = false;
 let volumeChangedWhileOpen = false; // Track if volume was changed while slider was open
 
+/**
+ * Common metrics for the mute button and volume slider.
+ * Ensures hit detection and drawing match perfectly.
+ */
+function getMuteButtonMetrics() {
+    // Gunakan isMobile global untuk konsistensi deteksi di semua bagian game
+    const currentIsMobile = isMobile || (canvas ? canvas.width < 768 : false);
+    const btnRadius = 22; // Ukuran dikembalikan ke awal sesuai permintaan
+    
+    // paddingX diatur kecil (25px) agar tetap di pojok (corner)
+    const paddingX = 18; 
+    // paddingY ditingkatkan di mobile (85px) agar naik ke atas menghindari nav bar HP
+    const paddingY = currentIsMobile ? 70 : 25; 
+    
+    return {
+        radius: btnRadius,
+        paddingX: paddingX,
+        paddingY: paddingY,
+        x: canvas ? canvas.width - btnRadius - paddingX : 0,
+        y: canvas ? canvas.height - btnRadius - paddingY : 0
+    };
+}
+
 function drawMuteButton(): void {
     if (!ctx || !canvas) return;
 
-    const btnRadius = 22;
-    const padding = 25;
-    const btnX = canvas.width - btnRadius - padding;
-    const btnY = canvas.height - btnRadius - padding;
+    const { radius: btnRadius, x: btnX, y: btnY } = getMuteButtonMetrics();
 
     const isMuted = audioManager.getMuted();
     const currentVol = audioManager.getMasterVolume();
@@ -1277,10 +1470,7 @@ function setupControls(): void {
     const handleDragVolume = (clickX: number, clickY: number): boolean => {
         if (!isVolumeSliderOpen || !canvas) return false;
         
-        const btnRadius = 22;
-        const padding = 25;
-        const btnX = canvas.width - btnRadius - padding;
-        const btnY = canvas.height - btnRadius - padding;
+        const { radius: btnRadius, x: btnX, y: btnY } = getMuteButtonMetrics();
         
         const sliderWidth = 12;
         const sliderHeight = 100;
@@ -1342,10 +1532,7 @@ function setupControls(): void {
         const clickX = e.clientX - rect.left;
         const clickY = e.clientY - rect.top;
 
-        const btnRadius = 22;
-        const padding = 25;
-        const btnX = canvas.width - btnRadius - padding;
-        const btnY = canvas.height - btnRadius - padding;
+        const { radius: btnRadius, x: btnX, y: btnY } = getMuteButtonMetrics();
 
         // Check Mute Button Click First
         if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 5) {
@@ -1392,10 +1579,7 @@ function setupControls(): void {
             const clickX = e.touches[0].clientX - rect.left;
             const clickY = e.touches[0].clientY - rect.top;
 
-            const btnRadius = 22;
-            const padding = 25;
-            const btnX = canvas.width - btnRadius - padding;
-            const btnY = canvas.height - btnRadius - padding;
+            const { radius: btnRadius, x: btnX, y: btnY } = getMuteButtonMetrics();
 
             if (Math.hypot(clickX - btnX, clickY - btnY) < btnRadius + 10) {
                 if (isVolumeSliderOpen) {
@@ -1443,9 +1627,14 @@ function setupControls(): void {
 // ============ GAME LOOP ============
 
 function update(): void {
-    if (!isGameRunning || !ctx || !canvas || !player || !difficultyConfig) {
+    if (!isGameRunning || !ctx || !canvas || !difficultyConfig) {
         return;
     }
+
+
+
+
+    if (!player) return;
 
     // CRITICAL: Clear the canvas area for the next frame.
     // We reset the transform to identity to ensure we fill the ENTIRE canvas area
@@ -1475,21 +1664,21 @@ function update(): void {
 
     // Handle keyboard movement
     if (keys['arrowleft'] || keys['a']) {
-        targetX = Math.max(player.width / 2, targetX - player.speed);
+        targetX = Math.max(player.width / 2, targetX - player.speed * dtMultiplier);
     }
     if (keys['arrowright'] || keys['d']) {
-        targetX = Math.min(canvas.width - player.width / 2, targetX + player.speed);
+        targetX = Math.min(canvas.width - player.width / 2, targetX + player.speed * dtMultiplier);
     }
     if (keys['arrowup'] || keys['w']) {
-        targetY = Math.max(player.height / 2, targetY - player.speed);
+        targetY = Math.max(player.height / 2, targetY - player.speed * dtMultiplier);
     }
     if (keys['arrowdown'] || keys['s']) {
-        targetY = Math.min(canvas.height - player.height / 2, targetY + player.speed);
+        targetY = Math.min(canvas.height - player.height / 2, targetY + player.speed * dtMultiplier);
     }
 
     // Smooth follow movement
-    player.x += (targetX - player.x) * LERP_SPEED;
-    player.y += (targetY - player.y) * LERP_SPEED;
+    player.x += (targetX - player.x) * LERP_SPEED * dtMultiplier;
+    player.y += (targetY - player.y) * LERP_SPEED * dtMultiplier;
 
     // Calculate swing/tilt animation
     const moveDirection = player.x - lastPlayerX;
@@ -1511,8 +1700,10 @@ function update(): void {
     updatePowerUps();
 
     // Firing - bullets go STRAIGHT UP
-    // Can only fire if NOT immune
-    if (hasWeapon && weaponConfig && isFiring && !isImmune && now - lastFireTime >= weaponConfig.fireRate) {
+    // Can only fire if NOT immune. Respects isAutoFire from weapon config if present.
+    const canFire = hasWeapon && weaponConfig && (weaponConfig.isAutoFire || isFiring) && !isImmune;
+    
+    if (canFire && now - lastFireTime >= (weaponConfig?.fireRate || 200)) {
         fireBullets();
         lastFireTime = now;
     }
@@ -1679,7 +1870,7 @@ function updateBoosterDecors(): void {
     if (!canvas) return;
 
     for (const booster of boosterDecors) {
-        booster.y += backgroundScrollSpeed * 0.8;
+        booster.y += backgroundScrollSpeed * 0.8 * dtMultiplier;
         booster.rotation += booster.rotationSpeed;
 
         // Reset to top when scrolled past bottom
@@ -1794,7 +1985,7 @@ function updateScrollingDecors(): void {
         if (decor.hitFlash && decor.hitFlash > 0) decor.hitFlash -= 0.1;
 
         // Base scrolling
-        decor.y += backgroundScrollSpeed * 0.6;
+        decor.y += backgroundScrollSpeed * 0.6 * dtMultiplier;
         decor.rotation += decor.rotationSpeed;
 
         // Death Logic
@@ -1816,8 +2007,8 @@ function updateScrollingDecors(): void {
             const dy = player.y - decor.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist > 0) {
-                decor.x += (dx / dist) * chaseSpeed;
-                decor.y += (dy / dist) * chaseSpeed;
+                decor.x += (dx / dist) * chaseSpeed * dtMultiplier;
+                decor.y += (dy / dist) * chaseSpeed * dtMultiplier;
             }
 
             // Check Collision
@@ -1925,8 +2116,8 @@ function updateSmokeParticles(): void {
     for (let i = smokeParticles.length - 1; i >= 0; i--) {
         const particle = smokeParticles[i];
 
-        particle.x += particle.vx;
-        particle.y += particle.vy;
+        particle.x += particle.vx * dtMultiplier;
+        particle.y += particle.vy * dtMultiplier;
         particle.alpha -= 0.015;
         particle.scale += 0.008;
 
@@ -2442,7 +2633,7 @@ function updateBossRocket(now: number): void {
     const bobAmount = bossRocket.phase === 3 ? Math.sin(now / 300) * 5 : 0;
 
     if (bossRocket.y < targetY) {
-        bossRocket.y += bossRocket.speed;
+        bossRocket.y += bossRocket.speed * dtMultiplier;
     } else {
         bossRocket.y = targetY + bobAmount;
 
@@ -2464,9 +2655,9 @@ function updateBossRocket(now: number): void {
 
         if (Math.abs(bossRocket.x - playerCenterX) > 5) {
             if (bossRocket.x < playerCenterX) {
-                bossRocket.x += bossFollowSpeed;
+                bossRocket.x += bossFollowSpeed * dtMultiplier;
             } else {
-                bossRocket.x -= bossFollowSpeed;
+                bossRocket.x -= bossFollowSpeed * dtMultiplier;
             }
         }
 
@@ -2742,9 +2933,10 @@ function drawBossRocket(): void {
     if (bossRocket.phase === 2) {
         for (const minion of bossRocket.minions) {
             // Draw minion (No connection line)
+            let mImg = bossMinionImage || enemyRocketImage;
 
-            if (enemyRocketImage && enemyRocketImage.complete) {
-                ctx.drawImage(enemyRocketImage, minion.x - minion.width / 2, minion.y - minion.height / 2, minion.width, minion.height);
+            if (mImg && mImg.complete) {
+                ctx.drawImage(mImg, minion.x - minion.width / 2, minion.y - minion.height / 2, minion.width, minion.height);
             } else {
                 ctx.fillStyle = '#aa3333';
                 ctx.fillRect(minion.x - minion.width / 2, minion.y - minion.height / 2, minion.width, minion.height);
@@ -2940,7 +3132,7 @@ function updateMovingAsteroids(): void {
         const asteroid = movingAsteroids[i];
 
         // Simple straight-down movement
-        asteroid.y += asteroid.speed;
+        asteroid.y += asteroid.speed * dtMultiplier;
         asteroid.rotation += asteroid.rotationSpeed;
         if (asteroid.hitFlash > 0) asteroid.hitFlash--;
 
@@ -3237,7 +3429,7 @@ function updateEnemyRockets(now: number): void {
             if (enemy.state === 'moving') {
                 // Move down to target Y
                 if (enemy.y < (enemy.targetY || 200)) {
-                    enemy.y += enemy.speed;
+                    enemy.y += enemy.speed * dtMultiplier;
                 } else {
                     enemy.state = 'aiming';
                     enemy.stateTimer = now + 1000; // Aim for 1s
@@ -3275,7 +3467,7 @@ function updateEnemyRockets(now: number): void {
 
             if (enemy.pathType.startsWith('sine')) {
                 // SINE WAVE: Move down, oscillate X
-                enemy.y += baseSpeed;
+                enemy.y += baseSpeed * dtMultiplier;;
 
                 const frequency = 0.005;
                 const amplitude = canvas.width * 0.25;
@@ -3290,13 +3482,13 @@ function updateEnemyRockets(now: number): void {
 
             } else if (enemy.pathType.startsWith('cross')) {
                 // CROSS: Move down + Move towards opposite side
-                enemy.y += baseSpeed;
+                enemy.y += baseSpeed * dtMultiplier;;
                 const crossSpeed = baseSpeed * 1.2;
 
                 if (enemy.pathType === 'cross_left') {
-                    enemy.x += crossSpeed; // Left -> Right
+                    enemy.x += crossSpeed * dtMultiplier; // Left -> Right
                 } else {
-                    enemy.x -= crossSpeed; // Right -> Left
+                    enemy.x -= crossSpeed * dtMultiplier; // Right -> Left
                 }
 
             } else if (enemy.pathType.startsWith('u_turn')) {
@@ -3305,19 +3497,19 @@ function updateEnemyRockets(now: number): void {
 
                 if (enemy.y < turnStartHeight && enemy.speedY >= 0) {
                     // Phase 1: Dive
-                    enemy.y += baseSpeed * 1.5;
+                    enemy.y += baseSpeed * 1.5 * dtMultiplier;
                     enemy.speedY = baseSpeed * 1.5; // Track speed
                 } else {
                     // Phase 2: Turn and Fly Up
                     // Simulating turn physics by modifying velocity
-                    enemy.speedY -= 0.15 * speedScale; // Accelerate upwards (gravity reverse)
-                    enemy.y += enemy.speedY; // Apply speed
+                    enemy.speedY -= 0.15 * speedScale * dtMultiplier; // Accelerate upwards (gravity reverse)
+                    enemy.y += enemy.speedY * dtMultiplier; // Apply speed
 
                     const turnOutSpeed = 2 * speedScale;
                     if (enemy.pathType === 'u_turn_left') {
-                        enemy.x -= turnOutSpeed; // Curve Left (Out)
+                        enemy.x -= turnOutSpeed * dtMultiplier; // Curve Left (Out)
                     } else {
-                        enemy.x += turnOutSpeed; // Curve Right (Out)
+                        enemy.x += turnOutSpeed * dtMultiplier; // Curve Right (Out)
                     }
                 }
             }
@@ -3349,8 +3541,8 @@ function updateEnemyRockets(now: number): void {
             const isHard = currentDifficulty === 'hard';
             const chaseSpeed = isHard ? 1.0 : 1.5;
             if (dist > 0) {
-                enemy.x += (dx / dist) * chaseSpeed;
-                enemy.y += (dy / dist) * chaseSpeed;
+                enemy.x += (dx / dist) * chaseSpeed * dtMultiplier;
+                enemy.y += (dy / dist) * chaseSpeed * dtMultiplier;
             }
 
             // Shoot at player
@@ -3500,11 +3692,11 @@ function updateEnemyBullets(): void {
 
         // Move STRAIGHT in the direction set at spawn (not homing)
         if (bullet.dirX !== undefined && bullet.dirY !== undefined) {
-            bullet.x += bullet.dirX * bullet.speed;
-            bullet.y += bullet.dirY * bullet.speed;
+            bullet.x += bullet.dirX * bullet.speed * dtMultiplier;
+            bullet.y += bullet.dirY * bullet.speed * dtMultiplier;
         } else {
             // Fallback: move straight down
-            bullet.y += bullet.speed;
+            bullet.y += bullet.speed * dtMultiplier;
         }
 
         // Check hit player
@@ -3751,7 +3943,7 @@ function updatePowerUps(): void {
         powerUp.rotation += 0.03;
 
         // Fall from top to bottom (natural drop)
-        powerUp.y += 3; // Fall speed
+        powerUp.y += 3 * dtMultiplier; // Fall speed
 
         const dist = Math.sqrt(
             Math.pow(player.x - powerUp.x, 2) +
@@ -4016,8 +4208,8 @@ function updateBullets(): void {
             // Apply movement based on current angle
             if (bullet.angle === undefined) bullet.angle = -Math.PI / 2;
 
-            bullet.x += Math.cos(bullet.angle) * bullet.speed;
-            bullet.y += Math.sin(bullet.angle) * bullet.speed;
+            bullet.x += Math.cos(bullet.angle) * bullet.speed * dtMultiplier;;
+            bullet.y += Math.sin(bullet.angle) * bullet.speed * dtMultiplier;;
 
             // Homing Logic
             let target: { x: number, y: number, hp: number } | null = bullet.targetAsteroid || null;
@@ -4068,9 +4260,9 @@ function updateBullets(): void {
                 }
             }
         } else {
-            bullet.y -= bullet.speed;
+            bullet.y -= bullet.speed * dtMultiplier;
             if (bullet.type === 'spread' && bullet.angle !== undefined) {
-                bullet.x += Math.sin(bullet.angle) * bullet.speed * 0.4;
+                bullet.x += Math.sin(bullet.angle) * bullet.speed * 0.4 * dtMultiplier;
             }
         }
 
@@ -4518,7 +4710,7 @@ function endGame(): void {
 
 export function cleanupMiniGame(): void {
     isGameRunning = false;
-
+    isLoadingAssets = false;
     // Stop all sounds
     audioManager.stopAllSounds();
 

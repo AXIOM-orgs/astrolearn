@@ -6,6 +6,7 @@ import { supabaseGame } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useGame } from "@/context/GameContext";
 import { X } from "lucide-react";
+import { spaceships } from "@/lib/data";
 
 // Error messages mapping
 const ERROR_MESSAGES = {
@@ -124,13 +125,23 @@ export default function AutoJoinPage() {
                     return;
                 }
 
+                // Randomize spacecraft
+                const randomShip = spaceships[Math.floor(Math.random() * spaceships.length)];
+                const spacecraftFilename = randomShip.image.split('/').pop() || '';
+
+                // Update participant's spacecraft in database
+                await supabaseGame
+                    .from('participants')
+                    .update({ spacecraft: spacecraftFilename })
+                    .eq('id', data.participant_id);
+
                 // Success! Save data and redirect to lobby
                 // Keep global loading visible during navigation!
-                localStorage.setItem("cosmicquest_player_name", data.nickname);
-                localStorage.setItem("cosmicquest_participant_id", data.participant_id);
-                localStorage.setItem("cosmicquest_joined_game_code", roomCode);
-                localStorage.setItem('cosmicquest_session_id', data.session_id);
-                localStorage.setItem('cosmicquest_spacecraft', data.spacecraft || '');
+                localStorage.setItem("player_name", data.nickname);
+                localStorage.setItem("participant_id", data.participant_id);
+                localStorage.setItem("joined_game_code", roomCode);
+                localStorage.setItem('session_id', data.session_id);
+                localStorage.setItem('spacecraft', spacecraftFilename);
                 localStorage.removeItem("pendingRoomCode");
 
                 // Navigate to waiting room (lobby)

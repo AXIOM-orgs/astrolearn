@@ -42,20 +42,17 @@ export default function JoinResultsPage(): React.JSX.Element {
     useEffect(() => {
         hideLoading();
     }, [hideLoading]);
-
-    // Main Logic: Fetch Session -> Fetch My Participant Data -> Calculate Rank (if finished)
+    
     useEffect(() => {
         const roomCode = params?.roomCode as string;
-
-        // Wait for auth to load.
         if (!roomCode || !user) return;
+
+        let channel: ReturnType<typeof supabaseGame.channel> | null = null;
 
         const fetchData = async () => {
             try {
                 setLoadingData(true);
-                console.log('Fetching result data for room:', roomCode);
 
-                // 1. Get Session Status & Details
                 const { data: sessionData, error: sessionError } = await supabaseGame
                     .from('sessions')
                     .select('id, status, question_limit')
@@ -63,44 +60,61 @@ export default function JoinResultsPage(): React.JSX.Element {
                     .maybeSingle();
 
                 if (sessionError || !sessionData) {
-                    console.error('Error fetching session:', sessionError);
                     setLoadingData(false);
                     return;
                 }
 
                 setTotalQuestions(sessionData.question_limit || 0);
-                const sessionId = sessionData.id;
-                setSessionId(sessionId);
+                const currentSessionId = sessionData.id;
+                setSessionId(currentSessionId);
 
-                // 2. Fetch My Participant Data from DB
+                // Fetch participant
                 let myData: ParticipantData | null = null;
-
                 if (profile?.id) {
-                    const userIdToMatch = profile?.id;
-                    const { data: pData, error: pError } = await supabaseGame
+                    const { data: pData } = await supabaseGame
                         .from('participants')
                         .select('id, score, duration, correct, nickname, user_id, spacecraft, eliminated')
-                        .eq('session_id', sessionId)
-                        .eq('user_id', userIdToMatch)
+                        .eq('session_id', currentSessionId)
+                        .eq('user_id', profile.id)
                         .maybeSingle();
 
-                    if (pData) {
-                        myData = pData;
-                    } else {
-                        console.warn('Participant not found for user_id:', userIdToMatch);
-                    }
+                    if (pData) myData = pData;
                 }
 
-                if (myData) {
-                    setMyStats(myData);
-                }
+                if (myData) setMyStats(myData);
 
-                // 3. Status & Rank Logic
-                const handleStatusChange = async (status: string) => {
+                const calculateRank = async (sid: string, participantId: string) => {
+                    const { data: participants, error: partError } = await supabaseGame
+                        .from('participants')
+                        .select('id, score, duration, eliminated, joined_at')
+                        .eq('session_id', sid);
+
+                    if (partError || !participants) return;
+
+                    const processed = participants.map(p => ({
+                        ...p,
+                        duration: p.duration ?? 999999
+                    }));
+
+                    const sorted = processed.sort((a, b) => {
+                        if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+                        if (b.score !== a.score) return b.score - a.score;
+                        if (a.duration !== b.duration) return a.duration - b.duration;
+                        const joinA = new Date(a.joined_at).getTime();
+                        const joinB = new Date(b.joined_at).getTime();
+                        if (joinA !== joinB) return joinA - joinB;
+                        return a.id.localeCompare(b.id);
+                    });
+
+                    const rankIndex = sorted.findIndex(p => p.id === participantId);
+                    if (rankIndex !== -1) setMyRank(rankIndex + 1);
+                };
+
+                const handleStatusChange = async (status: string, participantData: ParticipantData | null) => {
                     if (status === 'finished') {
                         setIsSessionFinished(true);
-                        if (sessionId && myData?.id) {
-                            await calculateRank(sessionId, myData.id);
+                        if (participantData?.id) {
+                            await calculateRank(currentSessionId, participantData.id);
                         }
                     } else {
                         setIsSessionFinished(false);
@@ -108,28 +122,37 @@ export default function JoinResultsPage(): React.JSX.Element {
                     }
                 };
 
-                await handleStatusChange(sessionData.status);
+                await handleStatusChange(sessionData.status, myData);
 
-                // Real-time subscription
-                const channel = supabaseGame.channel(`session_updates_${roomCode}`)
+                channel = supabaseGame.channel(`session_updates_${roomCode}`)
                     .on(
                         'postgres_changes',
                         {
                             event: 'UPDATE',
                             schema: 'public',
                             table: 'sessions',
-                            filter: `id=eq.${sessionId}`
+                            filter: `id=eq.${currentSessionId}`
                         },
                         async (payload) => {
                             const newStatus = (payload.new as any).status;
-                            await handleStatusChange(newStatus);
+                            // Re-fetch participant terbaru saat ada update
+                            let latestData = myData;
+                            if (profile?.id && !myData) {
+                                const { data: pData } = await supabaseGame
+                                    .from('participants')
+                                    .select('id, score, duration, correct, nickname, user_id, spacecraft, eliminated')
+                                    .eq('session_id', currentSessionId)
+                                    .eq('user_id', profile.id)
+                                    .maybeSingle();
+                                if (pData) {
+                                    latestData = pData;
+                                    setMyStats(pData);
+                                }
+                            }
+                            await handleStatusChange(newStatus, latestData);
                         }
                     )
                     .subscribe();
-
-                return () => {
-                    supabaseGame.removeChannel(channel);
-                };
 
             } catch (err) {
                 console.error('Error in fetchData:', err);
@@ -138,54 +161,17 @@ export default function JoinResultsPage(): React.JSX.Element {
             }
         };
 
-        // Helper to calculate rank
-        const calculateRank = async (sessionId: string, myParticipantId: string) => {
-            const { data: participants, error: partError } = await supabaseGame
-                .from('participants')
-                .select('id, score, duration, eliminated, joined_at')
-                .eq('session_id', sessionId);
-
-            if (partError || !participants) return;
-
-            // normalize data biar aman
-            const processed = participants.map(p => ({
-                ...p,
-                duration: p.duration ?? 999999
-            }));
-
-            // sorting rules sama persis kayak leaderboard host
-            const sorted = processed.sort((a, b) => {
-                // 1. Not eliminated first
-                if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
-
-                // 2. Higher score first
-                if (b.score !== a.score) return b.score - a.score;
-
-                // 3. Lower duration first
-                if (a.duration !== b.duration) return a.duration - b.duration;
-
-                // 4. Earlier joined first
-                const joinA = new Date(a.joined_at).getTime();
-                const joinB = new Date(b.joined_at).getTime();
-                if (joinA !== joinB) return joinA - joinB;
-
-                // 5. Final fallback biar gak random
-                return a.id.localeCompare(b.id);
-            });
-
-            const rankIndex = sorted.findIndex(p => p.id === myParticipantId);
-            if (rankIndex !== -1) {
-                setMyRank(rankIndex + 1);
-            }
-        };
-
         fetchData();
 
-    }, [params?.roomCode, user, profile, user?.id]);
+        return () => {
+            if (channel) supabaseGame.removeChannel(channel);
+        };
+
+    }, [params?.roomCode, user, profile]);
 
     const handleRestart = (): void => {
         clearCurrentPlayer();
-        localStorage.removeItem('cosmicquest_joined_game_code');
+        localStorage.removeItem('joined_game_code');
         resetGame();
         showLoading();
         setTimeout(() => {
