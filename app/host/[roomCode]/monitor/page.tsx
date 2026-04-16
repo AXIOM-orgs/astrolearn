@@ -98,7 +98,7 @@ export default function HostMonitorPage(): React.JSX.Element {
         setSoundEnabled(newValue);
         localStorage.setItem('bgm_enabled', String(newValue));
         localStorage.setItem('sfx_enabled', String(newValue));
-        
+
         window.dispatchEvent(new CustomEvent('sound_settings_changed', {
             detail: { type: 'bgm', enabled: newValue }
         }));
@@ -525,120 +525,120 @@ export default function HostMonitorPage(): React.JSX.Element {
                                 />
                             </Link>
                         </div>
-                <img
-                    src="/assets/logo.webp"
-                    alt="Gameforsmart Logo"
-                    className="header-logo"
-                />
-            </header>
+                        <img
+                            src="/assets/logo.webp"
+                            alt="Gameforsmart Logo"
+                            className="header-logo"
+                        />
+                    </header>
 
-            {/* Title */}
-            {/* <div className="monitor-title-section">
+                    {/* Title */}
+                    {/* <div className="monitor-title-section">
                 <h2 className="monitor-title">MONITOR</h2>
             </div> */}
 
-            {/* Monitor Info Bar */}
-            <div className={`monitor-info-bar ${isScrolled ? 'scrolled' : ''}`}>
-                <div className="info-item timer-central">
-                    <div className="timer-display">
-                        <span className={`timer-value ${timeRemaining <= 30 ? 'text-red-500 animate-pulse' : ''}`}>
-                            {formatTime(timeRemaining)}
-                        </span>
-                    </div>
-                </div>
+                    {/* Monitor Info Bar */}
+                    <div className={`monitor-info-bar ${isScrolled ? 'scrolled' : ''}`}>
+                        <div className="info-item timer-central">
+                            <div className="timer-display">
+                                <span className={`timer-value ${timeRemaining <= 30 ? 'text-red-500 animate-pulse' : ''}`}>
+                                    {formatTime(timeRemaining)}
+                                </span>
+                            </div>
+                        </div>
 
-                <div className="info-row-mobile">
-                    <div className="info-item completion-status">
-                        <Users />
-                        <span className="info-value">{participants.length}</span>
-                    </div>
+                        <div className="info-row-mobile">
+                            <div className="info-item completion-status">
+                                <Users />
+                                <span className="info-value">{participants.length}</span>
+                            </div>
 
-                    <div className="info-item actions">
-                        <button className="btn-red-3d" onClick={() => setIsEndConfirmOpen(true)}>
-                            <span>{t('endButton')}</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <EndGameConfirmationDialog
-                isOpen={isEndConfirmOpen}
-                onClose={() => setIsEndConfirmOpen(false)}
-                onConfirm={() => {
-                    setIsEndConfirmOpen(false);
-                    handleEndGame();
-                }}
-            />
-
-            {/* Player Progress Grid Wrapped in Panel */}
-            <div className="monitor-main-content">
-                <div className="monitor-panel">
-                    <div className="monitor-grid-container">
-                        <div className="progress-grid">
-                            {sortedPlayers.length === 0 ? (
-                                <div className="empty-state" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem' }}>
-                                    <p style={{ color: 'var(--text-secondary)' }}>{t('noPlayers')}</p>
-                                </div>
-                            ) : (
-                                <AnimatePresence>
-                                    {sortedPlayers.map((player) => {
-                                        const isActive = !player.isCompleted && player.questionsAnswered > 0;
-
-                                        return (
-                                            <motion.div
-                                                key={player.id}
-                                                layout
-                                                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                exit={{ opacity: 0, scale: 0.9 }}
-                                                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                                                whileHover={{ scale: 1 }}
-                                                className={`progress-card ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'completed' : '')} ${isActive ? 'animate-pulse-glow' : ''}`}
-                                            >
-                                                <div className="progress-card-header">
-                                                    <div className="progress-bar-container">
-                                                        <div
-                                                            className={`progress-bar-fill ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'complete' : '')}`}
-                                                            style={{ width: `${player.progress}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="progress-indicator">
-                                                        {player.questionsAnswered}/{totalQuestions}
-                                                    </span>
-                                                    {player.isEliminated ? (
-                                                        <div className="status-overlay">
-                                                            <X className="w-8 h-8 text-red-500" />
-                                                        </div>
-                                                    ) : player.isCompleted ? (
-                                                        <div className="status-overlay">
-                                                            <Check className="w-8 h-8 text-green-400" />
-                                                        </div>
-                                                    ) : null}
-                                                </div>
-                                                <div className="progress-card-body">
-                                                    {player.spacecraft ? (
-                                                        <div
-                                                            className={`rocket-sprite rocket-sm ${getSpacecraftSpriteClass(player.spacecraft)} ${!player.isCompleted && !player.isEliminated ? 'animate-float' : ''}`}
-                                                            role="img"
-                                                            aria-label="spacecraft"
-                                                        />
-                                                    ) : (
-                                                        <div className="progress-icon">🚀</div>
-                                                    )}
-                                                    <div className="progress-name-wrapper has-tooltip" data-tooltip={player.nickname}>
-                                                        <span className="progress-player-name">{player.nickname}</span>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        );
-                                    })}
-                                </AnimatePresence>
-                            )}
+                            <div className="info-item actions">
+                                <button className="btn-red-3d" onClick={() => setIsEndConfirmOpen(true)}>
+                                    <span>{t('endButton')}</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            </>
+
+                    <EndGameConfirmationDialog
+                        isOpen={isEndConfirmOpen}
+                        onClose={() => setIsEndConfirmOpen(false)}
+                        onConfirm={() => {
+                            setIsEndConfirmOpen(false);
+                            handleEndGame();
+                        }}
+                    />
+
+                    {/* Player Progress Grid Wrapped in Panel */}
+                    <div className="monitor-main-content">
+                        <div className="monitor-panel">
+                            <div className="monitor-grid-container">
+                                <div className="progress-grid">
+                                    {sortedPlayers.length === 0 ? (
+                                        <div className="empty-state" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem' }}>
+                                            <p style={{ color: 'var(--text-secondary)' }}>{t('noPlayers')}</p>
+                                        </div>
+                                    ) : (
+                                        <AnimatePresence>
+                                            {sortedPlayers.map((player) => {
+                                                const isActive = !player.isCompleted && player.questionsAnswered > 0;
+
+                                                return (
+                                                    <motion.div
+                                                        key={player.id}
+                                                        layout
+                                                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                        exit={{ opacity: 0, scale: 0.9 }}
+                                                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                                        whileHover={{ scale: 1 }}
+                                                        className={`progress-card ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'completed' : '')} ${isActive ? 'animate-pulse-glow' : ''}`}
+                                                    >
+                                                        <div className="progress-card-header">
+                                                            <div className="progress-bar-container">
+                                                                <div
+                                                                    className={`progress-bar-fill ${player.isEliminated ? 'eliminated' : (player.isCompleted ? 'complete' : '')}`}
+                                                                    style={{ width: `${player.progress}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="progress-indicator">
+                                                                {player.questionsAnswered}/{totalQuestions}
+                                                            </span>
+                                                            {player.isEliminated ? (
+                                                                <div className="status-overlay">
+                                                                    <X className="w-8 h-8 text-red-500" />
+                                                                </div>
+                                                            ) : player.isCompleted ? (
+                                                                <div className="status-overlay">
+                                                                    <Check className="w-8 h-8 text-green-400" />
+                                                                </div>
+                                                            ) : null}
+                                                        </div>
+                                                        <div className="progress-card-body">
+                                                            {player.spacecraft ? (
+                                                                <div
+                                                                    className={`rocket-sprite rocket-sm ${getSpacecraftSpriteClass(player.spacecraft)} ${!player.isCompleted && !player.isEliminated ? 'animate-float' : ''}`}
+                                                                    role="img"
+                                                                    aria-label="spacecraft"
+                                                                />
+                                                            ) : (
+                                                                <div className="progress-icon">🚀</div>
+                                                            )}
+                                                            <div className="progress-name-wrapper has-tooltip" data-tooltip={player.nickname}>
+                                                                <span className="progress-player-name">{player.nickname}</span>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })}
+                                        </AnimatePresence>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
             )}
 
             {/* Bottom Right Controls */}
@@ -653,7 +653,7 @@ export default function HostMonitorPage(): React.JSX.Element {
                     <VolumeX size={22} />
                 )}
             </button>
-            
+
             {!isInitialLoading && <FullscreenToggle />}
 
             {/* CSS tambahan untuk animasi yang diminta */}
