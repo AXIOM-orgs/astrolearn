@@ -11,6 +11,7 @@ import { CountdownOverlay } from '@/components/ui/CountdownOverlay';
 import { Spaceship, spaceships, getSpacecraftSpriteClass } from '@/lib/data';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
+import { preloadPhase1 } from '@/lib/miniGame';
 
 interface Participant {
     id: string;
@@ -69,6 +70,12 @@ export default function PlayerWaitingPage(): React.JSX.Element {
 
     const hasBootstrapped = useRef(false);
     const isRedirecting = useRef(false);
+
+    // Phase 1 Background Preload
+    useEffect(() => {
+        // Fire and forget (runs async in background without blocking UI)
+        preloadPhase1().catch(err => console.warn('Preload Phase 1 error:', err));
+    }, []);
 
     // Bootstrap: Fetch session & participants, setup realtime
     useEffect(() => {
