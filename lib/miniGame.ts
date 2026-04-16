@@ -165,6 +165,95 @@ let enemyBullets: Bullet[] = [];
 let bossRocket: BossRocket | null = null;
 let powerUps: PowerUp[] = [];
 let isGameRunning: boolean = false;
+let isLoadingAssets: boolean = false;
+let loadingProgress: number = 0;
+const imageCache: Map<string, HTMLImageElement> = new Map();
+
+const ALL_ASSET_URLS = [
+    '/assets/images/hiasan/meteor.webp',
+    '/assets/images/backgrounds/background_5.jpg',
+    '/assets/images/backgrounds/background_1.jpg',
+    '/assets/images/backgrounds/background_4.jpg',
+    '/assets/images/backgrounds/background_2.jpg',
+    '/assets/images/backgrounds/background_3.png',
+    '/assets/Smoke Texture.png',
+    '/assets/roket_musuh.png',
+    '/assets/var_enemy1.png',
+    '/assets/var_enemy2.png',
+    '/assets/var_enemy4.png',
+    '/assets/var_enemy5.png',
+    '/assets/images/enemy/enemy-sniper.webp',
+    '/assets/images/enemy/enemy-spiral.webp',
+    '/assets/bullet_16.png',
+    '/assets/explosion02.png',
+    '/assets/fire_ring.png',
+    '/assets/bullet_25.png',
+    '/assets/bullet_73_5.png',
+    '/assets/bullet_68.png',
+    '/assets/bos.png',
+    '/assets/images/enemy/anakan-bos.webp',
+    '/assets/bullet_4_2_0.png',
+    '/assets/laser_6.png',
+    '/assets/images/hiasan/upweapon.webp',
+    '/assets/images/hiasan/love.webp',
+    '/assets/bullet_1_1_4.png',
+    '/assets/bullet_2_3_2.png',
+    '/assets/images/peluru/orange.webp',
+    '/assets/images/hiasan/dec_dmg.webp',
+    '/assets/var_enemy3.png',
+    '/assets/images/hiasan/batu.webp'
+];
+
+async function preloadAssetsInChunks(spaceshipImageUrl: string): Promise<void> {
+    const urls = [...ALL_ASSET_URLS, spaceshipImageUrl];
+    const chunkSize = 5;
+    let loadedCount = 0;
+    const totalAssets = urls.length + 1; // +1 for audio sounds
+
+    for (let i = 0; i < urls.length; i += chunkSize) {
+        const chunk = urls.slice(i, i + chunkSize);
+        const promises = chunk.map(url => new Promise<void>((resolve) => {
+            if (imageCache.has(url)) {
+                loadedCount++;
+                loadingProgress = Math.floor((loadedCount / totalAssets) * 100);
+                resolve();
+                return;
+            }
+            const img = new Image();
+            img.onload = () => {
+                imageCache.set(url, img);
+                loadedCount++;
+                loadingProgress = Math.floor((loadedCount / totalAssets) * 100);
+                resolve();
+            };
+            img.onerror = () => {
+                console.warn(`Failed to load image: ${url}`);
+                loadedCount++;
+                loadingProgress = Math.floor((loadedCount / totalAssets) * 100);
+                resolve(); 
+            };
+            img.src = url;
+        }));
+        await Promise.all(promises);
+    }
+    
+    // Load sounds as the final chunk
+    await audioManager.resumeContext();
+    await audioManager.loadSounds();
+    loadedCount++;
+    loadingProgress = 100;
+}
+
+function getCachedImage(src: string): HTMLImageElement {
+    let img = imageCache.get(src);
+    if (!img) {
+        img = new Image();
+        img.src = src;
+        imageCache.set(src, img);
+    }
+    return img;
+}
+
 let dtMultiplier: number = 1;
 let lastTimeObj: number = 0;
 let gameLoop: ReturnType<typeof requestAnimationFrame> | null = null;
@@ -1015,178 +1104,151 @@ export function startMiniGame(
         isEliminated: false
     };
 
-    // Load meteor image
-    meteorImage = new Image();
-    meteorImage.src = '/assets/images/hiasan/meteor.webp';
-
-    // Randomly select between 3 background modes
-    const bgRand = Math.floor(Math.random() * 3);
-    backgroundImages = [];
-
-    if (bgRand === 0) {
-        currentBgMode = 'starfield';
-        const src = '/assets/images/backgrounds/background_5.jpg';
-        for (let i = 0; i < 4; i++) {
-            const img = new Image();
-            img.src = src;
-            backgroundImages.push(img);
-        }
-        bgPanelY = [0, -canvas.height, -canvas.height * 2, -canvas.height * 3];
-    } else if (bgRand === 1) {
-        currentBgMode = 'rocket_seq';
-        const sources = ['/assets/images/backgrounds/background_1.jpg', '/assets/images/backgrounds/background_4.jpg', '/assets/images/backgrounds/background_2.jpg'];
-        for (const src of sources) {
-            const img = new Image();
-            img.src = src;
-            backgroundImages.push(img);
-        }
-        bgPanelY = [0, -canvas.height, -canvas.height * 2];
-    } else {
-        currentBgMode = 'portrait_scene';
-        const src = '/assets/images/backgrounds/background_3.png';
-        for (let i = 0; i < 4; i++) {
-            const img = new Image();
-            img.src = src;
-            backgroundImages.push(img);
-        }
-        bgPanelY = [0, -canvas.height, -canvas.height * 2, -canvas.height * 3]; // Initial guess, drawBackground will adjust
-    }
-
-    // Set difficulty-based scroll speed
-    const scrollSpeeds = { easy: 3, medium: 3, hard: 3 };
-    backgroundScrollSpeed = scrollSpeeds[difficulty];
-
-    // Load smoke texture
-    smokeImage = new Image();
-    smokeImage.src = '/assets/Smoke Texture.png';
-    smokeParticles = [];
-    lastSmokeSpawnTime = 0;
-
-    // Load enemy rocket images
-    enemyRocketImage = new Image();
-    enemyRocketImage.src = '/assets/roket_musuh.png';
-
-    // Load 4 variants for Basic Enemy
-    enemyBasicImages = [];
-    const basicSources = [
-        '/assets/var_enemy1.png',
-        '/assets/var_enemy2.png',
-        '/assets/var_enemy4.png',
-        '/assets/var_enemy5.png'
-    ];
-    for (const src of basicSources) {
-        const img = new Image();
-        img.src = src;
-        enemyBasicImages.push(img);
-    }
-
-    enemySniperImage = new Image();
-    enemySniperImage.src = '/assets/images/enemy/enemy-sniper.webp'; // New Sniper Asset
-    enemySpinnerImage = new Image();
-    enemySpinnerImage.src = '/assets/images/enemy/enemy-spiral.webp'; // New Spinner (Squadron) Asset
-
-    // Load explosion image
-    explosionImage = new Image();
-    explosionImage.src = '/assets/bullet_16.png';
-    explosionParticles = [];
-
-    // Load boss death visuals
-    bossExplosionImage = new Image();
-    bossExplosionImage.src = '/assets/explosion02.png';
-    fireRingImage = new Image();
-    fireRingImage.src = '/assets/fire_ring.png';
-    bossDeathEffect = { active: false, startTime: 0, x: 0, y: 0 };
-
-    // Load bullet images
-    bulletSpreadImage = new Image();
-    bulletSpreadImage.src = '/assets/bullet_25.png';
-    bulletMagneticImage = new Image();
-    bulletMagneticImage.src = '/assets/bullet_73_5.png';
-    bulletLaserImage = new Image();
-    bulletLaserImage.src = '/assets/bullet_68.png';
-
-    // Load boss rocket image
-    bossRocketImage = new Image();
-    bossRocketImage.src = '/assets/bos.png';
-    bossMinionImage = new Image();
-    bossMinionImage.src = '/assets/images/enemy/anakan-bos.webp';
-    bossBulletImage = new Image();
-    bossBulletImage.src = '/assets/bullet_4_2_0.png';
-    laserBeamImage = new Image();
-    laserBeamImage.src = '/assets/laser_6.png';
-    weaponPowerUpImage = new Image();
-    weaponPowerUpImage.src = '/assets/images/hiasan/upweapon.webp';
-    loveImage = new Image();
-    loveImage.src = '/assets/images/hiasan/love.webp';
-    // barHpImage removed - file doesn't exist and is not used in any drawImage call
-    stationBulletImage = new Image();
-    stationBulletImage.src = '/assets/bullet_1_1_4.png';
-    enemySniperBulletImage = new Image();
-    enemySniperBulletImage.src = '/assets/bullet_2_3_2.png';
-    enemySpinnerBulletImage = new Image();
-    enemySpinnerBulletImage.src = '/assets/images/peluru/orange.webp';
-
-    // musuh hiasan
-    spaceStation1Image = new Image();
-    spaceStation1Image.src = '/assets/images/hiasan/dec_dmg.webp';
-    spaceStation2Image = new Image();
-    spaceStation2Image.src = '/assets/var_enemy3.png';
-    rockImage = new Image();
-    rockImage.src = '/assets/images/hiasan/batu.webp';
-    initScrollingDecors(canvas);
-
-    // Load spaceship image
-    const spaceshipImg = new Image();
-    spaceshipImg.src = spaceship.image;
-    const playerSpeeds: Record<string, number> = { easy: 3, medium: 3, hard: 3 };
-
-    // Initialize player at bottom center (no HP with base weapon)
-    player = {
-        x: canvas.width / 2,
-        y: canvas.height - 100,
-        width: 90,
-        height: 90,
-        speed: playerSpeeds[difficulty] || 10,
-        image: spaceshipImg,
-        dx: 0,
-        dy: 0,
-        hp: 0, // No HP with base weapon (invincible)
-        maxHp: 0,
-        tilt: 0,
-        hitFlash: 0,
-        upgradeFlash: 0
-    };
-
-    // Initialize crosshair and target
-    crosshairX = canvas.width / 2;
-    crosshairY = canvas.height / 2;
-    targetX = player.x;
-    targetY = player.y;
-    lastPlayerX = player.x;
-    player.tilt = 0;
-    player.dx = 0;
-    player.dy = 0;
-
-    // Update UI
-    updateUI();
-
-    // Setup controls
-    setupControls();
-
-    // Setup resize handler
+    // Start the game loop immediately for loading screen
+    isLoadingAssets = true;
+    loadingProgress = 0;
+    
+    // Setup resize handler and controls early so user can't resize incorrectly during load
     resizeHandler = handleResize;
     window.addEventListener('resize', resizeHandler);
+    setupControls();
 
-    // Load sounds and start BGM - resume AudioContext first (user already clicked to start game)
-    audioManager.resumeContext().then(() => {
-        return audioManager.loadSounds();
-    }).then(() => {
-        audioManager.startBGM(0.5);
-    });
-
-    // Start game loop
     gameLoop = requestAnimationFrame(update);
+
+    // Asynchronously preload chunks then initialize game objects
+    (async () => {
+        await preloadAssetsInChunks(spaceship.image);
+        
+        // Load meteor image
+        meteorImage = getCachedImage('/assets/images/hiasan/meteor.webp');
+
+        // Randomly select between 3 background modes
+        const bgRand = Math.floor(Math.random() * 3);
+        backgroundImages = [];
+
+        if (bgRand === 0) {
+            currentBgMode = 'starfield';
+            const src = '/assets/images/backgrounds/background_5.jpg';
+            for (let i = 0; i < 4; i++) {
+                backgroundImages.push(getCachedImage(src));
+            }
+            bgPanelY = [0, -canvas.height, -canvas.height * 2, -canvas.height * 3];
+        } else if (bgRand === 1) {
+            currentBgMode = 'rocket_seq';
+            const sources = ['/assets/images/backgrounds/background_1.jpg', '/assets/images/backgrounds/background_4.jpg', '/assets/images/backgrounds/background_2.jpg'];
+            for (const src of sources) {
+                backgroundImages.push(getCachedImage(src));
+            }
+            bgPanelY = [0, -canvas.height, -canvas.height * 2];
+        } else {
+            currentBgMode = 'portrait_scene';
+            const src = '/assets/images/backgrounds/background_3.png';
+            for (let i = 0; i < 4; i++) {
+                backgroundImages.push(getCachedImage(src));
+            }
+            bgPanelY = [0, -canvas.height, -canvas.height * 2, -canvas.height * 3]; 
+        }
+
+        // Set difficulty-based scroll speed
+        const scrollSpeeds = { easy: 3, medium: 3, hard: 3 };
+        backgroundScrollSpeed = scrollSpeeds[difficulty];
+
+        // Load smoke texture
+        smokeImage = getCachedImage('/assets/Smoke Texture.png');
+        smokeParticles = [];
+        lastSmokeSpawnTime = 0;
+
+        // Load enemy rocket images
+        enemyRocketImage = getCachedImage('/assets/roket_musuh.png');
+
+        // Load 4 variants for Basic Enemy
+        enemyBasicImages = [];
+        const basicSources = [
+            '/assets/var_enemy1.png',
+            '/assets/var_enemy2.png',
+            '/assets/var_enemy4.png',
+            '/assets/var_enemy5.png'
+        ];
+        for (const src of basicSources) {
+            enemyBasicImages.push(getCachedImage(src));
+        }
+
+        enemySniperImage = getCachedImage('/assets/images/enemy/enemy-sniper.webp'); 
+        enemySpinnerImage = getCachedImage('/assets/images/enemy/enemy-spiral.webp'); 
+
+        // Load explosion image
+        explosionImage = getCachedImage('/assets/bullet_16.png');
+        explosionParticles = [];
+
+        // Load boss death visuals
+        bossExplosionImage = getCachedImage('/assets/explosion02.png');
+        fireRingImage = getCachedImage('/assets/fire_ring.png');
+        bossDeathEffect = { active: false, startTime: 0, x: 0, y: 0 };
+
+        // Load bullet images
+        bulletSpreadImage = getCachedImage('/assets/bullet_25.png');
+        bulletMagneticImage = getCachedImage('/assets/bullet_73_5.png');
+        bulletLaserImage = getCachedImage('/assets/bullet_68.png');
+
+        // Load boss rocket image
+        bossRocketImage = getCachedImage('/assets/bos.png');
+        bossMinionImage = getCachedImage('/assets/images/enemy/anakan-bos.webp');
+        bossBulletImage = getCachedImage('/assets/bullet_4_2_0.png');
+        laserBeamImage = getCachedImage('/assets/laser_6.png');
+        weaponPowerUpImage = getCachedImage('/assets/images/hiasan/upweapon.webp');
+        loveImage = getCachedImage('/assets/images/hiasan/love.webp');
+        stationBulletImage = getCachedImage('/assets/bullet_1_1_4.png');
+        enemySniperBulletImage = getCachedImage('/assets/bullet_2_3_2.png');
+        enemySpinnerBulletImage = getCachedImage('/assets/images/peluru/orange.webp');
+
+        // musuh hiasan
+        spaceStation1Image = getCachedImage('/assets/images/hiasan/dec_dmg.webp');
+        spaceStation2Image = getCachedImage('/assets/var_enemy3.png');
+        rockImage = getCachedImage('/assets/images/hiasan/batu.webp');
+        initScrollingDecors(canvas!);
+
+        // Load spaceship image
+        const spaceshipImg = getCachedImage(spaceship.image);
+        const playerSpeeds: Record<string, number> = { easy: 3, medium: 3, hard: 3 };
+
+        // Initialize player at bottom center (no HP with base weapon)
+        player = {
+            x: canvas!.width / 2,
+            y: canvas!.height - 100,
+            width: 90,
+            height: 90,
+            speed: playerSpeeds[difficulty] || 10,
+            image: spaceshipImg,
+            dx: 0,
+            dy: 0,
+            hp: 0, 
+            maxHp: 0,
+            tilt: 0,
+            hitFlash: 0,
+            upgradeFlash: 0
+        };
+
+        // Initialize crosshair and target
+        crosshairX = canvas!.width / 2;
+        crosshairY = canvas!.height / 2;
+        targetX = player.x;
+        targetY = player.y;
+        lastPlayerX = player.x;
+        player.tilt = 0;
+        player.dx = 0;
+        player.dy = 0;
+
+        // Update UI
+        updateUI();
+
+        // Finish load, start music, remove load flag
+        audioManager.startBGM(0.5);
+        isLoadingAssets = false;
+        gameStartTime = Date.now(); // Reset start time so intro wave times correctly!
+    })();
 }
+
+
 
 
 
@@ -1508,9 +1570,18 @@ function setupControls(): void {
 // ============ GAME LOOP ============
 
 function update(): void {
-    if (!isGameRunning || !ctx || !canvas || !player || !difficultyConfig) {
+    if (!isGameRunning || !ctx || !canvas || !difficultyConfig) {
         return;
     }
+
+    if (isLoadingAssets) {
+        // Just return, let the canvas be transparent or hold its background
+        // Wait until assets are loaded to start rendering game frames
+        gameLoop = requestAnimationFrame(update);
+        return;
+    }
+
+    if (!player) return;
 
     // CRITICAL: Clear the canvas area for the next frame.
     // We reset the transform to identity to ensure we fill the ENTIRE canvas area
