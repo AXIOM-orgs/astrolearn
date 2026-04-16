@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { useEffect } from "react"
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
-    const { user, loading } = useAuth()
+    const { user, loading, isRestoringSession } = useAuth()
     const router = useRouter()
     const pathname = usePathname()
 
@@ -18,10 +18,10 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         typeof window !== "undefined" && window.location.hash.includes("access_token")
 
     useEffect(() => {
-        if (!loading && !isPublic && !user && !isOAuthCallback) {
+        if (!loading && !isRestoringSession && !isPublic && !user && !isOAuthCallback) {
             router.replace("/login")
         }
-    }, [loading, user, pathname, router, isPublic, isOAuthCallback])
+    }, [loading, isRestoringSession, user, pathname, router, isPublic, isOAuthCallback])
 
     // Public routes: render langsung
     if (isPublic) {
@@ -29,7 +29,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     }
 
     // Loading state: tampilkan loading indicator
-    if (loading) {
+    if (loading || isRestoringSession) {
         return (
             <div className="screen center" style={{
                 display: 'flex',

@@ -24,7 +24,6 @@ export default function GamePage(): React.JSX.Element {
     const roomCode = params.roomCode as string;
     const { gameState, setGameState, showLoading, hideLoading } = useGame();
     const [isInitializing, setIsInitializing] = useState(true);
-    const [isPreloading, setIsPreloading] = useState(true);
     const [isGameOver, setIsGameOver] = useState(false);
     const [retryCount, setRetryCount] = useState(0);
     const hasInitialized = useRef(false);
@@ -59,7 +58,7 @@ export default function GamePage(): React.JSX.Element {
             // If we have state, just verify valid spaceship
             if (gameState.selectedSpaceship && gameState.selectedDifficulty) {
                 setIsInitializing(false);
-                hideLoading();
+                // Note: hideLoading() is called after preloadPhase3 completes, not here
                 return;
             }
 
@@ -124,15 +123,20 @@ export default function GamePage(): React.JSX.Element {
                     currentQuestionIndex: participantRes.data.current_question || prev.currentQuestionIndex
                 }));
 
-                setIsInitializing(false);
-                hideLoading();
             } catch (err) {
                 console.error('Game bootstrap error:', err);
-                router.replace(`/player/${roomCode}/quiz`); // Go back to quiz might be safer than hangar
+                hideLoading(); // Ensure loading is hidden on error
+                router.replace(`/player/${roomCode}/quiz`);
+            } finally {
+                setIsInitializing(false);
             }
         };
 
         bootstrapRequest();
+        return () => {
+            hasInitialized.current = false;
+        };
+
     }, [gameState.selectedSpaceship, gameState.selectedDifficulty, roomCode, router, setGameState, showLoading, hideLoading]);
 
     // Session Timer Countdown
@@ -194,9 +198,20 @@ export default function GamePage(): React.JSX.Element {
             isEliminated: stats.isEliminated
         }));
 
-        showLoading();
+        // RETRY: game failed but player is not eliminated — restart without touching DB
+        // minigame stays true in DB while player is still in the minigame
+        if (!stats.success && !stats.isEliminated) {
+            localStorage.removeItem('lives');
+            localStorage.removeItem('hp');
 
-        // Sync with Supabase
+            setTimeout(() => {
+                setRetryCount(prev => prev + 1);
+                setIsGameOver(false);
+            }, 2500);
+            return;
+        }
+
+        // Game truly finished (success or eliminated) — sync with Supabase
         if (participantId) {
             try {
                 const updateData: any = { minigame: false };
@@ -216,21 +231,9 @@ export default function GamePage(): React.JSX.Element {
             }
         }
 
-        if (!stats.success && !stats.isEliminated) {
-            // RETRY LOGIC: Reset lives/HP for the next attempt
-            localStorage.removeItem('lives');
-            localStorage.removeItem('hp');
-
-            setTimeout(() => {
-                setRetryCount(prev => prev + 1);
-                setIsGameOver(false);
-                hideLoading();
-            }, 3500); // Give enough time for the "TRY AGAIN" text to be seen
-            return;
-        }
-
+        // Navigating away — show global loading to cover transition
+        showLoading();
         setTimeout(() => {
-            // Navigation Logic
             if (stats.isEliminated) {
                 router.replace(`/player/${roomCode}/result`);
             } else if (gameState.currentQuestionIndex < (gameState.selectedQuestions || 10)) {
@@ -275,7 +278,8 @@ export default function GamePage(): React.JSX.Element {
 
         // Double check spaceship exists before starting
         if (!gameState.selectedSpaceship) {
-            // Should have been handled by bootstrap, but if here, something is wrong
+            console.warn('[GamePage] No selected spaceship found, hiding loading.');
+            hideLoading();
             return;
         }
 
@@ -291,56 +295,47 @@ export default function GamePage(): React.JSX.Element {
             localStorage.setItem('hp', hp.toString());
         };
 
-        const initTimeout = setTimeout(() => {
-            if (gameState.selectedSpaceship) {
-                // Preload Phase 3: Spaceship image + Audio
-                preloadPhase3(gameState.selectedSpaceship.image).then(() => {
-                    if (!gameState.selectedSpaceship) return; // double check after async
+        // Ensure audio & assets are loaded before starting.
+        // - Normal flow (from waiting room): preloadPhase3 is already done → returns instantly
+        // - Refresh on game page: loads audio now (global loading is still shown during this)
+        preloadPhase3(gameState.selectedSpaceship.image).then(() => {
+            if (!gameState.selectedSpaceship) return;
 
-                    setIsPreloading(false); // Remove loading spinner
+            hideLoading();
 
-                    const translations = {
-                        mobileControls: t('mobileControls'),
-                        desktopControls: t('desktopControls'),
-                        bossWarning: t('bossWarning'),
-                        bossApproaching: t('bossApproaching'),
-                        bossLabel: t('bossLabel'),
-                        victory: t('victory'),
-                        gameOver: t('gameOver'),
-                        tryAgain: t('tryAgain'),
-                        continuing: t('continuing')
-                    };
+            const translations = {
+                mobileControls: t('mobileControls'),
+                desktopControls: t('desktopControls'),
+                bossWarning: t('bossWarning'),
+                bossApproaching: t('bossApproaching'),
+                bossLabel: t('bossLabel'),
+                victory: t('victory'),
+                gameOver: t('gameOver'),
+                tryAgain: t('tryAgain'),
+                continuing: t('continuing')
+            };
 
-                    startMiniGame(
-                        gameState.selectedSpaceship,
-                        gameState.selectedDifficulty || 'easy',
-                        handleGameComplete,
-                        initialLives,
-                        initialHP,
-                        handleStateChange,
-                        translations,
-                        () => setIsGameOver(true)
-                    );
-                }).catch(err => {
-                    console.error('Phase 3 preload failed:', err);
-                    setIsPreloading(false); // Proceed anyway on fail
-                });
-            }
-        }, 600);
+            startMiniGame(
+                gameState.selectedSpaceship,
+                gameState.selectedDifficulty || 'easy',
+                handleGameComplete,
+                initialLives,
+                initialHP,
+                handleStateChange,
+                translations,
+                () => setIsGameOver(true)
+            );
+        }).catch(err => {
+            console.error('Preload failed on game page:', err);
+            hideLoading();
+        });
 
         return () => {
-            clearTimeout(initTimeout);
             cleanupMiniGame();
         };
-    }, [isInitializing, gameState.selectedSpaceship, gameState.selectedDifficulty, handleGameComplete, t, retryCount]);
+    }, [isInitializing, gameState.selectedSpaceship, gameState.selectedDifficulty, handleGameComplete, t, retryCount, hideLoading]);
 
-    if (isInitializing || isPreloading) {
-        return (
-            <div className="flex items-center justify-center h-screen bg-[#0a0e27]">
-                <div className="loading-spinner text-primary" />
-            </div>
-        );
-    }
+
 
     return (
         <section id="screen-minigame" className="screen active game-fullscreen">

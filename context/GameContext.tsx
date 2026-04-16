@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useRef, useEffect } from 'react';
 import { QuizQuestion, Spaceship, DifficultyLevel } from '@/lib/data';
 
 // Game State Interface
@@ -74,13 +74,27 @@ interface GameProviderProps {
 export function GameProvider({ children }: GameProviderProps): React.JSX.Element {
     const [gameState, setGameState] = useState<GameState>(initialGameState);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const showLoading = useCallback((): void => {
+        if (hideTimeoutRef.current) {
+            clearTimeout(hideTimeoutRef.current);
+            hideTimeoutRef.current = null;
+        }
         setIsLoading(true);
     }, []);
 
     const hideLoading = useCallback((): void => {
-        setTimeout(() => setIsLoading(false), 300);
+        hideTimeoutRef.current = setTimeout(() => {
+            setIsLoading(false);
+            hideTimeoutRef.current = null;
+        }, 300);
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+        };
     }, []);
 
     const resetGame = useCallback((): void => {
