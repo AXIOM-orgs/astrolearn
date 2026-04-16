@@ -404,9 +404,9 @@ function getExplosionFromPool(): ExplosionParticle {
     if (explosionPool.pool.length > 0) {
         return explosionPool.pool.pop()!;
     }
-    return { 
-        x: 0, y: 0, scale: 0, alpha: 0, rotation: 0, age: 0, 
-        maxAge: 30, type: 'standard' 
+    return {
+        x: 0, y: 0, scale: 0, alpha: 0, rotation: 0, age: 0,
+        maxAge: 30, type: 'standard'
     };
 }
 
@@ -551,13 +551,13 @@ let muzzleFlashUntil: number = 0;
 
 // Explosion particles
 let explosionImage: HTMLImageElement | null = null;
-interface ExplosionParticle { 
-    x: number; 
-    y: number; 
-    scale: number; 
-    alpha: number; 
-    rotation: number; 
-    age: number; 
+interface ExplosionParticle {
+    x: number;
+    y: number;
+    scale: number;
+    alpha: number;
+    rotation: number;
+    age: number;
     maxAge: number;
     type: 'standard' | 'ring' | 'core';
 }
@@ -735,14 +735,14 @@ class AudioManager {
             this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
             this.masterGain = this.audioContext.createGain();
             this.masterGain.connect(this.audioContext.destination);
-            
+
             // Unify with global sound settings
             const savedBgm = localStorage.getItem('bgm_enabled');
             const savedSfx = localStorage.getItem('sfx_enabled');
-            
+
             // If either is true, we consider sound enabled, but we follow the "unified" approach
             this.isMuted = savedBgm === 'false' || (savedBgm === null && savedSfx === 'false');
-            
+
             // To be more robust: explicitly OFF if either says false, default OFF
             if (savedBgm === null && savedSfx === null) {
                 this.isMuted = true; // Default OFF
@@ -754,7 +754,7 @@ class AudioManager {
             if (savedVolume !== null) {
                 this.masterVolume = parseFloat(savedVolume);
             }
-            
+
             if (this.masterGain) {
                 this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
             }
@@ -765,7 +765,7 @@ class AudioManager {
                 if (this.masterGain) {
                     this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
                 }
-                
+
                 if (this.isMuted) {
                     this.stopBGM();
                     this.stopAllSounds();
@@ -920,7 +920,7 @@ class AudioManager {
     toggleMute(): boolean {
         this.isMuted = !this.isMuted;
         const newValue = !this.isMuted;
-        
+
         localStorage.setItem('bgm_enabled', newValue.toString());
         localStorage.setItem('sfx_enabled', newValue.toString());
 
@@ -929,10 +929,10 @@ class AudioManager {
         }
 
         // Notify other components
-        window.dispatchEvent(new CustomEvent('sound_settings_changed', { 
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
             detail: { type: 'bgm', enabled: newValue }
         }));
-        window.dispatchEvent(new CustomEvent('sound_settings_changed', { 
+        window.dispatchEvent(new CustomEvent('sound_settings_changed', {
             detail: { type: 'sfx', enabled: newValue }
         }));
 
@@ -950,7 +950,7 @@ class AudioManager {
     setMasterVolume(volume: number): void {
         this.masterVolume = Math.max(0, Math.min(1, volume)); // clamp 0-1
         localStorage.setItem('master_volume', this.masterVolume.toString());
-        
+
         // Auto-mute at 0, auto-unmute above 0
         if (this.masterVolume === 0) {
             this.isMuted = true;
@@ -961,12 +961,12 @@ class AudioManager {
             localStorage.setItem('bgm_enabled', 'true');
             localStorage.setItem('sfx_enabled', 'true');
         }
-        
+
         // Apply volume to masterGain
         if (this.masterGain) {
             this.masterGain.gain.value = this.isMuted ? 0 : this.masterVolume;
         }
-        
+
         // Start BGM if it wasn't playing yet
         if (!this.isMuted && !this.bgmSource) {
             if (this.audioContext?.state === 'suspended') {
@@ -975,7 +975,7 @@ class AudioManager {
             this.startBGM(0.5);
         }
     }
-    
+
     getMasterVolume(): number {
         return this.masterVolume;
     }
@@ -1351,12 +1351,12 @@ function getMuteButtonMetrics() {
     // Gunakan isMobile global untuk konsistensi deteksi di semua bagian game
     const currentIsMobile = isMobile || (canvas ? canvas.width < 768 : false);
     const btnRadius = 22; // Ukuran dikembalikan ke awal sesuai permintaan
-    
+
     // paddingX diatur kecil (25px) agar tetap di pojok (corner)
-    const paddingX = 18; 
+    const paddingX = 18;
     // paddingY ditingkatkan di mobile (85px) agar naik ke atas menghindari nav bar HP
-    const paddingY = currentIsMobile ? 70 : 25; 
-    
+    const paddingY = currentIsMobile ? 70 : 25;
+
     return {
         radius: btnRadius,
         paddingX: paddingX,
@@ -1380,7 +1380,7 @@ function drawMuteButton(): void {
         const sliderHeight = 100;
         const sliderX = btnX - sliderWidth / 2;
         const sliderY = btnY - btnRadius - 40 - sliderHeight; // Increased gap to button
-        
+
         // Background track
         ctx.fillStyle = 'rgba(0, 30, 50, 0.8)';
         ctx.beginPath();
@@ -1401,13 +1401,13 @@ function drawMuteButton(): void {
         const displayVol = isMuted ? 0 : currentVol;
         const fillHeight = sliderHeight * displayVol;
         const fillY = sliderY + sliderHeight - fillHeight;
-        
+
         // Gradient based on volume level
         const gradient = ctx.createLinearGradient(0, sliderY + sliderHeight, 0, sliderY);
         gradient.addColorStop(0, '#00d4ff');
         gradient.addColorStop(1, '#00ffa3');
         ctx.fillStyle = gradient;
-        
+
         if (fillHeight > 0) {
             ctx.beginPath();
             ctx.roundRect(sliderX, fillY, sliderWidth, fillHeight, 6);
@@ -1422,7 +1422,7 @@ function drawMuteButton(): void {
         ctx.strokeStyle = '#4ab8c7';
         ctx.lineWidth = 2;
         ctx.stroke();
-        
+
         // Volume percentage text
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 11px Arial';
@@ -1473,7 +1473,7 @@ function drawMuteButton(): void {
         ctx.beginPath();
         ctx.arc(cx, cy, 6, -Math.PI / 5, Math.PI / 5);
         ctx.stroke();
-        
+
         if (currentVol > 0.5) {
             ctx.beginPath();
             ctx.arc(cx, cy, 10, -Math.PI / 5, Math.PI / 5);
@@ -1498,18 +1498,18 @@ function setupControls(): void {
 
     const handleDragVolume = (clickX: number, clickY: number): boolean => {
         if (!isVolumeSliderOpen || !canvas) return false;
-        
+
         const { radius: btnRadius, x: btnX, y: btnY } = getMuteButtonMetrics();
-        
+
         const sliderWidth = 12;
         const sliderHeight = 100;
         const sliderX = btnX - sliderWidth / 2;
         const sliderY = btnY - btnRadius - 40 - sliderHeight; // Match the visual drawing
-        
+
         // Check if inside slider bounding box + margin
         if (clickX > sliderX - 25 && clickX < sliderX + sliderWidth + 25 &&
             clickY > sliderY - 25 && clickY < sliderY + sliderHeight + 25) {
-            
+
             // Calculate 0.0 to 1.0 volume
             let vol = 1.0 - ((clickY - sliderY) / sliderHeight);
             vol = Math.max(0, Math.min(1, vol));
@@ -1575,7 +1575,7 @@ function setupControls(): void {
             }
             return;
         }
-        
+
         // Check Drag Slider
         if (isVolumeSliderOpen) {
             if (handleDragVolume(clickX, clickY)) {
@@ -1591,8 +1591,8 @@ function setupControls(): void {
 
         isFiring = true;
     };
-    mouseUpHandler = (): void => { 
-        isFiring = false; 
+    mouseUpHandler = (): void => {
+        isFiring = false;
         isDraggingVolume = false;
     };
     document.addEventListener('mousedown', mouseDownHandler);
@@ -1621,7 +1621,7 @@ function setupControls(): void {
                 }
                 return;
             }
-            
+
             if (isVolumeSliderOpen) {
                 if (handleDragVolume(clickX, clickY)) {
                     isDraggingVolume = true;
@@ -1731,7 +1731,7 @@ function update(): void {
     // Firing - bullets go STRAIGHT UP
     // Can only fire if NOT immune. Respects isAutoFire from weapon config if present.
     const canFire = hasWeapon && weaponConfig && (weaponConfig.isAutoFire || isFiring) && !isImmune;
-    
+
     if (canFire && now - lastFireTime >= (weaponConfig?.fireRate || 200)) {
         fireBullets();
         lastFireTime = now;
@@ -1929,12 +1929,12 @@ function drawBoosterDecors(): void {
 
 function initScrollingDecors(canvasRef: HTMLCanvasElement): void {
     scrollingDecors = [];
-    const counts = { easy: 5, medium: 7, hard: 8 }; 
+    const counts = { easy: 5, medium: 7, hard: 8 };
     const baseCount = counts[currentDifficulty || 'easy'];
     const count = baseCount + Math.floor(Math.random() * 2);
 
     let types: ('station1' | 'station2' | 'rock')[] = ['station1', 'station2', 'rock'];
-    
+
     // Probability adjustment for Hard difficulty (Less Kamikazes)
     if (currentDifficulty === 'hard') {
         types = ['station1', 'station1', 'station2', 'rock', 'rock', 'rock']; // station2 probability reduced from 33% to 16%
@@ -2216,7 +2216,7 @@ function drawBackground(): void {
         const img = backgroundImages[i];
         if (img && img.complete && img.width > 0) {
             const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-            
+
             const cropW = canvas.width / scale;
             const cropH = img.height;
             const sX = (img.width - cropW) / 2;
@@ -2994,7 +2994,7 @@ function drawBossRocket(): void {
             // Caching gradient by using relative translation
             ctx.save();
             ctx.translate(bossRocket.x, bossRocket.y + 20);
-            
+
             // Optimization: Create gradient only if not already cached (basic check)
             const glowGradient = ctx.createRadialGradient(0, 0, 10, 0, 0, 80);
             glowGradient.addColorStop(0, 'rgba(255, 255, 255, 1)'); // Core white
@@ -3052,17 +3052,17 @@ function drawBossRocket(): void {
                 const y = Math.sin(angle) * radius;
 
                 // Tapering Size and Opacity
-                const size = 6 * (1 - ratio); 
-                const alpha = (1 - ratio) * 0.8; 
+                const size = 6 * (1 - ratio);
+                const alpha = (1 - ratio) * 0.8;
 
                 // Core Color (White-Cyan gradient illusion)
                 ctx.fillStyle = `rgba(${50 + ratio * 50}, ${212 + ratio * 40}, 255, ${alpha})`;
-                
+
                 ctx.beginPath();
                 ctx.arc(x, y, size, 0, Math.PI * 2);
                 ctx.fill();
             }
-            
+
             // Reset shadow after arc to prevent spillover
             if (enableShadows) {
                 ctx.shadowBlur = 0;
@@ -4578,7 +4578,7 @@ function drawPlayer(): void {
                     sColor = '#ff4444';
                     sBlur = 45;
                 }
-            } 
+            }
             // 2. Continuous Upgrade Flash (Yellow)
             else if (playerWeaponLevel > 1) {
                 // Blink pattern: 250ms periodic
