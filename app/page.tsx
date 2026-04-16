@@ -9,7 +9,6 @@ import { getRandomSciFiName } from '@/lib/randomNames';
 import { FullscreenToggle } from '@/components/FullscreenToggle';
 import { ProfileMenu } from '@/components/ProfileSidebar';
 import { LogoutDialog } from '@/components/LogoutDialog';
-import { SoundSettingsDialog } from '@/components/SoundSettingsDialog';
 import { supabaseGame } from '@/lib/supabase';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTranslations, useLocale } from 'next-intl';
@@ -33,7 +32,6 @@ export default function LandingPage(): React.JSX.Element {
     const [profileName, setProfileName] = useState('');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
-    const [isSoundDialogOpen, setIsSoundDialogOpen] = useState(false);
     const nicknameInputRef = useRef<HTMLInputElement>(null);
 
     // Sync Auth user with local state
@@ -223,7 +221,6 @@ export default function LandingPage(): React.JSX.Element {
                 onClose={() => setIsSidebarOpen(false)}
                 username={profileName}
                 onLogoutClick={() => setIsLogoutDialogOpen(true)}
-                onSoundClick={() => setIsSoundDialogOpen(true)}
             />
 
             {/* Logout Dialog */}
@@ -232,11 +229,6 @@ export default function LandingPage(): React.JSX.Element {
                 onOpenChange={setIsLogoutDialogOpen}
             />
 
-            {/* Sound Settings Dialog */}
-            <SoundSettingsDialog
-                open={isSoundDialogOpen}
-                onOpenChange={setIsSoundDialogOpen}
-            />
 
 
 

@@ -220,7 +220,7 @@ export default function GamePage(): React.JSX.Element {
             // RETRY LOGIC: Reset lives/HP for the next attempt
             localStorage.removeItem('lives');
             localStorage.removeItem('hp');
-            
+
             setTimeout(() => {
                 setRetryCount(prev => prev + 1);
                 setIsGameOver(false);
@@ -296,7 +296,7 @@ export default function GamePage(): React.JSX.Element {
                 // Preload Phase 3: Spaceship image + Audio
                 preloadPhase3(gameState.selectedSpaceship.image).then(() => {
                     if (!gameState.selectedSpaceship) return; // double check after async
-                    
+
                     setIsPreloading(false); // Remove loading spinner
 
                     const translations = {

@@ -180,12 +180,12 @@ export default function PlayerWaitingPage(): React.JSX.Element {
 
         // Fallback polling for session status change
         const pollInterval = setInterval(async () => {
-             const { data } = await supabaseGame
+            const { data } = await supabaseGame
                 .from('sessions')
                 .select('status, countdown_started_at')
                 .eq('game_pin', roomCode)
                 .single();
-            
+
             if (data) {
                 if (data.status === 'active' && !isRedirecting.current) {
                     isRedirecting.current = true;

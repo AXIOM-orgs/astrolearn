@@ -437,7 +437,7 @@ export default function HostLobbyPage(): React.JSX.Element {
         setSoundEnabled(newValue);
         localStorage.setItem('bgm_enabled', String(newValue));
         localStorage.setItem('sfx_enabled', String(newValue));
-        
+
         // Dispatch event for BackgroundMusic and ClientLayout components
         window.dispatchEvent(new CustomEvent('sound_settings_changed', {
             detail: { type: 'bgm', enabled: newValue }
