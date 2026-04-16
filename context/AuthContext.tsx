@@ -138,24 +138,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // 1. Coba ambil sesi dari localStorage (cara normal)
                 let { data: { session } } = await supabase.auth.getSession()
 
-                // 2. Jika tidak ada sesi di localStorage, coba pulihkan dari shared cookie
-                //    Ini terjadi saat user buka subdomain baru yang belum pernah login
-                //    tapi sudah login di subdomain lain (SSO)
-                if (!session) {
-                    const cookieSession = getSessionFromCookie()
-                    if (cookieSession) {
-                        console.log('[SSO] Mencoba pulihkan sesi dari shared cookie (setSession)...')
-                        // PENTING: Pakai setSession(), BUKAN refreshSession()!
-                        // setSession() tidak merotasi token → semua app tetap sinkron
-                        const { data, error } = await supabase.auth.setSession(cookieSession)
-                        if (!error && data.session) {
-                            session = data.session
-                            console.log('[SSO] Sesi berhasil dipulihkan!')
-                        } else {
-                            // Token sudah expired/invalid, hapus cookie
-                            console.warn('[SSO] Token expired, menghapus cookie')
-                            syncSessionCookie(null)
-                        }
+                // 2. Deteksi Zombie Session: Sesi lokal ada, tapi SSO cookie GA ADA (berarti sudah logout di app lain)
+                const cookieSession = getSessionFromCookie()
+                if (session && !cookieSession) {
+                    console.log('[SSO] Terdeteksi sisa sesi lokal padahal SSO cookie kosong. Menghapus sesi...')
+                    await supabase.auth.signOut()
+                    session = null
+                }
+
+                // 3. Jika tidak ada sesi di localStorage, coba pulihkan dari shared cookie
+                if (!session && cookieSession) {
+                    console.log('[SSO] Mencoba pulihkan sesi dari shared cookie (setSession)...')
+                    const { data, error } = await supabase.auth.setSession(cookieSession)
+                    if (!error && data.session) {
+                        session = data.session
+                        console.log('[SSO] Sesi berhasil dipulihkan!')
+                    } else {
+                        console.warn('[SSO] Token expired, menghapus cookie')
+                        syncSessionCookie(null)
                     }
                 }
 
@@ -201,7 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         access_token: session.access_token,
                         refresh_token: session.refresh_token
                     })
-                } else if (!currentUser) {
+                } else if (event === 'SIGNED_OUT' || !currentUser) {
                     // Hapus shared cookie saat logout → semua app ikut logout
                     syncSessionCookie(null)
                     setProfile(null)
