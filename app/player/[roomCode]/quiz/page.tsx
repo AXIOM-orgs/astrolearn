@@ -381,10 +381,10 @@ export default function JoinQuizPage(): React.JSX.Element | null {
             }));
         }
 
-        // Submit to Supabase AND wait for 1.5s visual feedback concurrently
+        // Submit to Supabase AND wait for 0.3s visual feedback concurrently
         await Promise.all([
             submitAnswerToSupabase(selectedIndex, isCorrect),
-            new Promise(resolve => setTimeout(resolve, 1500))
+            new Promise(resolve => setTimeout(resolve, 300))
         ]);
 
         const nextIndex = gameState.currentQuestionIndex + 1;

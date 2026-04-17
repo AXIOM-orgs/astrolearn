@@ -177,7 +177,7 @@ export default function JoinResultsPage(): React.JSX.Element {
         setTimeout(() => {
             router.push('/');
             hideLoading();
-        }, 500);
+        }, 300);
     };
 
     // Get ordinal suffix for rank

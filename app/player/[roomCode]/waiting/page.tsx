@@ -281,7 +281,7 @@ export default function PlayerWaitingPage(): React.JSX.Element {
                             setTimeout(() => {
                                 router.push('/');
                                 hideLoading();
-                            }, 1500);
+                            }, 300);
                         }
                     }
                 }

@@ -242,7 +242,7 @@ export default function GamePage(): React.JSX.Element {
                 router.replace(`/player/${roomCode}/result`);
             }
             hideLoading();
-        }, 500);
+        }, 300);
     }, [gameState.currentQuestionIndex, gameState.selectedQuestions, roomCode, router, setGameState, showLoading, hideLoading]);
 
     // Realtime Session Subscription to handle "End Game" from Host

@@ -314,7 +314,7 @@ export default function HostMonitorPage(): React.JSX.Element {
                 payload => {
                     setSession(payload.new as Session);
                     if (payload.new.status === 'finished') {
-                        setTimeout(() => router.push(`/host/${gamePin}/leaderboard`), 1500);
+                        setTimeout(() => router.push(`/host/${gamePin}/leaderboard`), 300);
                     }
                 }
             )

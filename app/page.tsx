@@ -164,7 +164,7 @@ export default function LandingPage(): React.JSX.Element {
         showLoading();
         setTimeout(() => {
             router.push('/host/select-quiz');
-        }, 500);
+        }, 300);
     };
 
     const handleLaunchMission = async (): Promise<void> => {
